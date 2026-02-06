@@ -243,7 +243,7 @@ lasso_feature_importance <- function(object,
           plot.title = element_text(size = 20, face = "bold"),
           axis.title.y = element_text(size = 14, face = "bold"),
           axis.text = element_text(size = 12)) +
-    ggprism::theme_prism(base_size = base_size)
+    ggplot2::theme_classic(base_size = base_size)
 
   print(p)
 

@@ -31,6 +31,9 @@ generate_time_dependent_roc <- function(data,
                                         save_format = "pdf"){
 
 
+  # Ensure survival package is available for timeROC
+  if (!requireNamespace("survival", quietly = TRUE)) install.packages("survival")
+  library(survival)
   time <- data[[time_col]]
   status <- data[[status_col]]
 
@@ -86,7 +89,7 @@ generate_time_dependent_roc <- function(data,
   }
 
   roc_plot <- roc_plot +
-    scale_color_manual(values = wesanderson::wes_palette(palette_name)) +
+    scale_color_manual(values = wes_palette(palette_name)) +
     labs(
       title = paste("Time-dependent ROC Curves by", var_col),
       subtitle = paste("AUCs:", paste0("   t=", time_points, ": ", round(roc_results$AUC_1, 2), collapse = "; ")),

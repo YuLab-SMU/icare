@@ -429,9 +429,13 @@ evaluate_pls_km <- function(fit_best_cv_pls,
   colnames(data)[ncol(data)] <- "risk_group"
   
   cat("Calculating Kaplan-Meier survival curve...\n")
-  km_fit_pls <- survival::survfit(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group, data = data)
+  # Use formula string construction to ensure variable names are preserved for ggsurvplot
+  f <- as.formula(paste0("survival::Surv(", time_col, ", ", status_col, ") ~ risk_group"))
+  km_fit_pls <- survival::survfit(f, data = data)
+  # Inject formula into call to avoid symbol lookup issues in ggsurvplot
+  km_fit_pls$call$formula <- f
   
-  survdiff_result_pls <- survival::survdiff(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group, data = data)
+  survdiff_result_pls <- survival::survdiff(f, data = data)
   km_pval_pls <- pchisq(survdiff_result_pls$chisq, 1, lower.tail = FALSE)
   km_hr_pls <- (survdiff_result_pls$obs[2] / survdiff_result_pls$exp[2]) / (survdiff_result_pls$obs[1] / survdiff_result_pls$exp[1])
   
@@ -459,7 +463,7 @@ evaluate_pls_km <- function(fit_best_cv_pls,
     xlab = "Follow-up Time (days)",
     legend = c(0.8, 0.75),
     legend.title = "Risk Group",
-    legend.labs = unique(data$risk_group_pls),
+    legend.labs = unique(data$risk_group),
     break.x.by = 100,
     palette = "Dark2",
     base_size = base_size
@@ -469,7 +473,7 @@ evaluate_pls_km <- function(fit_best_cv_pls,
   cat("Kaplan-Meier plot generated.\n")
   
   surv_plot <- km_plot_pls$plot +
-    ggprism::theme_prism(base_size = base_size) +
+    ggplot2::theme_classic(base_size = base_size) +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
@@ -478,8 +482,8 @@ evaluate_pls_km <- function(fit_best_cv_pls,
       axis.title.y = element_text(size = 12),
       legend.position = c(0.8, 0.8)
     )
-  
-  risk_table <- km_plot_pls$table + ggprism::theme_prism(base_size = base_size) +
+
+  risk_table <- km_plot_pls$table + ggplot2::theme_classic(base_size = base_size) +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
@@ -600,14 +604,16 @@ evaluate_km_pls_model <- function(object,
 #'
 #' @param pls_model PLS model.
 #' @param train_data Training data.
+#' @param time_col Time column.
+#' @param status_col Status column.
 #'
 #' @return HR results data frame.
 #' @export
-compute_hr_pls <- function(pls_model,train_data) {
-  pls_coefs <-pls_model[["Coeffs"]]
+compute_hr_pls <- function(pls_model, train_data, time_col = "time", status_col = "status") {
+  pls_coefs <- pls_model[["Coeffs"]]
   pls_coefs <- as.numeric(pls_coefs)
 
-  feature_names <- colnames(train_data[, !(names(train_data) %in% c("time", "status"))]) # Assuming defaults for now as arguments missing
+  feature_names <- colnames(train_data[, !(names(train_data) %in% c(time_col, status_col))])
 
   hr <- exp(pls_coefs)
 
@@ -638,14 +644,17 @@ compute_hr_pls <- function(pls_model,train_data) {
 #' Wrapper to compute HR/CI for PLS in PrognosiX.
 #'
 #' @param object PrognosiX object.
+#' @param time_col Time column.
+#' @param status_col Status column.
 #'
 #' @return Updated PrognosiX object or results.
 #' @export
-pls_compute_hr_and_ci <- function(object) {
+pls_compute_hr_and_ci <- function(object, time_col = "time", status_col = "status") {
   if (inherits(object, 'PrognosiX')) {
     cat("Input is a 'PrognosiX' object. Extracting data...\n")
 
-
+    status_col <- methods::slot(object, "status_col")
+    time_col <- methods::slot(object, "time_col")
     fit_best_cv_pls <- methods::slot(object, "survival.model")[["pls_model"]][["model"]]
     data_sets <- pn_filtered_set(object)
 
@@ -653,6 +662,19 @@ pls_compute_hr_and_ci <- function(object) {
     test_data <- data_sets$testing
   } else if (is.list(object) && all(c("fit_best_cv_pls") %in% names(object))) {
     fit_best_cv_pls <- object$fit_best_cv_pls
+    # train_data is needed but not extracted in list mode? 
+    # The original code didn't extract it properly in list mode either (it just used train_data which was not defined in this block?)
+    # Wait, in the original code:
+    # } else if (is.list(object) && all(c("fit_best_cv_pls") %in% names(object))) {
+    #   fit_best_cv_pls <- object$fit_best_cv_pls
+    # }
+    # Then it calls compute_hr_pls(..., train_data = train_data)
+    # If object is list, train_data would be NULL or Error if not found.
+    # I should try to extract it if present.
+    if ("train" %in% names(object)) train_data <- object$train
+    else if ("training" %in% names(object)) train_data <- object$training
+    else stop("Training data required for HR computation (feature names).")
+    
   } else {
     stop("Input must be an object of class 'PrognosiX' or a list with 'fit_best_cv_pls' and 'lambda'.")
   }
@@ -660,7 +682,9 @@ pls_compute_hr_and_ci <- function(object) {
   cat("Evaluating hazard ratios and confidence intervals for PLS model...\n")
   hr_results <- compute_hr_pls(
     pls_model = fit_best_cv_pls,
-    train_data =train_data
+    train_data = train_data,
+    time_col = time_col,
+    status_col = status_col
   )
 
   if (inherits(object, 'PrognosiX')) {

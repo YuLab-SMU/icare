@@ -469,7 +469,7 @@ PrognosiXClinicalPrediction <- function(
       legend.title = element_blank(),
       legend.text = element_text(size = base_size - 2)
     ) +
-    ggprism::theme_prism(base_size = base_size)  
+    ggplot2::theme_classic(base_size = base_size)  
   
   print(p)
   

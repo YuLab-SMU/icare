@@ -445,8 +445,12 @@ evaluate_lasso_km <- function(
   }
   
   cat("Predicting lasso risk scores for the", data_name, "data...\n")
+  
+  # Ensure data is matrix for glmnet
+  x_data <- as.matrix(data[, setdiff(names(data), c(time_col, status_col))])
+  
   risk_score <- predict(fit_best_cv_lasso,
-                        newx = as.matrix(data[, !(names(data) %in% c(time_col, status_col))]),
+                        newx = x_data,
                         s = best_lambda_value,
                         type = "response")
   
@@ -457,25 +461,24 @@ evaluate_lasso_km <- function(
   colnames(data)[ncol(data) - 1] <- "risk_score"
   colnames(data)[ncol(data)] <- "risk_group"
   
-  fit_km_lasso <- survival::survfit(survival::Surv(data[[time_col]], data[[status_col]]) ~ risk_group, data = data)
+  f <- as.formula(paste0("survival::Surv(", time_col, ", ", status_col, ") ~ risk_group"))
+  fit_km_lasso <- survival::survfit(f, data = data)
+  # Inject formula into call to avoid symbol lookup issues in ggsurvplot
+  fit_km_lasso$call$formula <- f
   cat("Kaplan-Meier fit for lasso risk groups completed.\n")
   
-  km_pval_lasso <- pchisq(survival::survdiff(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group,
-                                   data = data)$chisq, 1, lower.tail = FALSE)
+  # Ensure status is numeric for survdiff
+  data[[status_col]] <- as.numeric(data[[status_col]])
   
-  km_hr_lasso <- (survival::survdiff(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group,
-                           data = data)$obs[2] / survival::survdiff(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group,
-                                                          data = data)$exp[2]) /
-    (survival::survdiff(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group,
-              data = data)$obs[1] / survival::survdiff(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group,
-                                             data = data)$exp[1])
+  surv_diff_obj <- survival::survdiff(as.formula(paste0("survival::Surv(", time_col, ", ", status_col, ") ~ risk_group")), data = data)
   
-  km_upper95_lasso <- exp(log(km_hr_lasso) + qnorm(0.975) * sqrt(1 / survival::survdiff(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group,
-                                                                              data = data)$exp[2] + 1 / survival::survdiff(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group,
-                                                                                                                 data = data)$exp[1]))
-  km_lower95_lasso <- exp(log(km_hr_lasso) - qnorm(0.975) * sqrt(1 / survival::survdiff(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group,
-                                                                              data = data)$exp[2] + 1 / survival::survdiff(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group,
-                                                                                                                 data = data)$exp[1]))
+  km_pval_lasso <- pchisq(surv_diff_obj$chisq, 1, lower.tail = FALSE)
+  
+  km_hr_lasso <- (surv_diff_obj$obs[2] / surv_diff_obj$exp[2]) /
+    (surv_diff_obj$obs[1] / surv_diff_obj$exp[1])
+  
+  km_upper95_lasso <- exp(log(km_hr_lasso) + qnorm(0.975) * sqrt(1 / surv_diff_obj$exp[2] + 1 / surv_diff_obj$exp[1]))
+  km_lower95_lasso <- exp(log(km_hr_lasso) - qnorm(0.975) * sqrt(1 / surv_diff_obj$exp[2] + 1 / surv_diff_obj$exp[1]))
   
   km_results_lasso <- data.frame(
     KM_HR = km_hr_lasso,
@@ -506,7 +509,7 @@ evaluate_lasso_km <- function(
     base_size = base_size
   )
   
-  surv_plot <- km_plot_lasso$plot + ggprism::theme_prism(base_size = base_size) +
+  surv_plot <- km_plot_lasso$plot + ggplot2::theme_classic(base_size = base_size) +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
@@ -516,7 +519,7 @@ evaluate_lasso_km <- function(
       legend.position = c(0.8, 0.8)
     )
   
-  risk_table <- km_plot_lasso$table + ggprism::theme_prism(base_size = base_size) +
+  risk_table <- km_plot_lasso$table + ggplot2::theme_classic(base_size = base_size) +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
@@ -583,8 +586,14 @@ evaluate_km_lasso_model <- function(object,
   if (inherits(object, 'PrognosiX')) {
     cat("Input is a 'PrognosiX' object. Extracting data...\n")
 
-    status_col <- methods::slot(object, "status_col")
-    time_col <- methods::slot(object, "time_col")
+    # Safely extract status_col and time_col from slots if they exist
+    if ("status_col" %in% methods::slotNames(object)) {
+      status_col <- methods::slot(object, "status_col")
+    }
+    if ("time_col" %in% methods::slotNames(object)) {
+      time_col <- methods::slot(object, "time_col")
+    }
+    
     fit_best_cv_lasso <- methods::slot(object, "survival.model")[["lasso_model"]][["model"]]
     best_lambda_value <- methods::slot(object, "survival.model")[["lasso_model"]][["lambda"]]
 

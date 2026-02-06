@@ -9,7 +9,6 @@
 #' @import wesanderson
 #' @import stats
 #' @import here 
-#' @importFrom ggprism theme_prism
 #' @importFrom grDevices pdf
 #' @param data A data.frame containing the data to be analyzed. Missing values should be represented as `<NA>` or `NA`.
 #' @param palette_name A character string specifying the palette name for the plot colors. Default is `"Royal1"`.
@@ -56,7 +55,11 @@ plot_missing_data <- function(data,
                               var_filename = "var_missing_data.csv",
                               sample_filename = "sample_missing_data.csv") {
 
-  colors <- wes_palette(n = 3, name = palette_name, type = "discrete")
+  colors <- if (requireNamespace("wesanderson", quietly = TRUE)) {
+    wesanderson::wes_palette(n = 3, name = palette_name, type = "discrete")
+  } else {
+    grDevices::hcl.colors(3, "Dark 3")
+  }
   colors <- as.list(colors)
 
   primary_color <- colors[[1]]
@@ -84,14 +87,14 @@ plot_missing_data <- function(data,
     geom_density(alpha = alpha, color = NA) +
     labs(x = "Missing Percentage", y = "Density", title = "Variable Missing Data") +
     scale_fill_manual(values = primary_color) +
-    theme_prism(base_size = base_size) +
+    ggplot2::theme_classic(base_size = base_size) +
     theme(legend.position = "top")
 
   sample_plot_obj <- ggplot(data = sample_missing_df, aes(x = Missing_Percentage, fill = "Sample-wise")) +
     geom_density(alpha = alpha, color = NA) +
     labs(x = "Missing Percentage", y = "Density", title = "Sample Missing Data") +
     scale_fill_manual(values = secondary_color) +
-    theme_prism(base_size = base_size) +
+    ggplot2::theme_classic(base_size = base_size) +
     theme(legend.position = "none")
 
   combined_plot <- var_plot_obj +
@@ -99,7 +102,7 @@ plot_missing_data <- function(data,
     labs(y = "Density", title = "Overall Missing Data Distribution") +
     scale_fill_manual(values = c(primary_color, secondary_color)) +
     guides(fill = guide_legend(title = NULL)) +
-    theme_prism(base_size = base_size)
+    ggplot2::theme_classic(base_size = base_size)
 
   if (save_plots) {
     if (!dir.exists(save_dir)) {
@@ -432,6 +435,7 @@ stat_diagnose_variable_type <- function(object,
 #'                         digits = 1,
 #'                         show.p = FALSE,
 #'                         gaze_method = 1)
+
 gaze_analysis <- function(data,
                           formula = NULL,
                           group_cols = NULL,
@@ -473,35 +477,162 @@ gaze_analysis <- function(data,
 
   tryCatch({
     cat("Running gaze analysis with method:", gaze_method, "\n")
-    result <- gaze(formula, data, digits = digits, show.p = show.p, method = gaze_method)
-
-    cat("Result type:", class(result), "\n")
-    if (is.data.frame(result) || is.matrix(result)) {
-      result <- myft(result)
-      cat("Gaze analysis completed successfully.\n")
-
-      if (save_word) {
-        doc <- read_docx()
-        doc <- doc %>%
-          body_add_flextable(result) %>%
-          body_add_par("Gaze Analysis Results", style = "heading 1")
-
-        if (!dir.exists(save_dir)) {
-          dir.create(save_dir, recursive = TRUE)
-        }
-
-        word_filename <- file.path(save_dir, "gaze_analysis.docx")
-        print(doc, target = word_filename)
-        cat("Word file saved to:", word_filename, "\n")
-      }
-
-      return(result)
-    } else {
-      stop("The result is not a data frame or matrix.")
+    data2 <- data
+    if (!is.null(group_cols) && length(group_cols) > 1) {
+      grp <- interaction(data2[, group_cols, drop = FALSE], drop = TRUE, sep = "_")
+      data2 <- data2[, setdiff(names(data2), group_cols), drop = FALSE]
+      data2[[".Icare_group"]] <- as.factor(grp)
+      formula <- stats::as.formula(".Icare_group ~ .")
     }
+    result <- NULL
+    if (requireNamespace("autoReg", quietly = TRUE) && exists("gaze", where = asNamespace("autoReg"), inherits = FALSE)) {
+      result <- tryCatch(
+        autoReg::gaze(formula, data2, digits = digits, show.p = show.p, method = gaze_method),
+        error = function(e) NULL
+      )
+      if (!is.null(result) && (is.data.frame(result) || is.matrix(result))) {
+        if (requireNamespace("autoReg", quietly = TRUE) &&
+          exists("myft", where = asNamespace("autoReg"), inherits = FALSE) &&
+          requireNamespace("flextable", quietly = TRUE)) {
+          result <- autoReg::myft(result)
+        }
+      }
+    }
+    if (is.null(result)) {
+      result <- .gaze_analysis_fallback(
+        data = data2,
+        formula = formula,
+        group_cols = group_cols,
+        digits = digits,
+        show.p = show.p,
+        gaze_method = gaze_method
+      )
+    }
+    if (save_word) {
+      if (!requireNamespace("officer", quietly = TRUE)) stop("Package 'officer' is required to save Word output.")
+      if (!requireNamespace("flextable", quietly = TRUE)) stop("Package 'flextable' is required to save Word output.")
+      if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
+      doc <- officer::read_docx()
+      doc <- officer::body_add_par(doc, "Gaze Analysis Results", style = "heading 1")
+      doc <- officer::body_add_flextable(doc, result)
+      word_filename <- file.path(save_dir, "gaze_analysis.docx")
+      print(doc, target = word_filename)
+      cat("Word file saved to:", word_filename, "\n")
+    }
+    result
   }, error = function(e) {
     stop("An error occurred while performing the gaze analysis: ", e$message)
   })
+}
+
+.gaze_analysis_fallback <- function(data, formula = NULL, group_cols = NULL, digits = 1, show.p = TRUE, gaze_method = 3) {
+  if (!is.data.frame(data) || nrow(data) == 0) stop("The input 'data' must be a non-empty data frame.")
+  if (!is.null(formula)) {
+    f <- tryCatch(stats::terms(formula, data = data), error = function(e) NULL)
+    if (is.null(f)) stop("The input 'formula' must be a valid formula.")
+    lhs <- attr(f, "variables")[[2]]
+    group_name <- as.character(lhs)
+    group_cols <- group_name
+  }
+  if (is.null(group_cols) || length(group_cols) == 0) {
+    group_cols <- character(0)
+  }
+  if (length(group_cols) > 0 && !all(group_cols %in% names(data))) {
+    missing <- group_cols[!group_cols %in% names(data)]
+    stop("Group columns not found in data: ", paste(missing, collapse = ", "))
+  }
+
+  fmt <- function(x) round(x, digits = digits)
+
+  if (length(group_cols) == 0) {
+    grp <- factor(rep("Overall", nrow(data)))
+  } else {
+    grp <- interaction(data[, group_cols, drop = FALSE], drop = TRUE, sep = "_")
+    grp <- droplevels(as.factor(grp))
+  }
+
+  numeric_vars <- setdiff(names(data)[vapply(data, is.numeric, logical(1))], group_cols)
+  categorical_vars <- setdiff(names(data)[vapply(data, function(x) is.factor(x) || is.character(x), logical(1))], group_cols)
+
+  out_rows <- list()
+
+  for (v in numeric_vars) {
+    x <- data[[v]]
+    split_x <- split(x, grp)
+    pval <- NA
+    if (show.p) {
+      if (length(split_x) == 2) {
+        a <- split_x[[1]]
+        b <- split_x[[2]]
+        if (gaze_method == 2) {
+          pval <- tryCatch(stats::t.test(a, b)$p.value, error = function(e) NA)
+        } else {
+          pval <- tryCatch(stats::wilcox.test(a, b)$p.value, error = function(e) NA)
+        }
+      } else if (length(split_x) > 2) {
+        if (gaze_method == 2) {
+          pval <- tryCatch(stats::anova(stats::lm(x ~ grp))[["Pr(>F)"]][1], error = function(e) NA)
+        } else {
+          pval <- tryCatch(stats::kruskal.test(x, grp)$p.value, error = function(e) NA)
+        }
+      }
+    }
+    row <- list(Variable = v)
+    for (lev in levels(grp)) {
+      vec <- split_x[[lev]]
+      vec <- vec[!is.na(vec)]
+      if (length(vec) == 0) {
+        row[[lev]] <- NA
+      } else {
+        row[[lev]] <- paste0(
+          fmt(mean(vec)), "±", fmt(stats::sd(vec)),
+          "/", fmt(stats::median(vec)),
+          "[", fmt(min(vec)), ",", fmt(max(vec)), "]"
+        )
+      }
+    }
+    row[["P.value"]] <- if (!is.na(pval)) signif(pval, digits = max(2, digits)) else NA
+    out_rows[[length(out_rows) + 1]] <- row
+  }
+
+  for (v in categorical_vars) {
+    x <- as.factor(data[[v]])
+    pval <- NA
+    if (show.p && length(levels(grp)) > 1) {
+      tbl <- table(grp, x)
+      if (all(tbl >= 5)) {
+        pval <- tryCatch(stats::chisq.test(tbl)$p.value, error = function(e) NA)
+      } else {
+        pval <- tryCatch(stats::fisher.test(tbl)$p.value, error = function(e) NA)
+      }
+    }
+    totals <- tapply(!is.na(x), grp, sum)
+    for (lv in levels(x)) {
+      lvl_mask <- x == lv
+      counts <- tapply(lvl_mask, grp, function(m) sum(m, na.rm = TRUE))
+      perc <- round(100 * counts / totals, digits)
+      row <- list(Variable = paste0(v, "=", lv))
+      for (lev in levels(grp)) {
+        row[[lev]] <- paste0(as.integer(counts[[lev]]), ",", perc[[lev]], "%")
+      }
+      row[["P.value"]] <- if (!is.na(pval)) signif(pval, digits = max(2, digits)) else NA
+      out_rows[[length(out_rows) + 1]] <- row
+    }
+  }
+
+  if (length(out_rows) == 0) {
+    out <- data.frame(Variable = character(0))
+  } else {
+    out <- do.call(rbind.data.frame, out_rows)
+  }
+
+  if (requireNamespace("flextable", quietly = TRUE)) {
+    ft <- flextable::flextable(out)
+    ft <- flextable::autofit(ft)
+    return(ft)
+  }
+
+  out
 }
 
 #' Statistical Gaze Analysis

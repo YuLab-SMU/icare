@@ -11,7 +11,7 @@
 #' @param alpha Line transparency (default: 1)
 #' @return List containing performance metrics and enhanced ROC curve visualization
 #' @importFrom pROC roc auc ci.auc
-#' @import caret
+#' @importFrom caret sensitivity specificity F_meas
 #' @export
 compare_models <- function(model_list,
                            model_names = NULL,

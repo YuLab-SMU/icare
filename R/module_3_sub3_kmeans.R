@@ -50,7 +50,7 @@ kmeans_with_optimal_k <- function(data,
     labs(title = "Silhouette Method for Optimal K") +
     scale_color_manual(values = wes_palette(palette_name)) +
     theme_minimal() +
-    theme_prism(base_size = base_size)
+    theme_classic(base_size = base_size)
 
   print(silhouette)
 

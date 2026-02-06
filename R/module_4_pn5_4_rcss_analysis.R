@@ -38,11 +38,24 @@ run_regression_analysis <- function(data,
     vars_to_check <- c(vars_to_check, time_col)
   }
   data <- na.omit(data[, vars_to_check])
-  
+
+  # Convert factor outcome to numeric for Cox regression
+  if (method == "cox" && is.factor(data[[y_label]])) {
+    data[[y_label]] <- as.numeric(as.character(data[[y_label]]))
+    # Ensure binary 0/1 encoding
+    if (!all(unique(data[[y_label]]) %in% c(0, 1))) {
+      stop("Outcome variable must be binary (0/1) for Cox regression.")
+    }
+  }
+
   cat("Data dimensions after filtering: ", dim(data), "\n")
-  
+
   cat("Data structure before modeling:\n")
   print(str(data))
+  
+  # Set up datadist for rms
+  dd <- rms::datadist(data)
+  options(datadist = "dd")
   
   formula_str <- paste(y_label, "~ rms::rcs(", x_label, ",", knots, ")")
   if (!is.null(adjust_vars)) {
@@ -113,7 +126,10 @@ plot_regression_analysis <- function(data,
   
   vars_to_check <- c(y_label, x_label, adjust_vars, time_col)
   data <- na.omit(data[, vars_to_check])
-  data[[y_label]] <- as.factor(data[[y_label]])
+  # Convert outcome to factor only for logistic regression
+  if (method == "logistic") {
+    data[[y_label]] <- as.factor(data[[y_label]])
+  }
   if (method == "cox") {
     result <- rcssci::rcssci_cox(data = data, 
                              y = y_label, 
@@ -204,11 +220,17 @@ Pron_univariate_regression <- function(object,
                                        knots = knots,
                                        adjust_vars = adjust_vars)
   
-  # Update the PrognosiX object with the results
-  object@univariate.analysis[["rcs_analysis"]] <- list(plot = plot_fit, fit = final_fit)
-  
-  cat("The 'PrognosiX' object has been updated with the following slots:\n")
-  cat("- 'univariate.analysis' slot updated.\n")
-  
-  return(object)
+  # Update the PrognosiX object with the results if it's a PrognosiX object
+  if (inherits(object, 'PrognosiX')) {
+    object@univariate.analysis[["rcs_analysis"]] <- list(plot = plot_fit, fit = final_fit)
+    
+    cat("The 'PrognosiX' object has been updated with the following slots:\n")
+    cat("- 'univariate.analysis' slot updated.\n")
+    
+    return(object)
+  } else {
+    # If input is a data frame, return the results as a list
+    cat("Analysis completed for data frame input.\n")
+    return(list(plot = plot_fit, fit = final_fit))
+  }
 }

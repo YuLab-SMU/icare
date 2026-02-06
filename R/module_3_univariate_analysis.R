@@ -6,7 +6,8 @@
 #' @param selected_vars Selected vars.
 #' @param covariates Covariates.
 #' @param P_value P value.
-#' @import survival dplyr
+#' @import survival
+#' @importFrom dplyr %>%
 #' @export
 run_univariate_cox_analysis <- function(data,
                                         time_col = "time",
@@ -52,11 +53,11 @@ run_univariate_cox_analysis <- function(data,
       formula_str <- paste("Surv(", time_col, ",", status_col, ") ~", var_col)
     }
     
-    temp_data <- data %>% filter(!is.na(data[[var_col]]) & !is.na(data[[status_col]]))
+    temp_data <- data %>% dplyr::filter(!is.na(data[[var_col]]) & !is.na(data[[status_col]]))
     
     # Also check for NA in covariates if they exist
     if (!is.null(covariates) && length(covariates) > 0) {
-      temp_data <- temp_data %>% filter(complete.cases(temp_data[, covariates]))
+      temp_data <- temp_data %>% dplyr::filter(complete.cases(temp_data[, covariates]))
     }
     
     if (nrow(temp_data) == 0) {

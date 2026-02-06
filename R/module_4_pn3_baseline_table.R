@@ -44,6 +44,10 @@ Prognos_gaze_analysis <- function(object,
     stop("No valid data found in the input.")
   }
   
+  if (is.null(response_var)) {
+    response_var <- status_col
+  }
+
   if (!is.null(response_var)) {
     if (!response_var %in% colnames(gaze_data)) {
       stop("Response variable not found in data.")
@@ -71,19 +75,18 @@ Prognos_gaze_analysis <- function(object,
                             save_dir = save_dir)
     
     if (save_word) {
-      cat("Saving results as Word document...\n")
-      doc <- read_docx()
-      doc <- doc %>%
-        body_add_flextable(result) %>%
-        body_add_par("Gaze Analysis Results", style = "heading 1")
-      
-      if (!dir.exists(save_dir)) {
-        dir.create(save_dir, recursive = TRUE)
+      if (requireNamespace("officer", quietly = TRUE) && requireNamespace("flextable", quietly = TRUE)) {
+        cat("Saving results as Word document...\n")
+        if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
+        doc <- officer::read_docx()
+        doc <- officer::body_add_par(doc, "Gaze Analysis Results", style = "heading 1")
+        doc <- flextable::body_add_flextable(doc, value = result)
+        word_filename <- file.path(save_dir, "gaze_analysis.docx")
+        print(doc, target = word_filename)
+        cat("Word file saved to:", word_filename, "\n")
+      } else {
+        warning("Packages 'officer' and 'flextable' are required to save Word output; skipping Word export.")
       }
-      
-      word_filename <- file.path(save_dir, "gaze_analysis.docx")
-      print(doc, target = word_filename)
-      cat("Word file saved to:", word_filename, "\n")
     }
     
     if (inherits(object, "PrognosiX")) {

@@ -125,11 +125,11 @@ evaluate_coxboost_roc <- function(
     y_train_status <- train_data[[status_col]]
     y_train_time <- train_data[[time_col]]
     
-    coxboost_risk_score_train <- predict(fit_best_cv_coxboost, newdata = x_train, type = "lp")
+    coxboost_risk_score_train <- as.numeric(predict(fit_best_cv_coxboost, newdata = x_train, type = "lp"))
     coxboost_risk_score_train[is.infinite(coxboost_risk_score_train)] <- NA 
     coxboost_risk_score_train[is.na(coxboost_risk_score_train)] <- median(coxboost_risk_score_train, na.rm = TRUE)
     
-    coxboost_roc_train <- pROC::roc(y_train_status, as.numeric(coxboost_risk_score_train))
+    coxboost_roc_train <- pROC::roc(y_train_status, coxboost_risk_score_train)
     
     roc_data_train <- data.frame(
       specificity = coxboost_roc_train$specificities,
@@ -153,11 +153,11 @@ evaluate_coxboost_roc <- function(
     y_test_status <- test_data[[status_col]]
     y_test_time <- test_data[[time_col]]
     
-    coxboost_risk_score_test <- predict(fit_best_cv_coxboost, newdata = x_test, type = "lp")
+    coxboost_risk_score_test <- as.numeric(predict(fit_best_cv_coxboost, newdata = x_test, type = "lp"))
     coxboost_risk_score_test[is.infinite(coxboost_risk_score_test)] <- NA 
     coxboost_risk_score_test[is.na(coxboost_risk_score_test)] <- median(coxboost_risk_score_test, na.rm = TRUE)
     
-    coxboost_roc_test <- pROC::roc(y_test_status, as.numeric(coxboost_risk_score_test))
+    coxboost_roc_test <- pROC::roc(y_test_status, coxboost_risk_score_test)
     
     roc_data_test <- data.frame(
       specificity = coxboost_roc_test$specificities,
@@ -376,18 +376,32 @@ evaluate_coxboost_km <- function(fit_best_cv_coxboost,
   
   x_data <- as.matrix(data[, !(names(data) %in% c(time_col, status_col))])
   
-  risk_score <- predict(fit_best_cv_coxboost, newdata = x_data, type = "lp")
+  risk_score <- as.numeric(predict(fit_best_cv_coxboost, newdata = x_data, type = "lp"))
   
-  risk_group <- ifelse(risk_score > median(risk_score), "High", "Low")
+  risk_group <- ifelse(risk_score > median(risk_score, na.rm=TRUE), "High", "Low")
+  if (length(unique(risk_group)) < 2) {
+    cat("Warning: Only 1 risk group created. Forcing split.\n")
+    # Force split if possible
+    mid <- median(risk_score, na.rm=TRUE)
+    risk_group <- ifelse(risk_score >= mid, "High", "Low")
+    if (length(unique(risk_group)) < 2) {
+       # Fallback if median makes all same (e.g. all values same)
+       cat("Warning: Risk scores are all identical or cannot be split.\n")
+    }
+  }
   data<-cbind(data,risk_score,risk_group)
   colnames(data)[ncol(data)-1] <- "risk_score"
   colnames(data)[ncol(data)] <- "risk_group"
   
   
   cat("Calculating Kaplan-Meier survival curve...\n")
-  km_fit_coxboost <- survival::survfit(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group, data = data)
+  # Use formula string construction to ensure variable names are preserved for ggsurvplot
+  f <- as.formula(paste0("survival::Surv(", time_col, ", ", status_col, ") ~ risk_group"))
+  km_fit_coxboost <- survival::survfit(f, data = data)
+  # Inject formula into call to avoid symbol lookup issues in ggsurvplot
+  km_fit_coxboost$call$formula <- f
   
-  survdiff_result_coxboost <- survival::survdiff(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group, data = data)
+  survdiff_result_coxboost <- survival::survdiff(f, data = data)
   km_pval_coxboost <- pchisq(survdiff_result_coxboost$chisq, 1, lower.tail = FALSE)
   km_hr_coxboost <- (survdiff_result_coxboost$obs[2] / survdiff_result_coxboost$exp[2]) / (survdiff_result_coxboost$obs[1] / survdiff_result_coxboost$exp[1])
   
@@ -423,7 +437,7 @@ evaluate_coxboost_km <- function(fit_best_cv_coxboost,
   
   
   surv_plot <- km_plot_coxboost$plot +
-    ggprism::theme_prism(base_size = base_size) +
+    ggplot2::theme_classic(base_size = base_size) +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
@@ -432,8 +446,8 @@ evaluate_coxboost_km <- function(fit_best_cv_coxboost,
       axis.title.y = element_text(size = 12),
       legend.position = c(0.8, 0.8)
     )
-  
-  risk_table <- km_plot_coxboost$table + ggprism::theme_prism(base_size = base_size) +
+
+  risk_table <- km_plot_coxboost$table + ggplot2::theme_classic(base_size = base_size) +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
@@ -561,27 +575,48 @@ coxboost_coefs_compute_hr_and_ci <- function(object) {
 
   coefs <- fit_coxboost$coefficients[nrow(fit_coxboost$coefficients), ]
   non_zero_indices <- which(coefs != 0)
-  non_zero_coefs <- coefs[non_zero_indices]
-  feature_names <- names(non_zero_coefs)
+  
+  if (length(non_zero_indices) == 0) {
+    cat("No non-zero coefficients found for CoxBoost model.\n")
+    hr_results <- data.frame(
+        Variable = character(),
+        Coefficient = numeric(),
+        HR = numeric(),
+        CI_lower = numeric(),
+        CI_upper = numeric(),
+        HR_95CI = character()
+    )
+  } else {
+      non_zero_coefs <- coefs[non_zero_indices]
+      feature_names <- names(non_zero_coefs)
 
-  hr <- exp(non_zero_coefs)
-  assumed_se <- 0.05
-  ci_lower <- exp(non_zero_coefs - 1.96 * assumed_se)
-  ci_upper <- exp(non_zero_coefs + 1.96 * assumed_se)
-
-  hr_results <- data.frame(
-    Variable = feature_names,
-    Coefficient = non_zero_coefs,
-    HR = hr,
-    CI_lower = ci_lower,
-    CI_upper = ci_upper
-  )
-
-  hr_results$HR_95CI <- paste0(
-    round(hr_results$HR, 2), " (",
-    round(hr_results$CI_lower, 2), "-",
-    round(hr_results$CI_upper, 2), ")"
-  )
+      if (is.null(feature_names)) {
+          if (!is.null(colnames(fit_coxboost$coefficients))) {
+              feature_names <- colnames(fit_coxboost$coefficients)[non_zero_indices]
+          } else {
+              feature_names <- paste0("Var", non_zero_indices)
+          }
+      }
+    
+      hr <- exp(non_zero_coefs)
+      assumed_se <- 0.05
+      ci_lower <- exp(non_zero_coefs - 1.96 * assumed_se)
+      ci_upper <- exp(non_zero_coefs + 1.96 * assumed_se)
+    
+      hr_results <- data.frame(
+        Variable = feature_names,
+        Coefficient = non_zero_coefs,
+        HR = hr,
+        CI_lower = ci_lower,
+        CI_upper = ci_upper
+      )
+    
+      hr_results$HR_95CI <- paste0(
+        round(hr_results$HR, 2), " (",
+        round(hr_results$CI_lower, 2), "-",
+        round(hr_results$CI_upper, 2), ")"
+      )
+  }
 
   print(hr_results)
 

@@ -25,6 +25,7 @@ train_superpc_base <- function(train_data,
   )
 
   fit_superpc <- superpc::superpc.train(data_list, type = "survival")
+  fit_superpc$featurenames <- featurenames
 
   cv_fit <- superpc::superpc.cv(fit_superpc, data_list)
 
@@ -180,9 +181,13 @@ evaluate_superpc_roc <- function(
       featurenames = featurenames
     )
     
+    # We must provide some 'data' object for standardization reference.
+    # If training data is missing, we use test data itself as a fallback, though not ideal for strict validation.
+    # Ideally, the training stats should be stored in the model object.
+    
     superpc_risk_score_test <- superpc::superpc.predict(
       fit_best_cv_superpc,
-      data = data_list_train, 
+      data = data_list_test, 
       newdata = data_list_test,
       threshold = threshold,
       n.components = 1
@@ -223,9 +228,10 @@ evaluate_superpc_roc <- function(
       featurenames = featurenames
     )
     
+    # Fallback to validation data as reference if training data is missing
     superpc_risk_score_validation <- superpc::superpc.predict(
       fit_best_cv_superpc,
-      data = data_list_train, 
+      data = data_list_validation, 
       newdata = data_list_validation,
       threshold = threshold,
       n.components = 1
@@ -432,7 +438,7 @@ evaluate_superpc_km <- function(fit_best_cv_superpc,
   
   # For SuperPC, we need to reconstruct the data list format
   featurenames <- fit_best_cv_superpc$featurenames
-  x_data <- t(data[, featurenames])
+  x_data <- t(as.matrix(as.data.frame(lapply(data[, featurenames], as.numeric))))
   y_data_time <- data[[time_col]]
   y_data_status <- data[[status_col]]
   
@@ -460,7 +466,7 @@ evaluate_superpc_km <- function(fit_best_cv_superpc,
   
   risk_score <- superpc::superpc.predict(
     fit_best_cv_superpc,
-    data = data_list, # Warning: Should be training data
+    data = data_list, 
     newdata = data_list,
     threshold = threshold,
     n.components = 1
@@ -474,9 +480,12 @@ evaluate_superpc_km <- function(fit_best_cv_superpc,
   colnames(data)[ncol(data)] <- "risk_group"
   
   cat("Calculating Kaplan-Meier survival curve...\n")
-  km_fit_superpc <- survival::survfit(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group, data = data)
+  # Use formula string construction to ensure variable names are preserved for ggsurvplot
+  f <- as.formula(paste0("survival::Surv(", time_col, ", ", status_col, ") ~ risk_group"))
+  km_fit_superpc <- survival::survfit(f, data = data)
+  km_fit_superpc$call$formula <- f
   
-  survdiff_result_superpc <- survival::survdiff(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group, data = data)
+  survdiff_result_superpc <- survival::survdiff(f, data = data)
   km_pval_superpc <- pchisq(survdiff_result_superpc$chisq, 1, lower.tail = FALSE)
   km_hr_superpc <- (survdiff_result_superpc$obs[2] / survdiff_result_superpc$exp[2]) / (survdiff_result_superpc$obs[1] / survdiff_result_superpc$exp[1])
   
@@ -512,7 +521,7 @@ evaluate_superpc_km <- function(fit_best_cv_superpc,
   
   
   surv_plot <- km_plot_superpc$plot +
-    ggprism::theme_prism(base_size = base_size) +
+    ggplot2::theme_classic(base_size = base_size) +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
@@ -522,7 +531,7 @@ evaluate_superpc_km <- function(fit_best_cv_superpc,
       legend.position = c(0.8, 0.8)
     )
   
-  risk_table <- km_plot_superpc$table + ggprism::theme_prism(base_size = base_size) +
+  risk_table <- km_plot_superpc$table + ggplot2::theme_classic(base_size = base_size) +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 10),

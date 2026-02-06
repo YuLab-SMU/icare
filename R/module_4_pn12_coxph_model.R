@@ -369,9 +369,13 @@ evaluate_coxph_km <- function(fit_best_cv_coxph,
   colnames(data)[ncol(data)] <- "risk_group"
   
   cat("Calculating Kaplan-Meier survival curve...\n")
-  km_fit_coxph <- survival::survfit(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group, data = data)
+  # Use formula string construction to ensure variable names are preserved for ggsurvplot
+  f <- as.formula(paste0("survival::Surv(", time_col, ", ", status_col, ") ~ risk_group"))
+  km_fit_coxph <- survival::survfit(f, data = data)
+  # Inject formula into call to avoid symbol lookup issues in ggsurvplot
+  km_fit_coxph$call$formula <- f
   
-  survdiff_result_coxph <- survival::survdiff(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group, data = data)
+  survdiff_result_coxph <- survival::survdiff(f, data = data)
   km_pval_coxph <- pchisq(survdiff_result_coxph$chisq, 1, lower.tail = FALSE)
   km_hr_coxph <- (survdiff_result_coxph$obs[2] / survdiff_result_coxph$exp[2]) / (survdiff_result_coxph$obs[1] / survdiff_result_coxph$exp[1])
   
@@ -407,7 +411,7 @@ evaluate_coxph_km <- function(fit_best_cv_coxph,
   
   
   surv_plot <- km_plot_coxph$plot +
-    ggprism::theme_prism(base_size = base_size) +
+    ggplot2::theme_classic(base_size = base_size) +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
@@ -416,8 +420,8 @@ evaluate_coxph_km <- function(fit_best_cv_coxph,
       axis.title.y = element_text(size = 12),
       legend.position = c(0.8, 0.8)
     )
-  
-  risk_table <- km_plot_coxph$table + ggprism::theme_prism(base_size = base_size) +
+
+  risk_table <- km_plot_coxph$table + ggplot2::theme_classic(base_size = base_size) +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 10),

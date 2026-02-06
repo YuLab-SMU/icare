@@ -548,7 +548,7 @@ VarFeature_volcano <- function(object,
 #' This function generates a violin plot for the top differentially expressed genes based on their log-fold change
 #' and statistical significance. It also calculates the Wilcoxon test p-values for group comparisons and annotates
 #' the plot with significance stars. The plot can be saved to a specified directory.
-#' @importFrom dplyr %>% group_by arrange desc top_n filter mutate case_when
+#' @importFrom dplyr %>% group_by arrange desc top_n mutate case_when
 #' @importFrom dplyr summarise left_join
 #' @importFrom tidyr pivot_longer
 #'
@@ -771,7 +771,7 @@ VarFeature_violinplot <- function(object,
 #' It filters the significant features, calculates the ROC curve, and visualizes the AUC (Area Under the Curve)
 #' for each feature. The plot can be saved to a specified directory.
 #'
-#' @importFrom dplyr %>% group_by arrange desc top_n filter
+#' @importFrom dplyr %>% group_by arrange desc top_n
 #' @importFrom pROC roc ggroc
 #' @param deg_test A data frame containing the results of differential expression analysis.
 #'                 It should have a column `change` indicating whether a feature is "Stable" or changed.

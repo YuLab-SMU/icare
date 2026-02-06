@@ -147,7 +147,7 @@ Sub_plot_umap <- function(object,
   p <- ggplot(umap_df, aes(x = `Dimension 1`, y = `Dimension 2`, color = cluster)) +
     geom_point() +
     theme_minimal(base_size = base_size) +
-    theme_prism(base_size = base_size) +
+    theme_classic(base_size = base_size) +
     labs(title = "UMAP Visualization with Clustering",
          x = "Dimension 1",
          y = "Dimension 2") +

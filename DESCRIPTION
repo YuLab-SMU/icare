@@ -1,7 +1,7 @@
 Package: Icare
 Type: Package
 Title: Integrated Clinical Analysis and Risk Evaluation
-Version: 0.1.0
+Version: 0.1.1
 Author: User
 Maintainer: User <user@example.com>
 Description: A modular framework for clinical statistics, machine learning, clustering, and prognostic modeling.
@@ -13,4 +13,28 @@ RoxygenNote: 7.3.3
 Imports:
     methods,
     caret,
-    survival
+    survival,
+    ggplot2,
+    ggprism,
+    wesanderson,
+    dplyr,
+    tidyr,
+    survminer,
+    glmnet,
+    pROC,
+    rms,
+    autoReg,
+    flextable,
+    officer,
+    gridExtra,
+    reshape2,
+    ggpubr,
+    ggridges,
+    here,
+    scales,
+    stats,
+    grDevices,
+    randomForestSRC,
+    plsRcox,
+    superpc,
+    rmda

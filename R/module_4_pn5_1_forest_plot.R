@@ -86,7 +86,7 @@ create_forest_plot <- function(hr_results,
 
   p_errorbar <- ggplot2::ggplot(data = tmp_error) +
     geom_point(aes(x = HR, y = Variable, color = HR > 1), shape = "diamond", size = 4) +
-    scale_color_manual(values = wesanderson::wes_palette(palette_name)) +
+    scale_color_manual(values = wes_palette(palette_name, n = 2, type = "discrete")) +
     geom_errorbarh(aes(xmin = CI_lower, xmax = CI_upper, y = Variable), linewidth = 1, height = error_bar_height) +
     theme_classic(base_size = base_size) +
     theme(

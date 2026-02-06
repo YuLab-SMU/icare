@@ -37,19 +37,61 @@ survival_analysis_var_plot <- function(data,
     stop(paste("Variable", status_col, "does not exist in the data frame"))
   }
 
-  data <- data %>% dplyr::filter(!is.na(data[[var_col]]) & !is.na(data[[status_col]]))
+  if (!is.numeric(data[[time_col]])) {
+    data[[time_col]] <- suppressWarnings(as.numeric(data[[time_col]]))
+  }
+  status_vec <- data[[status_col]]
+  if (is.factor(status_vec)) status_vec <- as.character(status_vec)
+  if (is.logical(status_vec)) status_vec <- as.integer(status_vec)
+  if (is.character(status_vec)) {
+    status_vec_trim <- trimws(status_vec)
+    if (all(na.omit(status_vec_trim) %in% c("0", "1"))) {
+      status_vec <- as.numeric(status_vec_trim)
+    } else {
+      u <- sort(unique(na.omit(status_vec_trim)))
+      if (length(u) == 2) {
+        status_vec <- ifelse(status_vec_trim == u[1], 0, 1)
+      } else {
+        stop("Status column is not binary.")
+      }
+    }
+  }
+  if (is.numeric(status_vec)) {
+    u <- sort(unique(na.omit(status_vec)))
+    if (length(u) == 2 && all(u %in% c(1, 2))) {
+      status_vec <- ifelse(status_vec == 1, 0, 1)
+    } else if (length(u) == 2 && !all(u %in% c(0, 1))) {
+       # Try to map min to 0, max to 1
+       status_vec <- ifelse(status_vec == min(u), 0, 1)
+    }
+  }
+  data[[status_col]] <- status_vec
+
+  data <- data %>% dplyr::filter(!is.na(data[[var_col]]) & !is.na(data[[status_col]]) & !is.na(data[[time_col]]))
   if (nrow(data) == 0) {
     stop("Filtered data has no valid rows.")
   }
 
+  # Ensure passed data is a pure data frame to avoid random class issues
+  data <- as.data.frame(data)
+
   cat("Data validation successful. Number of valid rows: ", nrow(data),"\n")
 
-  fit <- survival::survfit(as.formula(paste("Surv(", time_col, ",", status_col, ") ~", var_col)), data = data)
-
   cat("Fitting survival model...\n")
-  data[[status_col]] <- as.numeric(data[[status_col]], levels = c(0, 1))
-
+  # Use non-evaluation formula construction for robustness
+  f <- as.formula(paste("survival::Surv(", time_col, ", ", status_col, ") ~ ", var_col))
+  fit <- survival::survfit(f, data = data)
+  # Inject formula into call to avoid symbol lookup issues in ggsurvplot
+  fit$call$formula <- f
+  
   legend.title <- paste("Risk Group", var_col)
+  pal <- wes_palette(palette_name, n = max(2, length(unique(data[[var_col]]))), type = "discrete")
+  
+  # Debug prints
+  cat("DEBUG: Calling ggsurvplot\n")
+  print(class(fit))
+  print(fit$call)
+  
   km_var <- survminer::ggsurvplot(
     fit,
     data = data,
@@ -62,15 +104,14 @@ survival_analysis_var_plot <- function(data,
     xlab = "Follow up time (days)",
     legend = c(0.8, 0.75),
     legend.title = legend.title,
-    legend.labs = unique(data[[var_col]]),
     break.x.by = 100,
-    palette = palette_name
+    palette = pal
   )
 
   cat("Survival curve plotted.\n")
 
   surv_plot <- km_var$plot +
-    ggprism::theme_prism(base_size = base_size) +
+    ggplot2::theme_classic(base_size = base_size) +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
@@ -80,7 +121,8 @@ survival_analysis_var_plot <- function(data,
       legend.position = c(0.8, 0.8)
     )
 
-  risk_table <- km_var$table + ggprism::theme_prism(base_size = base_size) +
+  risk_table <- km_var$table +
+    ggplot2::theme_classic(base_size = base_size) +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
@@ -174,7 +216,6 @@ plot_var_kaplan_meier <- function(object,
   }
 
   cat("Starting Kaplan-Meier plotting...\n")
-  data <- convert_to_numeric(data)
 
   combined_plot <- survival_analysis_var_plot(data,
                                               time_col = time_col,
@@ -241,13 +282,13 @@ plot_survival_time_distribution <- function(data,
     dplyr::ungroup() %>%
     dplyr::mutate(y = seq(12, 12 - 5 * (dplyr::n() - 1), length.out = dplyr::n()))
 
-  colors <- wesanderson::wes_palette(palette_name, type = "discrete")
+  colors <- wes_palette(palette_name, n = max(4, length(unique(data[[var_col]]))), type = "discrete")
   p <- ggplot2::ggplot(data, aes(x = !!rlang::sym(time_col), fill = !!rlang::sym(var_col))) +
     geom_histogram(binwidth = binwidth, color = "black", alpha = 0.7) +
     geom_vline(data = mean_df, aes(xintercept = mean_time), color = colors[4], linetype = "solid", size = 1) +
     geom_vline(data = mean_df, aes(xintercept = mean_time - se_time), color = colors[2], linetype = "dashed", size = 0.6) +
     geom_vline(data = mean_df, aes(xintercept = mean_time + se_time), color = colors[2], linetype = "dashed", size = 0.6) +
-    scale_fill_manual(values = wesanderson::wes_palette(palette_name)) +
+    scale_fill_manual(values = wes_palette(palette_name, n = max(2, length(unique(data[[var_col]]))), type = "discrete")) +
     labs(title = paste("Distribution of Survival Time by", var_col),
          x = "Survival Time (days)",
          y = "Frequency") +

@@ -19,7 +19,8 @@
 #' @param xlab Xlab.
 #' @param legend.position Legend pos.
 #' @param legend.title Legend title.
-#' @import survival survminer ggplot2 gridExtra
+#' @import survival survminer ggplot2
+#' @importFrom gridExtra arrangeGrob
 #' @export
 survival_analysis_var_plot  <- function(data,
                                        time_col = "time",
@@ -136,7 +137,7 @@ survival_analysis_var_plot  <- function(data,
   
   # 增强风险表主题
   risk_table <- km_plot$table + 
-    theme_prism(base_size = base_size) +
+    theme_classic(base_size = base_size) +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1, size = base_size * 0.8),
       axis.text.y = element_text(size = base_size * 0.8),

@@ -199,7 +199,7 @@ train_and_evaluate_models <- function(data,
 #' }
 #' @export
 #' @import stats
-#' @import caret
+#' @importFrom caret train trainControl twoClassSummary modelLookup sensitivity specificity F_meas
 evaluate_model_performance<- function(data, model_result,
                                        group_col = "group",
                                        custom_cutoff = NULL) {
@@ -524,7 +524,7 @@ check_factor_level <- function(data, group_col) {
 #' )
 #' }
 #' @export
-#' @import caret
+#' @importFrom caret train trainControl twoClassSummary modelLookup
 #' @import ggplot2
 #' @importFrom wesanderson wes_palette
 #' @importFrom viridis viridis

@@ -125,9 +125,14 @@ compute_descriptive_stats <- function(data,
     cat("Descriptive statistics computation completed.\n")
   } else {
     cat("Computing overall descriptive statistics...\n")
-    stats_compute <- apply(data, 2, function(x) c(Mean = mean(x, na.rm = TRUE), Median = median(x, na.rm = TRUE), SD = sd(x, na.rm = TRUE), Min = min(x, na.rm = TRUE), Max = max(x, na.rm = TRUE)))
-    result$Stats <- stats_compute
-    cat("Overall statistics computed.\n")
+    num_cols <- variable_types$numeric_vars
+    if (length(num_cols) > 0) {
+      stats_compute <- apply(data[, num_cols, drop = FALSE], 2, function(x) c(Mean = mean(x, na.rm = TRUE), Median = median(x, na.rm = TRUE), SD = sd(x, na.rm = TRUE), Min = min(x, na.rm = TRUE), Max = max(x, na.rm = TRUE)))
+      result$Stats <- stats_compute
+      cat("Overall statistics computed.\n")
+    } else {
+       cat("No numeric variables for overall statistics.\n")
+    }
   }
 
   return(result)
@@ -222,7 +227,6 @@ stat_compute_descriptive <- function(
 #' @import ggplot2
 #' @importFrom dplyr group_by summarise mutate
 #' @import wesanderson
-#' @importFrom ggprism theme_prism
 #' @import here
 #' @importFrom scales percent
 #' @importFrom gridExtra grid.arrange
@@ -324,7 +328,7 @@ plot_categorical_descriptive <- function(
         geom_text(aes(label = scales::percent(perc / 100)),
                   position = position_dodge(width = 0.9), size = 4, vjust = -0.5, hjust = 0.5) +
         labs(title = paste("Bar plot of", col, "with percentage"), y = "Percentage") +
-        theme_prism(base_size = base_size)
+        ggplot2::theme_classic(base_size = base_size)
 
       p <- p + scale_fill_manual(values = wes_palette(palette_name))
 
@@ -478,10 +482,10 @@ violin_plots <- function(data,
         geom_boxplot(width = 0.1, size = 0.7, outlier.shape = NA) +
         geom_jitter(width = 0.2, alpha = 0.3, color = "black", size = 0.5) +
         scale_fill_manual(values = pal) +
-        facet_wrap(~variable, scales = "free_y", ncol = 1) +
-        theme_minimal(base_size = base_size) +
-        theme(legend.position = "bottom") +
-        labs(title = paste("Violin Plots - Part", i), x = "Group", y = "Value")
+    facet_wrap(~variable, scales = "free_y", ncol = 1) +
+    theme_classic(base_size = base_size) +
+    theme(legend.position = "bottom") +
+    labs(title = paste("Violin Plots - Part", i), x = "Group", y = "Value")
 
       if (!is.null(group_col) && paired_comparison) {
         groups <- unique(group_data$group)
@@ -634,7 +638,7 @@ density_ridge_plots <- function(data,
         geom_density_ridges_gradient(scale = 3, rel_min_height = 0.00) +
         scale_fill_gradientn(colours = pal) +
         facet_wrap(~variable, scales = "free_x", ncol = 1) +
-        theme_prism(base_size = base_size) +
+        ggplot2::theme_classic(base_size = base_size) +
         labs(title = paste("Density Ridge Plots  - Part", i),
              x = "Value",
              y = ifelse(!is.null(group_col), group_col, "Group"))

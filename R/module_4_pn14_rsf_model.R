@@ -377,9 +377,12 @@ evaluate_rsf_km <- function(fit_best_rsf,
   colnames(data)[ncol(data)] <- "risk_group"
   
   cat("Calculating Kaplan-Meier survival curve...\n")
-  km_fit_rsf <- survival::survfit(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group, data = data)
+  f <- as.formula(paste0("survival::Surv(", time_col, ", ", status_col, ") ~ risk_group"))
+  km_fit_rsf <- survival::survfit(f, data = data)
+  # Inject formula into call to avoid symbol lookup issues in ggsurvplot
+  km_fit_rsf$call$formula <- f
   
-  survdiff_result_rsf <- survival::survdiff(survival::Surv(data[[time_col]], as.numeric(data[[status_col]])) ~ risk_group, data = data)
+  survdiff_result_rsf <- survival::survdiff(f, data = data)
   km_pval_rsf <- pchisq(survdiff_result_rsf$chisq, 1, lower.tail = FALSE)
   km_hr_rsf <- (survdiff_result_rsf$obs[2] / survdiff_result_rsf$exp[2]) / (survdiff_result_rsf$obs[1] / survdiff_result_rsf$exp[1])
   
@@ -415,7 +418,7 @@ evaluate_rsf_km <- function(fit_best_rsf,
   
   
   surv_plot <- km_plot_rsf$plot +
-    ggprism::theme_prism(base_size = base_size) +
+    ggplot2::theme_classic(base_size = base_size) +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
@@ -424,8 +427,8 @@ evaluate_rsf_km <- function(fit_best_rsf,
       axis.title.y = element_text(size = 12),
       legend.position = c(0.8, 0.8)
     )
-  
-  risk_table <- km_plot_rsf$table + ggprism::theme_prism(base_size = base_size) +
+
+  risk_table <- km_plot_rsf$table + ggplot2::theme_classic(base_size = base_size) +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
@@ -558,16 +561,20 @@ rsf_compute_hr_and_ci <- function(object) {
   # A rigorous HR calculation from RSF is non-trivial.
   # We will output importance values.
   
-  hr_results <- data.frame(
-    Variable = feature_names,
-    Importance = importance
-  )
-  
-  # Dummy columns to match structure if needed, or just return importance
-  hr_results$HR <- NA
-  hr_results$CI_lower <- NA
-  hr_results$CI_upper <- NA
-  hr_results$HR_95CI <- NA
+  if (is.null(importance) || length(importance) == 0) {
+      hr_results <- data.frame(Variable = character(), Importance = numeric(), HR = numeric(), CI_lower = numeric(), CI_upper = numeric(), HR_95CI = character())
+  } else {
+      hr_results <- data.frame(
+        Variable = feature_names,
+        Importance = importance
+      )
+      
+      # Dummy columns to match structure if needed, or just return importance
+      hr_results$HR <- NA
+      hr_results$CI_lower <- NA
+      hr_results$CI_upper <- NA
+      hr_results$HR_95CI <- NA
+  }
 
 
   print(hr_results)
@@ -671,12 +678,14 @@ forest_plot_rsf_model <- function(object,
     hr_results <- methods::slot(object, "survival.model")[["rsf_model"]][["hr_results"]]
 
     if (is.null(hr_results) || nrow(hr_results) == 0) {
-      stop("The hr_results in the PrognosiX object is empty.")
+      warning("The hr_results in the PrognosiX object is empty. Skipping forest plot.")
+      return(object)
     }
   } else if (is.data.frame(object)) {
     hr_results <- object
     if (nrow(hr_results) == 0) {
-      stop("The provided data frame is empty.")
+      warning("The provided data frame is empty. Skipping forest plot.")
+      return(NULL)
     }
     cat("Using provided data frame for univariate analysis data...\n")
 

@@ -10,7 +10,8 @@
 #' @param base_size Base size.
 #' @param hr_limit HR limit.
 #' @param ci_range_limit CI range limit.
-#' @import ggplot2 dplyr tidyr ggtext patchwork here
+#' @import ggplot2 tidyr ggtext patchwork here
+#' @importFrom dplyr %>%
 #' @export
 create_forest_plot <- function(hr_results,
                                plot_title = "Univariate Analysis: Clinical Factors and Hazard Ratios with 95% Confidence Intervals",
@@ -26,9 +27,9 @@ create_forest_plot <- function(hr_results,
   
   
   hr_results <- hr_results %>%
-    filter(is.finite(HR) & is.finite(CI_lower) & is.finite(CI_upper)) %>%
-    filter(HR >= hr_limit[1] & HR <= hr_limit[2]) %>%
-    filter((CI_upper - CI_lower) <= ci_range_limit)
+    dplyr::filter(is.finite(HR) & is.finite(CI_lower) & is.finite(CI_upper)) %>%
+    dplyr::filter(HR >= hr_limit[1] & HR <= hr_limit[2]) %>%
+    dplyr::filter((CI_upper - CI_lower) <= ci_range_limit)
   
   cat(paste(nrow(hr_results), "rows remain after filtering. Rows with extreme or invalid values were excluded.\n"))
   

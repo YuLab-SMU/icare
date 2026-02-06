@@ -43,10 +43,45 @@ run_univariate_cox_analysis <- function(data,
       next
     }
 
-    temp_data <- data %>% dplyr::filter(!is.na(data[[var_col]]) & !is.na(data[[status_col]]))
+    temp_data <- data %>% dplyr::filter(!is.na(data[[var_col]]) & !is.na(data[[status_col]]) & !is.na(data[[time_col]]))
     if (nrow(temp_data) == 0) {
       cat("Filtered data for", var_col, "has no valid rows. Skipping...\n")
       next
+    }
+
+    status_vec <- temp_data[[status_col]]
+    if (is.factor(status_vec)) status_vec <- as.character(status_vec)
+    if (is.logical(status_vec)) status_vec <- as.integer(status_vec)
+    if (is.character(status_vec)) {
+      status_vec_trim <- trimws(status_vec)
+      u <- sort(unique(na.omit(status_vec_trim)))
+      if (length(u) == 2) {
+         # Map first level to 0, second to 1
+         status_vec <- ifelse(status_vec_trim == u[1], 0, 1)
+      } else if (all(na.omit(status_vec_trim) %in% c("0", "1"))) {
+         status_vec <- as.numeric(status_vec_trim)
+      } else {
+         cat("Status column", status_col, "is not binary. Skipping...\n")
+         next
+      }
+    }
+    if (is.numeric(status_vec)) {
+      u <- sort(unique(na.omit(status_vec)))
+      if (length(u) == 2 && all(u %in% c(1, 2))) {
+        status_vec <- ifelse(status_vec == 1, 0, 1)
+      } else if (!(length(u) == 2 && all(u %in% c(0, 1)))) {
+        # Check if it has 0, 1 and other things, or just not binary
+        cat("Status column", status_col, "is not binary 0/1. Skipping...\n")
+        next
+      }
+    }
+    temp_data[[status_col]] <- status_vec
+    
+    # Ensure time > 0 for coxph stability
+    temp_data <- temp_data[temp_data[[time_col]] > 0, ]
+    if (nrow(temp_data) == 0) {
+       cat("No valid rows with time > 0. Skipping...\n")
+       next
     }
 
     cox_model <- survival::coxph(as.formula(paste("Surv(", time_col, ",", status_col, ") ~", var_col)), data = temp_data)

@@ -155,7 +155,7 @@ Sub_plot_tsne <- function(object,
     geom_point() +
     scale_color_manual(values = wes_palette(palette_name)) +
     theme_minimal(base_size = base_size) +
-    theme_prism(base_size = base_size) +
+    theme_classic(base_size = base_size) +
     labs(title = "T-SNE Visualization with Clustering",
          x = "Dimension 1",
          y = "Dimension 2") +
