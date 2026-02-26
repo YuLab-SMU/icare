@@ -1,22 +1,27 @@
 #' Run Univariate Cox Regression Analysis
 #'
-#' This function performs univariate Cox regression analysis for a list of selected variables.
+#' This function performs univariate Cox regression analysis for a list of selected variables,
+#' optionally adjusting for covariates.
 #'
 #' @param data A data frame containing the survival data.
 #' @param time_col The column name for time-to-event data.
 #' @param status_col The column name for event status (0/1).
-#' @param selected_vars A character vector of variable names to analyze. If NULL, all variables except time and status are used.
+#' @param selected_vars A character vector of variable names to analyze. If NULL, all variables except time, status, and covariates are used.
+#' @param covariates A character vector of covariate names to adjust for in the Cox model.
+#' @param P_value Threshold for significance (p-value). Default is 0.05.
 #'
-#' @return A list containing a data frame of all results and a data frame of significant results (p < 0.05).
+#' @return A list containing a data frame of all results and a data frame of significant results.
 #' @export
 run_univariate_cox_analysis <- function(data,
                                         time_col = "time",
                                         status_col = "status",
-                                        selected_vars = NULL) {
+                                        selected_vars = NULL,
+                                        covariates = NULL,
+                                        P_value = 0.05) {
   cat("Starting univariate Cox regression analysis for selected variables...\n")
 
   if (is.null(selected_vars)) {
-    selected_vars <- setdiff(names(data), c(status_col, time_col))
+    selected_vars <- setdiff(names(data), c(status_col, time_col, covariates))
   }
 
   if (length(selected_vars) == 0) {
@@ -43,12 +48,26 @@ run_univariate_cox_analysis <- function(data,
       next
     }
 
-    temp_data <- data %>% dplyr::filter(!is.na(data[[var_col]]) & !is.na(data[[status_col]]) & !is.na(data[[time_col]]))
+    # Identify columns needed for this specific model
+    cols_needed <- c(var_col, status_col, time_col)
+    if (!is.null(covariates)) cols_needed <- c(cols_needed, covariates)
+    
+    # Check for missing columns
+    if (!all(cols_needed %in% names(data))) {
+         missing <- cols_needed[!cols_needed %in% names(data)]
+         cat("Missing columns:", paste(missing, collapse=", "), ". Skipping...\n")
+         next
+    }
+
+    # Filter data: complete cases for all involved variables
+    temp_data <- data[complete.cases(data[, cols_needed]), ]
+
     if (nrow(temp_data) == 0) {
       cat("Filtered data for", var_col, "has no valid rows. Skipping...\n")
       next
     }
 
+    # Status column checks and conversion (Robust logic)
     status_vec <- temp_data[[status_col]]
     if (is.factor(status_vec)) status_vec <- as.character(status_vec)
     if (is.logical(status_vec)) status_vec <- as.integer(status_vec)
@@ -70,7 +89,6 @@ run_univariate_cox_analysis <- function(data,
       if (length(u) == 2 && all(u %in% c(1, 2))) {
         status_vec <- ifelse(status_vec == 1, 0, 1)
       } else if (!(length(u) == 2 && all(u %in% c(0, 1)))) {
-        # Check if it has 0, 1 and other things, or just not binary
         cat("Status column", status_col, "is not binary 0/1. Skipping...\n")
         next
       }
@@ -84,9 +102,26 @@ run_univariate_cox_analysis <- function(data,
        next
     }
 
-    cox_model <- survival::coxph(as.formula(paste("Surv(", time_col, ",", status_col, ") ~", var_col)), data = temp_data)
+    # Construct formula
+    if (!is.null(covariates) && length(covariates) > 0) {
+      formula_str <- paste("Surv(", time_col, ",", status_col, ") ~", var_col, "+", paste(covariates, collapse = " + "))
+      cat("Adjusting for covariates:", paste(covariates, collapse = ", "), "\n")
+    } else {
+      formula_str <- paste("Surv(", time_col, ",", status_col, ") ~", var_col)
+    }
+
+    cox_model <- tryCatch({
+        survival::coxph(as.formula(formula_str), data = temp_data)
+    }, error = function(e) {
+        cat("Error fitting Cox model for", var_col, ":", e$message, "\n")
+        return(NULL)
+    })
+    
+    if (is.null(cox_model)) next
+
     cox_summary <- summary(cox_model)
 
+    # Extract results for the variable of interest (assuming it's the first coefficient)
     hr <- cox_summary$coefficients[1, "exp(coef)"]
     ci_lower <- cox_summary$conf.int[1, "lower .95"]
     ci_upper <- cox_summary$conf.int[1, "upper .95"]
@@ -115,8 +150,8 @@ run_univariate_cox_analysis <- function(data,
     ))
   }
 
-  # Subset results where p-value < 0.05 (significant results)
-  significant_results <- results[results$P_value < 0.05, ]
+  # Subset results where p-value < P_value (significant results)
+  significant_results <- results[results$P_value < P_value, ]
 
   cat("Univariate Cox regression analysis for selected variables completed.\n")
   return(list(all_results = results, significant_results = significant_results))

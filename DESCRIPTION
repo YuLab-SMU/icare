@@ -1,7 +1,7 @@
 Package: Icare
 Type: Package
 Title: Integrated Clinical Analysis and Risk Evaluation
-Version: 0.1.1
+Version: 0.1.2
 Author: User
 Maintainer: User <user@example.com>
 Description: A modular framework for clinical statistics, machine learning, clustering, and prognostic modeling.
@@ -15,7 +15,6 @@ Imports:
     caret,
     survival,
     ggplot2,
-    ggprism,
     wesanderson,
     dplyr,
     tidyr,

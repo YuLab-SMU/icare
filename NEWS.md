@@ -1,3 +1,11 @@
+# Icare 0.1.2
+
+### Refactoring & Improvements
+*   **Code Consolidation**: Merged `run_univariate_cox_analysis` from `module_3` and `module_4` into a single, enhanced implementation in `module_4_pn5_0_cox_univariate.R`.
+    *   Added support for **covariate adjustment** and custom **P-value thresholds** (migrated from module 3).
+    *   Retained **robust status column handling** and data validation (from module 4).
+    *   Deprecated the redundant function in `module_3` to prevent namespace conflicts and installation warnings.
+
 # Icare 0.1.1
 
 ### Bug Fixes

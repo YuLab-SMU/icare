@@ -155,8 +155,7 @@ lasso_cv_visualization <- function(object,
     geom_vline(xintercept = log(lasso_model$lambda.1se), linetype = "dashed", color = secondary_color) +
     scale_x_reverse() +
     labs(x = "Log(Lambda)", y = "Mean Squared Error") +
-    theme_minimal() +
-    ggprism::theme_prism(base_size = base_size)
+    theme_classic(base_size = base_size)
 
   print(p)
 
@@ -236,14 +235,13 @@ lasso_feature_importance <- function(object,
     geom_point(aes(color = Coefficient > 0), size = 3) +
     scale_color_manual(values =wesanderson::wes_palette(palette_name)) +
     coord_flip() +
-    theme_bw() +
+    theme_classic(base_size = base_size) +
     labs(title = "LASSO Model Feature Importance",
          y = "Coefficient",  x = "") +
     theme(legend.title = element_blank(),
           plot.title = element_text(size = 20, face = "bold"),
           axis.title.y = element_text(size = 14, face = "bold"),
-          axis.text = element_text(size = 12)) +
-    ggplot2::theme_classic(base_size = base_size)
+          axis.text = element_text(size = 12))
 
   print(p)
 
