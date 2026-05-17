@@ -16,10 +16,11 @@ impute_missing_values <- function(data,
                                   m = 5,
                                   max_unique_values = 5,
                                   return_imputation_info = T,
-                                  save_dir = here::here("StatObject","Data"),
+                                  save_dir = NULL,
                                   save_data = TRUE,
                                   csv_filename = "clean_data.csv") {
   if (!is.data.frame(data)) stop("Input must be a data frame.")
+  if (is.null(save_dir)) save_dir <- get_output_dir("StatObject", "Data")
   impute_method <- match.arg(impute_method, choices = c("mice", "median_mode"))
   
   imputation_info <- list(
@@ -159,9 +160,10 @@ stat_miss_processed <- function(object,
                                 miss_threshold = 20,
                                 max_unique_values = 5,
                                 return_imputation_info = TRUE,
-                                save_dir = here::here("StatObject","Data"),
+                                save_dir = NULL,
                                 save_data = TRUE,
                                 csv_filename = "clean_data.csv") {
+  if (is.null(save_dir)) save_dir <- get_output_dir("StatObject", "Data")
   impute_method <- match.arg(impute_method, choices = c("mice", "median_mode"))
   
   if (inherits(object, "Stat")) {

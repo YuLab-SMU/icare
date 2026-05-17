@@ -15,7 +15,7 @@ process_new_data <- function(stat_object,
                              new_data,
                              group_col = "group",
                              max_unique_values = 5,
-                             save_dir = here::here("StatObject","NewData"),
+                             save_dir = NULL,
                              save_data = TRUE) {
   
   if (!inherits(stat_object, "Stat")) stop("stat_object must be of class 'Stat'.")

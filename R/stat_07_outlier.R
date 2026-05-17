@@ -14,8 +14,8 @@ detect_and_mark_outliers <- function(data,
                                      threshold = 3,
                                      group_col = "group",
                                      max_unique_values = 5,
-                                     save_dir = here::here("StatObject","Data"),
-                                     save_data = TRUE,
+                                     save_dir = NULL,
+                                     save_data = FALSE,
                                      csv_filename = "outlier_info.csv") {
   
   if (!is.data.frame(data)) stop("Input must be a data frame.")
@@ -55,6 +55,9 @@ detect_and_mark_outliers <- function(data,
   all_outliers <- sort(unique(unlist(outlier_indices)))
   
   if (save_data) {
+    if (is.null(save_dir)) {
+      stop("'save_dir' cannot be NULL when 'save_data' is TRUE. Please provide a valid directory path.")
+    }
     if (!dir.exists(save_dir)) {
       dir.create(save_dir, recursive = TRUE)}
     
@@ -92,8 +95,8 @@ stat_detect_and_mark_outliers <- function(object,
                                           threshold = 3,
                                           group_col = "group",
                                           max_unique_values = 5,
-                                          save_dir = here::here("StatObject","Data"),
-                                          save_data = TRUE,
+                                          save_dir = NULL,
+                                          save_data = FALSE,
                                           csv_filename = "outlier_info.csv") {
   if (inherits(object, "Stat")) {
     data <- slot(object, "clean.data")
@@ -166,8 +169,8 @@ handle_outliers <- function(data,
                             outlier_info,
                             method = "remove",
                             impute_value = "median",
-                            save_dir = here::here("StatObject","Data"),
-                            save_data = TRUE,
+                            save_dir = NULL,
+                            save_data = FALSE,
                             csv_filename = "clean_data.csv") {
   
   if (!is.data.frame(data)) stop("Input must be a data frame.")
@@ -207,6 +210,9 @@ handle_outliers <- function(data,
   }
   
   if (save_data) {
+    if (is.null(save_dir)) {
+      stop("'save_dir' cannot be NULL when 'save_data' is TRUE. Please provide a valid directory path.")
+    }
     if (!dir.exists(save_dir)) {
       dir.create(save_dir, recursive = TRUE)}
     full_path <- file.path(save_dir, csv_filename)
@@ -229,8 +235,8 @@ handle_outliers <- function(data,
 stat_handle_outliers <- function(object,
                                  method = "remove",
                                  impute_value = "median",
-                                 save_dir = here::here("StatObject","Data"),
-                                 save_data = TRUE,
+                                 save_dir = NULL,
+                                 save_data = FALSE,
                                  csv_filename = "clean_data.csv") {
   
   if (inherits(object, "Stat")) {

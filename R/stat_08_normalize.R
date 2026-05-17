@@ -135,9 +135,10 @@ normalize_data <- function(data,
                            method = "auto",
                            group_col = "group",
                            max_unique_values = 5,
-                           save_dir = here::here("StatObject","Data"),
+                           save_dir = NULL,
                            save_data = TRUE,
                            csv_filename = "scale_data.csv") {
+  if (is.null(save_dir)) save_dir <- get_output_dir("StatObject", "Data")
   
   if (!is.data.frame(data)) stop("Input must be a data frame.")
   
@@ -215,9 +216,10 @@ stat_normalize_process <- function(object,
                                    method = "auto",
                                    group_col = "group",
                                    max_unique_values = 5,
-                                   save_dir = here::here("StatObject","Data"),
+                                   save_dir = NULL,
                                    save_data = TRUE,
                                    csv_filename = "scale_data.csv") {
+  if (is.null(save_dir)) save_dir <- get_output_dir("StatObject", "Data")
   
   if (inherits(object, "Stat")) {
     data <- slot(object, "clean.data")

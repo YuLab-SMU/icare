@@ -15,23 +15,20 @@
 #' data <- data.frame("First Name" = c("John", "Jane"), "Age" = c(25, 30))
 #' modified_data <- modify_column_names(data)
 #' print(modified_data)
-modify_column_names <- function(data) {
-  if (is.null(names(data))) {
-    stop("Column names of the data frame cannot be NULL!")
-  }
-  new_names <- names(data)
+
+modify_column_names <- function(data,tolower=F) {
+  if (is.null(names(data))) stop("Column names cannot be NULL!")
+  if(tolower){ new_names <- tolower(names(data)) }   
+  new_names=names(data)
   new_names <- gsub(" ", "_", new_names)
   new_names <- gsub("[^[:alnum:]_]", "", new_names)
-
   if (anyDuplicated(new_names)) {
-    warning("Duplicate column names found; they have been made unique.")
+    warning("Duplicate column names found; made unique.")
     new_names <- make.unique(new_names)
   }
-
   names(data) <- new_names
   return(data)
 }
-
 
 
 #' Class to store statistical analysis results
@@ -87,7 +84,53 @@ Stat <- setClass(
     corr.result = list(),
     var.result = list(),
     variable.types = list()
-  )
+  ),
+  validity = function(object) {
+    # Check data frame slots
+    if (!is.data.frame(object@raw.data)) {
+      return("Slot 'raw.data' must be a data.frame")
+    }
+    if (!is.data.frame(object@clean.data)) {
+      return("Slot 'clean.data' must be a data.frame")
+    }
+    if (!is.data.frame(object@info.data)) {
+      return("Slot 'info.data' must be a data.frame")
+    }
+    if (!is.data.frame(object@scale.data)) {
+      return("Slot 'scale.data' must be a data.frame")
+    }
+    
+    # Check character slot
+    if (!is.character(object@meta.featurename)) {
+      return("Slot 'meta.featurename' must be a character vector")
+    }
+    
+    # Check list slots
+    if (!is.list(object@process.info)) {
+      return("Slot 'process.info' must be a list")
+    }
+    if (!is.list(object@compute.descriptive)) {
+      return("Slot 'compute.descriptive' must be a list")
+    }
+    if (!is.list(object@corr.result)) {
+      return("Slot 'corr.result' must be a list")
+    }
+    if (!is.list(object@var.result)) {
+      return("Slot 'var.result' must be a list")
+    }
+    if (!is.list(object@variable.types)) {
+      return("Slot 'variable.types' must be a list")
+    }
+    
+    # Check row name consistency if data exists
+    if (nrow(object@clean.data) > 0 && nrow(object@info.data) > 0) {
+      if (!setequal(rownames(object@clean.data), rownames(object@info.data))) {
+        return("Row names of 'clean.data' and 'info.data' must match")
+      }
+    }
+    
+    return(TRUE)
+  }
 )
 
 #' Create a Stat object for statistical analysis
@@ -111,17 +154,48 @@ Stat <- setClass(
 #'
 #' # Creating a Stat object with metadata
 #' stat_obj <- CreateStatObject(raw.data = example_raw_data, clean.data = example_clean_data, info.data = example_info_data)
+#' @param na.action Character string specifying how to handle NA values. 
+#'   Options are "allow" (keep NA values, default), "omit" (remove rows with NA),
+#'   or "error" (stop if NA values are found).
 CreateStatObject <- function(
     raw.data = data.frame(),
     clean.data = data.frame(),
     info.data = data.frame(),
     group_col = "group",
+    na.action = c("allow", "omit", "error"),
     ...
 ) {
 
+  na.action <- match.arg(na.action)
   raw.data <- as.data.frame(raw.data)
   clean.data <- as.data.frame(clean.data)
   info.data <- as.data.frame(info.data)
+  
+  # Store original group_col before any column name modifications
+  original_group_col <- group_col
+  
+  # Handle NA values based on na.action
+  handle_na <- function(data, data_name) {
+    if (is.null(data) || nrow(data) == 0) return(data)
+    if (!any(is.na(data))) return(data)
+    
+    switch(na.action,
+           "allow" = {
+             message("Note: NA values found in ", data_name, " but kept (na.action='allow')")
+             return(data)
+           },
+           "omit" = {
+             warning("NA values found in ", data_name, ". Removing ", sum(is.na(data)), " NA values.")
+             return(na.omit(data))
+           },
+           "error" = {
+             stop("NA values found in ", data_name, ". Set na.action='omit' to remove or na.action='allow' to keep.")
+           }
+    )
+  }
+  
+  raw.data <- handle_na(raw.data, "raw.data")
+  clean.data <- handle_na(clean.data, "clean.data")
 
   clean_symbol_values <- function(data) {
     for(col in colnames(data)) {
@@ -144,7 +218,6 @@ CreateStatObject <- function(
   }
 
 
-  
   if(nrow(raw.data) > 0) {
     raw.data <- clean_symbol_values(raw.data)
   }
@@ -159,6 +232,16 @@ CreateStatObject <- function(
     
     if (nrow(clean.data) > 0 && !setequal(rownames(info.data), rownames(clean.data))) {
       stop("Row names in 'info.data' do not match 'clean.data' (content mismatch).")
+    }
+  }
+  
+  # Check group_col BEFORE modifying column names
+  if (!is.null(original_group_col)) {
+    # Check in raw.data or clean.data (whichever has data)
+    ref_data <- if(nrow(clean.data) > 0) clean.data else if(nrow(raw.data) > 0) raw.data else NULL
+    if (!is.null(ref_data) && !(original_group_col %in% colnames(ref_data))) {
+      stop(sprintf("Specified group_col '%s' not found in data columns: %s",
+                   original_group_col, paste(colnames(ref_data), collapse = ", ")))
     }
   }
 
@@ -190,6 +273,19 @@ CreateStatObject <- function(
 
   raw.data <- prepare_data(raw.data, "raw.data")
   clean.data <- prepare_data(clean.data, "clean.data")
+  
+  # Update group_col if it was modified by modify_column_names
+  if (!is.null(original_group_col)) {
+    modified_group_col <- make.names(tolower(gsub(" ", "_", gsub("[^[:alnum:]_]", "", original_group_col))))
+    if (modified_group_col != original_group_col) {
+      if (modified_group_col %in% colnames(clean.data)) {
+        message("Note: group_col '", original_group_col, "' was modified to '", modified_group_col, "'")
+        group_col <- modified_group_col
+      } else if (nrow(clean.data) > 0 && !(original_group_col %in% colnames(clean.data))) {
+        warning("group_col '", original_group_col, "' not found in data columns after name modification")
+      }
+    }
+  }
 
   if (nrow(raw.data) > 0) {
     meta.featurename <- as.character(colnames(raw.data))
