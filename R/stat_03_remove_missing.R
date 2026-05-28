@@ -8,7 +8,7 @@
 #' @export
 remove_high_missing <- function(data, 
                                 miss_threshold = 25,
-                                save_dir = here::here("StatObject","Data"),
+                                save_dir = NULL,
                                 save_data = TRUE,
                                 csv_filename = "clean_data.csv") {
   if (!is.data.frame(data)) stop("Input must be a data frame.")
@@ -75,7 +75,7 @@ remove_high_missing <- function(data,
 #' @export
 stat_miss_remove <- function(object, 
                              miss_threshold = 25,
-                             save_dir = here::here("StatObject","Data"),
+                             save_dir = NULL,
                              save_data = TRUE,
                              csv_filename = "clean_data.csv") {
   if (inherits(object, "Stat")) {

@@ -9,6 +9,7 @@
 #' @import wesanderson
 #' @import stats
 #' @import here 
+#' @importFrom ggprism theme_prism
 #' @importFrom grDevices pdf
 #' @param data A data.frame containing the data to be analyzed. Missing values should be represented as `<NA>` or `NA`.
 #' @param palette_name A character string specifying the palette name for the plot colors. Default is `"Royal1"`.
@@ -47,19 +48,16 @@ plot_missing_data <- function(data,
                               palette_name = 'Royal1',
                               alpha = 0.9,
                               save_plots = TRUE,
-                              save_dir = here("StatObject"),
+                              save_dir = NULL,
                               plot_width = 5,
                               plot_height = 5,
                               base_size = 14,
                               save_data = TRUE,
                               var_filename = "var_missing_data.csv",
                               sample_filename = "sample_missing_data.csv") {
+  if (is.null(save_dir)) save_dir <- get_output_dir("StatObject", "missing_info")
 
-  colors <- if (requireNamespace("wesanderson", quietly = TRUE)) {
-    wesanderson::wes_palette(n = 3, name = palette_name, type = "discrete")
-  } else {
-    grDevices::hcl.colors(3, "Dark 3")
-  }
+  colors <- wes_palette(n = 3, name = palette_name, type = "discrete")
   colors <- as.list(colors)
 
   primary_color <- colors[[1]]
@@ -87,14 +85,14 @@ plot_missing_data <- function(data,
     geom_density(alpha = alpha, color = NA) +
     labs(x = "Missing Percentage", y = "Density", title = "Variable Missing Data") +
     scale_fill_manual(values = primary_color) +
-    ggplot2::theme_classic(base_size = base_size) +
+    theme_prism(base_size = base_size) +
     theme(legend.position = "top")
 
   sample_plot_obj <- ggplot(data = sample_missing_df, aes(x = Missing_Percentage, fill = "Sample-wise")) +
     geom_density(alpha = alpha, color = NA) +
     labs(x = "Missing Percentage", y = "Density", title = "Sample Missing Data") +
     scale_fill_manual(values = secondary_color) +
-    ggplot2::theme_classic(base_size = base_size) +
+    theme_prism(base_size = base_size) +
     theme(legend.position = "none")
 
   combined_plot <- var_plot_obj +
@@ -102,7 +100,7 @@ plot_missing_data <- function(data,
     labs(y = "Density", title = "Overall Missing Data Distribution") +
     scale_fill_manual(values = c(primary_color, secondary_color)) +
     guides(fill = guide_legend(title = NULL)) +
-    ggplot2::theme_classic(base_size = base_size)
+    theme_prism(base_size = base_size)
 
   if (save_plots) {
     if (!dir.exists(save_dir)) {
@@ -160,6 +158,7 @@ plot_missing_data <- function(data,
 #' @import stats
 #' @import methods
 #' @import here 
+#' @importFrom ggprism theme_prism
 #' @importFrom grDevices pdf
 #' @param object An object of class 'Stat' or a data frame. If it is a 'Stat' object, the function uses the
 #'               `raw.data` slot for missing data analysis. If it is a data frame, it directly performs the analysis.
@@ -186,12 +185,13 @@ state_plot_missing_data <- function(
     palette_name = 'Royal1',
     alpha = 0.9,
     save_plots = TRUE,
-    save_dir = here("StatObject","missing_info"),
+    save_dir = NULL,
     plot_width = 5,
     plot_height = 5,
     save_data = TRUE,
     var_filename = "var_missing_data.csv",
     sample_filename = "sample_missing_data.csv") {
+  if (is.null(save_dir)) save_dir <- get_output_dir("StatObject", "missing_info")
 
   if (inherits(object, "Stat")) {
     data <- slot(object, "raw.data")
@@ -434,7 +434,6 @@ stat_diagnose_variable_type <- function(object,
 #'                         digits = 1,
 #'                         show.p = FALSE,
 #'                         gaze_method = 1)
-
 gaze_analysis <- function(data,
                           formula = NULL,
                           group_cols = NULL,
@@ -442,7 +441,7 @@ gaze_analysis <- function(data,
                           show.p = TRUE,
                           gaze_method = 3,
                           save_word = TRUE,
-                          save_dir = here("PrognosiX", "gaze_baseline")) {
+                          save_dir = NULL) {
 
   if (!is.data.frame(data)) stop("The input 'data' must be a data frame.")
 
@@ -476,205 +475,118 @@ gaze_analysis <- function(data,
 
   tryCatch({
     cat("Running gaze analysis with method:", gaze_method, "\n")
-    data2 <- data
-    if (!is.null(group_cols) && length(group_cols) > 1) {
-      grp <- interaction(data2[, group_cols, drop = FALSE], drop = TRUE, sep = "_")
-      data2 <- data2[, setdiff(names(data2), group_cols), drop = FALSE]
-      data2[[".Icare_group"]] <- as.factor(grp)
-      formula <- stats::as.formula(".Icare_group ~ .")
-    }
-    result <- NULL
-    if (requireNamespace("autoReg", quietly = TRUE) && exists("gaze", where = asNamespace("autoReg"), inherits = FALSE)) {
-      result <- tryCatch(
-        autoReg::gaze(formula, data2, digits = digits, show.p = show.p, method = gaze_method),
-        error = function(e) NULL
-      )
-      if (!is.null(result) && (is.data.frame(result) || is.matrix(result))) {
-        if (requireNamespace("autoReg", quietly = TRUE) &&
-          exists("myft", where = asNamespace("autoReg"), inherits = FALSE) &&
-          requireNamespace("flextable", quietly = TRUE)) {
-          result <- autoReg::myft(result)
+    result <- gaze(formula, data, digits = digits, show.p = show.p, method = gaze_method)
+
+    cat("Result type:", class(result), "\n")
+    if (is.data.frame(result) || is.matrix(result)) {
+      result <- myft(result)
+      cat("Gaze analysis completed successfully.\n")
+
+      if (save_word) {
+        doc <- read_docx()
+        doc <- doc %>%
+          body_add_flextable(result) %>%
+          body_add_par("Gaze Analysis Results", style = "heading 1")
+
+        if (!dir.exists(save_dir)) {
+          dir.create(save_dir, recursive = TRUE)
         }
+
+        word_filename <- file.path(save_dir, "gaze_analysis.docx")
+        print(doc, target = word_filename)
+        cat("Word file saved to:", word_filename, "\n")
       }
+
+      return(result)
+    } else {
+      stop("The result is not a data frame or matrix.")
     }
-    if (is.null(result)) {
-      result <- .gaze_analysis_fallback(
-        data = data2,
-        formula = formula,
-        group_cols = group_cols,
-        digits = digits,
-        show.p = show.p,
-        gaze_method = gaze_method
-      )
-    }
-    if (save_word) {
-      if (!requireNamespace("officer", quietly = TRUE)) stop("Package 'officer' is required to save Word output.")
-      if (!requireNamespace("flextable", quietly = TRUE)) stop("Package 'flextable' is required to save Word output.")
-      if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
-      doc <- officer::read_docx()
-      doc <- officer::body_add_par(doc, "Gaze Analysis Results", style = "heading 1")
-      doc <- officer::body_add_flextable(doc, result)
-      word_filename <- file.path(save_dir, "gaze_analysis.docx")
-      print(doc, target = word_filename)
-      cat("Word file saved to:", word_filename, "\n")
-    }
-    result
   }, error = function(e) {
     stop("An error occurred while performing the gaze analysis: ", e$message)
   })
 }
 
-.gaze_analysis_fallback <- function(data, formula = NULL, group_cols = NULL, digits = 1, show.p = TRUE, gaze_method = 3) {
-  if (!is.data.frame(data) || nrow(data) == 0) stop("The input 'data' must be a non-empty data frame.")
-  if (!is.null(formula)) {
-    f <- tryCatch(stats::terms(formula, data = data), error = function(e) NULL)
-    if (is.null(f)) stop("The input 'formula' must be a valid formula.")
-    lhs <- attr(f, "variables")[[2]]
-    group_name <- as.character(lhs)
-    group_cols <- group_name
-  }
-  if (is.null(group_cols) || length(group_cols) == 0) {
-    group_cols <- character(0)
-  }
-  if (length(group_cols) > 0 && !all(group_cols %in% names(data))) {
-    missing <- group_cols[!group_cols %in% names(data)]
-    stop("Group columns not found in data: ", paste(missing, collapse = ", "))
-  }
-
-  fmt <- function(x) round(x, digits = digits)
-
-  if (length(group_cols) == 0) {
-    grp <- factor(rep("Overall", nrow(data)))
-  } else {
-    grp <- interaction(data[, group_cols, drop = FALSE], drop = TRUE, sep = "_")
-    grp <- droplevels(as.factor(grp))
-  }
-
-  numeric_vars <- setdiff(names(data)[vapply(data, is.numeric, logical(1))], group_cols)
-  categorical_vars <- setdiff(names(data)[vapply(data, function(x) is.factor(x) || is.character(x), logical(1))], group_cols)
-
-  out_rows <- list()
-
-  for (v in numeric_vars) {
-    x <- data[[v]]
-    split_x <- split(x, grp)
-    pval <- NA
-    if (show.p) {
-      if (length(split_x) == 2) {
-        a <- split_x[[1]]
-        b <- split_x[[2]]
-        if (gaze_method == 2) {
-          pval <- tryCatch(stats::t.test(a, b)$p.value, error = function(e) NA)
-        } else {
-          pval <- tryCatch(stats::wilcox.test(a, b)$p.value, error = function(e) NA)
-        }
-      } else if (length(split_x) > 2) {
-        if (gaze_method == 2) {
-          pval <- tryCatch(stats::anova(stats::lm(x ~ grp))[["Pr(>F)"]][1], error = function(e) NA)
-        } else {
-          pval <- tryCatch(stats::kruskal.test(x, grp)$p.value, error = function(e) NA)
-        }
-      }
-    }
-    row <- list(Variable = v)
-    for (lev in levels(grp)) {
-      vec <- split_x[[lev]]
-      vec <- vec[!is.na(vec)]
-      if (length(vec) == 0) {
-        row[[lev]] <- NA
-      } else {
-        row[[lev]] <- paste0(
-          fmt(mean(vec)), "±", fmt(stats::sd(vec)),
-          "/", fmt(stats::median(vec)),
-          "[", fmt(min(vec)), ",", fmt(max(vec)), "]"
-        )
-      }
-    }
-    row[["P.value"]] <- if (!is.na(pval)) signif(pval, digits = max(2, digits)) else NA
-    out_rows[[length(out_rows) + 1]] <- row
-  }
-
-  for (v in categorical_vars) {
-    x <- as.factor(data[[v]])
-    pval <- NA
-    if (show.p && length(levels(grp)) > 1) {
-      tbl <- table(grp, x)
-      if (all(tbl >= 5)) {
-        pval <- tryCatch(stats::chisq.test(tbl)$p.value, error = function(e) NA)
-      } else {
-        pval <- tryCatch(stats::fisher.test(tbl)$p.value, error = function(e) NA)
-      }
-    }
-    totals <- tapply(!is.na(x), grp, sum)
-    for (lv in levels(x)) {
-      lvl_mask <- x == lv
-      counts <- tapply(lvl_mask, grp, function(m) sum(m, na.rm = TRUE))
-      perc <- round(100 * counts / totals, digits)
-      row <- list(Variable = paste0(v, "=", lv))
-      for (lev in levels(grp)) {
-        row[[lev]] <- paste0(as.integer(counts[[lev]]), ",", perc[[lev]], "%")
-      }
-      row[["P.value"]] <- if (!is.na(pval)) signif(pval, digits = max(2, digits)) else NA
-      out_rows[[length(out_rows) + 1]] <- row
-    }
-  }
-
-  if (length(out_rows) == 0) {
-    out <- data.frame(Variable = character(0))
-  } else {
-    out <- do.call(rbind.data.frame, out_rows)
-  }
-
-  if (requireNamespace("flextable", quietly = TRUE)) {
-    ft <- flextable::flextable(out)
-    ft <- flextable::autofit(ft)
-    return(ft)
-  }
-
-  out
-}
-
 #' Statistical Gaze Analysis
+#' Safe gaze analysis for Table 1 (auto‑removes problematic columns)
 #'
-#' This function performs gaze analysis on a given dataset or `Stat` object, providing results for
-#' group comparisons, statistical significance, and optionally saving the results as a Word document
-#' and plots as images. It supports customized formulas and gaze methods for the analysis.
+#' Wrapper around \code{stat_gaze_analysis} that first drops zero‑variance
+#' and all‑missing columns from \code{clean.data} to avoid errors in
+#' \code{autoReg::gaze}.
 #'
-#' @import here
-#' @import officer
-#' @import flextable
-#' @import methods
-#' @import stats
-#' @param object An object of class 'Stat' or a data frame containing the data to analyze.
-#' @param formula A formula specifying the model to fit. If NULL, a default formula is used (default is NULL).
-#' @param group_col The column name representing the grouping variable (default is "group").
-#' @param digits The number of digits to display for the result (default is 1).
-#' @param show.p A logical value indicating whether to display p-values in the output (default is TRUE).
-#' @param gaze_method An integer between 1 and 5 representing the gaze analysis method to use (default is 3).
-#' @param save_word A logical value indicating whether to save the results to a Word document (default is TRUE).
-#' @param save_dir The directory to save the Word document and plot images (default is the "StatObject/gaze_baseline" folder).
+#' @param object A \code{Stat} object or data frame.
+#' @param formula Optional formula.
+#' @param group_col Group column name.
+#' @param digits Number of digits for statistics.
+#' @param show.p Logical. Show p‑values?
+#' @param gaze_method Integer 1–5.
+#' @param save_word Logical. Save Word file?
+#' @param save_dir Output directory. If \code{NULL} and \code{save_word = TRUE},
+#'   uses \code{./tables/}.
 #'
-#' @returns An updated 'Stat' object with the gaze analysis results if the input is of class 'Stat',
-#'         or a data frame containing the results otherwise.
+#' @return Updated \code{Stat} object or flextable.
 #' @export
-#'
+#' #' @examples
 #' @examples
-#' stat_object <- Stat$new(clean.data = your_data_frame, group_col = "group")
-#' updated_stat_object <- stat_gaze_analysis(stat_object,
-#'                                          formula = ~ group + age + gender,
-#'                                          digits = 2,
-#'                                          show.p = TRUE,
-#'                                          gaze_method = 3,
-#'                                          save_word = TRUE,
-#'                                          save_plots = TRUE,
-#'                                          save_dir = "path/to/save")
-#'
-#' # Example 2: Performing gaze analysis on a data frame
-#' result <- stat_gaze_analysis(your_data_frame,
-#'                              formula = ~ group + age + gender,
-#'                              save_word = FALSE,
-#'                              save_plots = TRUE)
-#'
+#' # --- Prepare example data ---
+#' library(autoReg)
+#' library(flextable)
+#' 
+#' data("mtcars")
+#' mtcars$cyl <- factor(mtcars$cyl)
+#' mtcars$vs  <- factor(mtcars$vs, labels = c("V-shaped", "Straight"))
+#' 
+#' # Create a Stat object with "vs" as the grouping variable
+#' stat_obj <- CreateStatObject(raw.data = mtcars, group_col = "vs")
+#' 
+#' # --- Example 1: Basic usage with 2 groups (automatic formula) ---
+#' stat_obj <- stat_gaze_analysis(stat_obj,
+#'                                digits = 2,
+#'                                show.p = TRUE,
+#'                                gaze_method = 3)
+#' # View the formatted table
+#' stat_obj@baseline.table
+#' 
+#' # --- Example 2: Direct use with a data frame, no Word output ---
+#' result <- stat_gaze_analysis(mtcars,
+#'                              group_col = "cyl",    # >2 groups
+#'                              digits = 1,
+#'                              show.p = FALSE,
+#'                              gaze_method = 3,
+#'                              save_word = FALSE)
+#' result
+#' 
+#' # --- Example 3: Custom formula to compare selected variables ---
+#' stat_obj <- stat_gaze_analysis(stat_obj,
+#'                                formula = vs ~ mpg + hp + wt,
+#'                                digits = 2,
+#'                                show.p = TRUE,
+#'                                save_word = FALSE)
+#' 
+#' # --- Example 4: Different gaze method (method 1: t-test / Wilcoxon) ---
+#' stat_obj <- stat_gaze_analysis(stat_obj,
+#'                                gaze_method = 1,
+#'                                digits = 1,
+#'                                save_word = FALSE)
+#' 
+#' # --- Example 5: Save as Word document with custom directory ---
+#' \dontrun{
+#' stat_obj <- stat_gaze_analysis(stat_obj,
+#'                                save_word = TRUE,
+#'                                save_dir = "my_results/tables")
+#' # The file is saved as my_results/tables/gaze_analysis.docx
+#' }
+#' 
+#' # --- Example 6: Suppress p‑values (descriptive statistics only) ---
+#' stat_obj <- stat_gaze_analysis(stat_obj,
+#'                                show.p = FALSE,
+#'                                save_word = FALSE)
+#' 
+#' # --- Example 7: Multi‑group comparison (>2 groups) ---
+#' result_multi <- stat_gaze_analysis(mtcars,
+#'                                    group_col = "cyl",
+#'                                    digits = 2,
+#'                                    show.p = TRUE,
+#'                                    save_word = FALSE)
 stat_gaze_analysis <- function(object,
                                formula = NULL,
                                group_col = "group",
@@ -682,30 +594,78 @@ stat_gaze_analysis <- function(object,
                                show.p = TRUE,
                                gaze_method = 3,
                                save_word = TRUE,
-                               save_dir = here("StatObject", "gaze_baseline")) {
-
-  cat("Starting stat_gaze_analysis function...\n")
-
+                               save_dir = NULL) {
+  
+  cat("Starting stat_gaze_analysis (safe version)...\n")
+  
+  # ---- 1. Extract data ----
   if (inherits(object, "Stat")) {
     data <- slot(object, "clean.data")
     if (is.null(data) || nrow(data) == 0) {
       data <- slot(object, "raw.data")
-    } 
+    }
     group_col <- slot(object, "group_col")
   } else if (is.data.frame(object)) {
     data <- object
   } else {
     stop("Input must be an object of class 'Stat' or a data frame.")
   }
-
+  
   if (is.null(data) || nrow(data) == 0)
     stop("No valid data found in the input.")
-
+  
+  # ---- 2. Sanitize grouping column ----
   if (!is.null(group_col) && !group_col %in% colnames(data))
     group_col <- NULL
-
-  cat("Data prepared for gaze analysis. Number of rows:", nrow(data), "\n")
-
+  
+  # ---- 3. Drop problematic columns ----
+  # (a) Remove all‑NA columns
+  na_cols <- sapply(data, function(x) all(is.na(x)))
+  if (any(na_cols)) {
+    cat("Removing all‑NA columns:", paste(names(data)[na_cols], collapse = ", "), "\n")
+    data <- data[, !na_cols, drop = FALSE]
+  }
+  
+  # (b) Remove zero‑variance numeric columns
+  numeric_cols <- sapply(data, is.numeric)
+  if (any(numeric_cols)) {
+    zero_var <- sapply(data[, numeric_cols, drop = FALSE], var, na.rm = TRUE) == 0
+    if (any(zero_var)) {
+      cat("Removing zero‑variance numeric columns:",
+          paste(names(data[, numeric_cols])[zero_var], collapse = ", "), "\n")
+      data <- data[, !(colnames(data) %in% names(data[, numeric_cols])[zero_var]), drop = FALSE]
+    }
+  }
+  
+  # (c) Remove factor columns with only one level (excluding group_col)
+  factor_cols <- sapply(data, is.factor)
+  if (any(factor_cols)) {
+    single_level <- sapply(data[, factor_cols, drop = FALSE],
+                           function(x) length(levels(droplevels(x))) < 2)
+    # keep group_col if present
+    if (!is.null(group_col) && group_col %in% names(single_level))
+      single_level[group_col] <- FALSE
+    if (any(single_level)) {
+      cat("Removing single‑level factor columns:",
+          paste(names(data[, factor_cols])[single_level], collapse = ", "), "\n")
+      data <- data[, !(colnames(data) %in% names(data[, factor_cols])[single_level]), drop = FALSE]
+    }
+  }
+  
+  cat("Data prepared for gaze analysis. Number of rows:", nrow(data),
+      "Columns:", ncol(data), "\n")
+  
+  # ---- 4. Default save_dir for Word output ----
+  if (save_word && is.null(save_dir)) {
+    if (exists("get_output_dir")) {
+      save_dir <- get_output_dir("m1", "baseline_tables")
+    } else {
+      save_dir <- file.path(".", "tables")
+    }
+    if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
+  }
+  
+  # ---- 5. Call gaze_analysis with cleaned data ----
   result <- gaze_analysis(data,
                           formula = formula,
                           group_cols = group_col,
@@ -714,32 +674,15 @@ stat_gaze_analysis <- function(object,
                           gaze_method = gaze_method,
                           save_word = save_word,
                           save_dir = save_dir)
-
+  
   print(result)
-
-  if (save_word) {
-    cat("Saving results as Word document...\n")
-    doc <- read_docx()
-    doc <- doc %>%
-      body_add_flextable(result) %>%
-      body_add_par("Gaze Analysis Results", style = "heading 1")
-
-    if (!dir.exists(save_dir)) {
-      dir.create(save_dir, recursive = TRUE)
-    }
-
-    word_filename <- file.path(save_dir, "gaze_analysis.docx")
-    print(doc, target = word_filename)
-    cat("Word file saved to:", word_filename, "\n")
-  }
-
+  
+  # ---- 6. Update Stat object if needed ----
   if (inherits(object, "Stat")) {
     object@baseline.table <- result
-    cat("Updating 'Stat' object...\n")
-    cat("The 'Stat' object has been updated with the following slots:\n")
-    cat("- 'baseline.table' slot updated.\n")
+    cat("'baseline.table' slot updated.\n")
     return(object)
   }
-
+  
   return(result)
 }

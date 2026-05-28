@@ -125,14 +125,9 @@ compute_descriptive_stats <- function(data,
     cat("Descriptive statistics computation completed.\n")
   } else {
     cat("Computing overall descriptive statistics...\n")
-    num_cols <- variable_types$numeric_vars
-    if (length(num_cols) > 0) {
-      stats_compute <- apply(data[, num_cols, drop = FALSE], 2, function(x) c(Mean = mean(x, na.rm = TRUE), Median = median(x, na.rm = TRUE), SD = sd(x, na.rm = TRUE), Min = min(x, na.rm = TRUE), Max = max(x, na.rm = TRUE)))
-      result$Stats <- stats_compute
-      cat("Overall statistics computed.\n")
-    } else {
-       cat("No numeric variables for overall statistics.\n")
-    }
+    stats_compute <- apply(data, 2, function(x) c(Mean = mean(x, na.rm = TRUE), Median = median(x, na.rm = TRUE), SD = sd(x, na.rm = TRUE), Min = min(x, na.rm = TRUE), Max = max(x, na.rm = TRUE)))
+    result$Stats <- stats_compute
+    cat("Overall statistics computed.\n")
   }
 
   return(result)
@@ -215,63 +210,45 @@ stat_compute_descriptive <- function(
 }
 
 
-
-
 #' Plot Categorical Descriptive Statistics for 'Stat' Object or Data Frame
 #'
-#' This function generates bar plots displaying the distribution of categorical variables and their percentages across different groups.
-#' It can handle both `Stat` objects and standard data frames. The function also supports saving plots to a specified directory.
-#' The plots are created using `ggplot2` and the colors are customized using a specified color palette.
+#' This function generates bar plots displaying the distribution of categorical
+#' variables and their percentages across different groups. It handles both
+#' `Stat` objects and data frames. Plots can optionally be saved.
 #'
+#' @param object A Stat object or a data frame.
+#' @param group_col Grouping column name (default "group").
+#' @param palette_name Color palette name (default "Royal1").
+#' @param save_plots Logical; whether to save the plots (default TRUE).
+#' @param save_dir Directory to save plots (if NULL and save_plots=TRUE,
+#'   a default figure directory is used).
+#' @param sub_var Character vector of variable names to plot (NULL = all).
+#' @param plot_width Width of saved plot.
+#' @param plot_height Height of saved plot.
+#' @param base_size Base font size.
 #'
-#' @import ggplot2
-#' @importFrom dplyr group_by summarise mutate
-#' @import wesanderson
-#' @import here
-#' @importFrom scales percent
-#' @importFrom gridExtra grid.arrange
-#' @import methods
-#' @importFrom rlang sym
-#' @param object An object of class 'Stat' or a data frame containing the dataset to analyze.
-#' @param group_col The column name representing the grouping variable (default is "group").
-#' @param palette_name The name of the color palette to use (default is "Royal1").
-#' @param save_plots A logical value indicating whether to save the plots (default is TRUE).
-#' @param save_dir The directory where the plots will be saved (default is "StatObject/categorical_descriptive").
-#' @param sub_var A vector of column names to subset the variables to plot (default is NULL, meaning all categorical variables will be plotted).
-#' @param plot_width The width of the saved plot (default is 5).
-#' @param plot_height The height of the saved plot (default is 5).
-#' @param base_size The base font size for the plots (default is 14).
-#'
-#' @returns If the input is a 'Stat' object, the function returns the updated 'Stat' object with a new slot `compute.descriptive$count_plots`
-#'          containing the generated plots. If the input is a data frame, it returns a list of the generated plots.
-#'
+#' @returns If object is a Stat object, the updated Stat object with
+#'   `compute.descriptive$count_plots` slot. Otherwise, a list of plots.
 #' @export
-#'
-#' @examples
-#' # Example 1: Plot categorical descriptive statistics for a 'Stat' object
-#' updated_stat <- plot_categorical_descriptive(object = my_stat, group_col = "group")
-#'
-#' # Example 2: Plot categorical descriptive statistics for a data frame
-#' plot_results <- plot_categorical_descriptive(object = my_data, group_col = "group")
 plot_categorical_descriptive <- function(
     object,
     group_col = "group",
     palette_name = "Royal1",
     save_plots = TRUE,
-    save_dir = here("StatObject", "categorical_descriptive"),
+    save_dir = NULL,
     sub_var = NULL,
     plot_width = 5,
     plot_height = 5,
     base_size = 14
 ) {
   tryCatch({
+    # ---- 1. Extract data and group column ----
     if (inherits(object, "Stat")) {
       data <- slot(object, "clean.data")
       if (is.null(data) || nrow(data) == 0) {
         data <- slot(object, "raw.data")
-      } 
+      }
       group_col <- slot(object, "group_col")
-
       if (length(group_col) == 0 || !group_col %in% colnames(data)) {
         group_col <- NULL
       }
@@ -280,94 +257,121 @@ plot_categorical_descriptive <- function(
     } else {
       stop("Input must be an object of class 'Stat' or a data frame.\n")
     }
-
+    
     if (is.null(data) || nrow(data) == 0) {
       stop("No valid data found in the input.\n")
     }
-
+    
+    # ---- 2. Get descriptive statistics ----
     if (inherits(object, "Stat")) {
       stats <- slot(object, "compute.descriptive")
     } else {
       stats <- compute_descriptive_stats(data, count_feature = TRUE, group_col = group_col)
     }
-
+    
     if (is.null(stats$Count_Results)) {
-      cat("No valid count results to display. Please check the data and parameters.\n")
+      cat("No valid count results to display.\n")
       return(object)
     }
-
+    
     count_plots <- list()
-
+    
+    # ---- 3. Loop through categorical variables ----
     for (col in names(stats$Count_Results)) {
-      cat(paste("Processing column:", col, "\n"))
-
+      cat("Processing column:", col, "\n")
+      
+      # Skip if not in sub_var
       if (!is.null(sub_var) && !(col %in% sub_var)) {
-        cat(paste("Skipping column:", col, "not in sub_var.\n"))
+        cat("Skipping column:", col, "not in sub_var.\n")
         next
       }
-
+      
+      # Skip if the categorical column is the same as the grouping column
+      if (!is.null(group_col) && col == group_col) {
+        cat("Skipping column:", col, "(same as group column)\n")
+        next
+      }
+      
+      # Create a dummy group if grouping column is absent
       if (is.null(group_col)) {
         group_col <- "temp_group"
         data[[group_col]] <- "All"
       }
-
+      
       data[[group_col]] <- as.factor(data[[group_col]])
-
+      
+      # Compute percentages within groups
       plot_data <- data %>%
-        group_by(!!sym(col), !!sym(group_col)) %>%
-        summarise(n = n(), .groups = 'drop') %>%
-        mutate(perc = n / sum(n) * 100)
-
+        dplyr::group_by(!!rlang::sym(col), !!rlang::sym(group_col)) %>%
+        dplyr::summarise(n = dplyr::n(), .groups = 'drop') %>%
+        dplyr::group_by(!!rlang::sym(group_col)) %>%
+        dplyr::mutate(perc = n / sum(n) * 100) %>%
+        dplyr::ungroup()
+      
       if (nrow(plot_data) == 0) {
-        cat(paste("No data available for column:", col, "\n"))
+        cat("No data available for column:", col, "\n")
         next
       }
-
-      p <- ggplot(plot_data, aes_string(x = col, y = "perc", fill = group_col)) +
-        geom_bar(stat = "identity", position = "dodge") +
-        geom_text(aes(label = scales::percent(perc / 100)),
-                  position = position_dodge(width = 0.9), size = 4, vjust = -0.5, hjust = 0.5) +
-        labs(title = paste("Bar plot of", col, "with percentage"), y = "Percentage") +
-        ggplot2::theme_classic(base_size = base_size)
-
-      p <- p + scale_fill_manual(values = wes_palette(palette_name))
-
+      
+      # Create bar plot
+      p <- ggplot2::ggplot(plot_data,
+                           ggplot2::aes_string(x = col, y = "perc", fill = group_col)) +
+        ggplot2::geom_bar(stat = "identity", position = "dodge") +
+        ggplot2::geom_text(ggplot2::aes(label = scales::percent(perc / 100)),
+                           position = ggplot2::position_dodge(width = 0.9),
+                           size = 4, vjust = -0.5, hjust = 0.5) +
+        ggplot2::labs(title = paste("Bar plot of", col, "with percentage"), y = "Percentage") +
+        ggprism::theme_prism(base_size = base_size) +
+        ggplot2::scale_fill_manual(values = wesanderson::wes_palette(palette_name))
+      
       count_plots[[col]] <- p
-
+      
+      # Save plot if requested
       if (save_plots) {
-        ggsave(here(save_dir, paste0(col, "_plot.pdf")),
-               plot = p,
-               width = plot_width,
-               height = plot_height,
-               device = "pdf")
-        cat(paste("Saved plot for column:", col, "\n"))
+        if (is.null(save_dir)) {
+          # Use a default figure directory (from viz_functions helpers)
+          save_dir <- .get_viz_output_dir("Stat")
+        }
+        if (!dir.exists(save_dir)) {
+          dir.create(save_dir, recursive = TRUE)
+        }
+        ggplot2::ggsave(filename = file.path(save_dir, paste0(col, "_plot.pdf")),
+                        plot = p, width = plot_width, height = plot_height, device = "pdf")
+        cat("Saved plot for column:", col, "\n")
       }
     }
-
+    
     plot_count <- length(count_plots)
-    cat(paste("A total of", plot_count, "plots were generated.\n"))
-
+    cat("A total of", plot_count, "plots were generated.\n")
+    
     if (plot_count > 0) {
-      grid.arrange(grobs = count_plots, nrow = 1)
+      # Use gridExtra::grid.arrange to avoid dependency on global library
+      if (requireNamespace("gridExtra", quietly = TRUE)) {
+        gridExtra::grid.arrange(grobs = count_plots, nrow = 1)
+      } else {
+        # fallback: print the first plot
+        print(count_plots[[1]])
+      }
       print(count_plots[[1]])
     } else {
       cat("No valid count plots to display.\n")
     }
-
+    
     if (save_plots) {
       cat("Saved plots to:", save_dir, "\n")
     }
-
+    
+    # ---- 4. Update Stat object if applicable ----
     if (inherits(object, "Stat")) {
       object@compute.descriptive[["count_plots"]] <- count_plots
       cat("Updating 'Stat' object...\n")
-      cat("The 'Stat' object has been updated with the following slots:\n")
       cat("- 'compute.descriptive' slot updated.\n")
       return(object)
     }
     return(count_plots)
   }, error = function(e) {
-    cat("An error occurred. Function terminated silently.\n")
+    cat("An error occurred:\n")
+    cat("Error message:", conditionMessage(e), "\n")
     return(object)
   })
 }
@@ -382,50 +386,32 @@ plot_categorical_descriptive <- function(
 #' argument). The function also allows for customization of plot appearance
 #' and save locations.
 #'
-#'
-#' @import ggplot2
-#' @import wesanderson
-#' @importFrom reshape2 melt
-#' @importFrom ggpubr stat_compare_means
-#' @import here
-#' @import stats
 #' @param data A data frame containing the data to plot.
 #' @param vars_per_plot Integer. The number of variables (columns) to include
-#'   in each individual plot. Default is 5.
-#' @param save_dir String. The directory to save the plots in. Default is
-#'   the directory `"StatObject"`.
-#' @param palette_name String. The name of the color palette to use. The
-#'   default is `"Royal1"`, which uses a predefined color scheme.
+#'   in each individual plot. Default is 1.
+#' @param save_dir String. The directory to save the plots in. Default is `NULL`.
+#'   When `save_plots = TRUE` and this is `NULL`, a default figure directory is used.
+#' @param palette_name String. The name of the color palette to use. Default `"Royal1"`.
 #' @param group_col String. The name of the column in the data used to group
 #'   the samples. Default is `"group"`.
 #' @param max_unique_values Integer. The maximum number of unique values
-#'   allowed for categorical variables. Defaults to 5. Used for filtering
-#'   variables when diagnosing their types.
+#'   allowed for categorical variables. Defaults to 5.
 #' @param sub_var Character vector. A subset of variable names (columns)
 #'   to include in the plot. If `NULL`, all numeric variables will be included.
 #' @param save_plots Logical. If `TRUE`, the plots will be saved as PDF
 #'   files in the specified `save_dir`. Default is `TRUE`.
-#' @param plot_width Numeric. The width of each saved plot (in inches).
-#'   Default is 5.
-#' @param plot_height Numeric. The height of each saved plot (in inches).
-#'   Default is 5.
-#' @param base_size Numeric. The base font size for the plot. Default is 14.
+#' @param plot_width Numeric. The width of each saved plot (in inches). Default 5.
+#' @param plot_height Numeric. The height of each saved plot (in inches). Default 5.
+#' @param base_size Numeric. The base font size for the plot. Default 14.
+#' @param stat_method Statistical method for comparisons.
+#' @param paired_comparison Logical, whether to add pairwise comparisons.
 #'
 #' @returns A list of ggplot objects containing the generated violin plots.
-#'   If `save_plots` is `TRUE`, the plots are also saved as PDF files in
-#'   the specified directory.
+#'   If `save_plots` is `TRUE`, the plots are also saved as PDF files.
 #' @export
-#'
-#' @examples
-#' violin_plots(data = my_data,
-#'              vars_per_plot = 4,
-#'              save_dir = here::here("StatObject"),
-#'              palette_name = "Zissou1",
-#'              group_col = "group",
-#'              save_plots = TRUE)
 violin_plots <- function(data,
                          vars_per_plot = 1,
-                         save_dir = here::here("StatObject"),
+                         save_dir = NULL,
                          palette_name = "Zissou1",
                          group_col = "group",
                          max_unique_values = 5,
@@ -436,71 +422,76 @@ violin_plots <- function(data,
                          base_size = 14,
                          stat_method = "wilcox.test",
                          paired_comparison = TRUE) {
-
+  
+  # ---- Handle default save_dir ----
+  if (save_plots && is.null(save_dir)) {
+    if (exists(".get_viz_output_dir")) {
+      save_dir <- .get_viz_output_dir("Stat")
+    } else {
+      save_dir <- file.path(".", "figures", "Stat")
+    }
+  }
+  
   if (!is.null(group_col) && !group_col %in% names(data)) {
     stop(paste("Column", group_col, "not found in data"))
   }
-
+  
   variable_types <- diagnose_variable_type(data, group_col = group_col, max_unique_values = max_unique_values)
   num_cols <- variable_types$numeric_vars
-
+  
   if (!is.null(sub_var)) {
     num_cols <- intersect(num_cols, sub_var)
   }
-
+  
   if (length(num_cols) == 0) {
     stop("No numeric variables found after filtering with sub_var")
   }
-
+  
   if (is.null(group_col)) {
-    melted_data <- melt(data, measure.vars = num_cols)
+    melted_data <- reshape2::melt(data, measure.vars = num_cols)
     melted_data$group <- "All"
   } else {
-    melted_data <- melt(data, id.vars = group_col, measure.vars = num_cols)
+    melted_data <- reshape2::melt(data, id.vars = group_col, measure.vars = num_cols)
     melted_data$group <- as.character(melted_data[[group_col]])
   }
-
+  
   num_vars <- length(num_cols)
   num_groups <- ceiling(num_vars / vars_per_plot)
   var_groups <- split(num_cols, rep(1:num_groups, each = vars_per_plot, length.out = num_vars))
-
+  
   plot_list <- list()
-
+  
   for (i in seq_along(var_groups)) {
     group_vars <- var_groups[[i]]
     group_data <- melted_data[melted_data$variable %in% group_vars, ]
-
+    
     if (nrow(group_data) > 0) {
+      n_groups <- length(unique(group_data$group))
       if (is.null(group_col)) {
-        pal <- wes_palette(palette_name, n = 1, type = "continuous")
+        pal <- wesanderson::wes_palette(palette_name, n = 1, type = "continuous")
       } else {
-        pal <- wes_palette(palette_name, n = length(unique(group_data$group)), type = "continuous")
+        pal <- wesanderson::wes_palette(palette_name, n = n_groups, type = "continuous")
       }
-
-      p <- ggplot(group_data, aes(x = as.factor(group), y = value)) +
-        geom_violin(aes(fill = group), scale = "area", alpha = 0.5) +
-        geom_boxplot(width = 0.1, size = 0.7, outlier.shape = NA) +
-        geom_jitter(width = 0.2, alpha = 0.3, color = "black", size = 0.5) +
-        scale_fill_manual(values = pal) +
-    facet_wrap(~variable, scales = "free_y", ncol = 1) +
-    theme_classic(base_size = base_size) +
-    theme(legend.position = "bottom") +
-    labs(title = paste("Violin Plots - Part", i), x = "Group", y = "Value")
-
-      if (!is.null(group_col) && paired_comparison) {
-        groups <- unique(group_data$group)
-        if (length(groups) >= 3) {
-          comparisons <- list(
-            c(groups[1], groups[3]),
-            c(groups[2], groups[3]),
-            c(groups[1], groups[2])
-          )
+      
+      p <- ggplot2::ggplot(group_data,
+                           ggplot2::aes(x = as.factor(group), y = value)) +
+        ggplot2::geom_violin(ggplot2::aes(fill = group), scale = "area", alpha = 0.5) +
+        ggplot2::geom_boxplot(width = 0.1, size = 0.7, outlier.shape = NA) +
+        ggplot2::geom_jitter(width = 0.2, alpha = 0.3, color = "black", size = 0.5) +
+        ggplot2::scale_fill_manual(values = pal) +
+        ggplot2::facet_wrap(~variable, scales = "free_y", ncol = 1) +
+        ggprism::theme_prism(base_size = base_size) +
+        ggplot2::theme(legend.position = "bottom") +
+        ggplot2::labs(title = paste("Violin Plots - Part", i), x = "Group", y = "Value")
+      
+      if (!is.null(group_col) && paired_comparison && n_groups >= 2) {
+        comparisons <- if (n_groups >= 3) {
+          list(c(groups[1], groups[3]), c(groups[2], groups[3]), c(groups[1], groups[2]))
         } else {
-          comparisons <- combn(groups, 2, simplify = FALSE)
+          combn(unique(group_data$group), 2, simplify = FALSE)
         }
-
         if (length(comparisons) > 0) {
-          p <- p + stat_compare_means(
+          p <- p + ggpubr::stat_compare_means(
             method = stat_method,
             comparisons = comparisons,
             label = "p.format",
@@ -510,24 +501,25 @@ violin_plots <- function(data,
           )
         }
       }
-
+      
       plot_list[[i]] <- p
-
+      
       if (save_plots) {
         if (!dir.exists(save_dir)) {
           dir.create(save_dir, recursive = TRUE)
         }
-        ggsave(
+        ggplot2::ggsave(
           filename = paste0(save_dir, "/violin_plot_part_", i, ".pdf"),
           plot = p,
           width = plot_width,
           height = plot_height,
           device = "pdf"
         )
+        cat("Saved violin plot part", i, "\n")
       }
     }
   }
-
+  
   return(plot_list)
 }
 
@@ -535,55 +527,32 @@ violin_plots <- function(data,
 #'
 #' This function generates density ridge plots for numeric variables in the dataset,
 #' with optional grouping by a specified column. It handles large numbers of variables
-#' by splitting them into multiple plots, each containing a set of variables (defined
-#' by the `vars_per_plot` argument). The function also allows for customization of plot
-#' appearance and save locations.
+#' by splitting them into multiple plots.
 #'
-#' @import ggplot2
-#' @import wesanderson
-#' @importFrom reshape2 melt
-#' @importFrom ggpubr stat_compare_means
-#' @import here
-#' @import stats
-#' @importFrom ggridges geom_density_ridges_gradient
 #' @param data A data frame containing the data to plot.
 #' @param vars_per_plot Integer. The number of variables (columns) to include
-#'   in each individual plot. Default is 5.
-#' @param save_dir String. The directory to save the plots in. Default is
-#'   the directory `"StatObject"`.
-#' @param palette_name String. The name of the color palette to use. The
-#'   default is `"Royal1"`, which uses a predefined color scheme.
+#'   in each individual plot. Default is 1.
+#' @param save_dir String. The directory to save the plots in. Default is `NULL`.
+#'   When `save_plots = TRUE` and this is `NULL`, a default figure directory is used.
+#' @param palette_name String. The name of the color palette to use. Default `"Zissou1"`.
 #' @param group_col String. The name of the column in the data used to group
 #'   the samples. Default is `"group"`.
 #' @param max_unique_values Integer. The maximum number of unique values
-#'   allowed for categorical variables. Defaults to 5. Used for filtering
-#'   variables when diagnosing their types.
+#'   allowed for categorical variables. Defaults to 5.
 #' @param sub_var Character vector. A subset of variable names (columns)
 #'   to include in the plot. If `NULL`, all numeric variables will be included.
 #' @param save_plots Logical. If `TRUE`, the plots will be saved as PDF
 #'   files in the specified `save_dir`. Default is `TRUE`.
-#' @param plot_width Numeric. The width of each saved plot (in inches).
-#'   Default is 5.
-#' @param plot_height Numeric. The height of each saved plot (in inches).
-#'   Default is 5.
-#' @param base_size Numeric. The base font size for the plot. Default is 14.
+#' @param plot_width Numeric. The width of each saved plot (in inches). Default 5.
+#' @param plot_height Numeric. The height of each saved plot (in inches). Default 5.
+#' @param base_size Numeric. The base font size for the plot. Default 14.
 #'
 #' @returns A list of ggplot objects containing the generated density ridge plots.
-#'   If `save_plots` is `TRUE`, the plots are also saved as PDF files in
-#'   the specified directory.
+#'   If `save_plots` is `TRUE`, the plots are also saved as PDF files.
 #' @export
-#'
-#' @examples
-#' density_ridge_plots(data = my_data,
-#'                     vars_per_plot = 4,
-#'                     save_dir = here("StatObject"),
-#'                     palette_name = "Zissou1",
-#'                     group_col = "group",
-#'                     save_plots = TRUE)
-#'
 density_ridge_plots <- function(data,
                                 vars_per_plot = 1,
-                                save_dir = here("StatObject"),
+                                save_dir = NULL,
                                 palette_name = "Zissou1",
                                 group_col = "group",
                                 max_unique_values = 5,
@@ -592,74 +561,82 @@ density_ridge_plots <- function(data,
                                 plot_width = 5,
                                 plot_height = 5,
                                 base_size = 14) {
-
+  
+  # ---- Handle default save_dir ----
+  if (save_plots && is.null(save_dir)) {
+    if (exists(".get_viz_output_dir")) {
+      save_dir <- .get_viz_output_dir("Stat")
+    } else {
+      save_dir <- file.path(".", "figures", "Stat")
+    }
+  }
+  
   if (length(group_col) == 0 || is.null(group_col) || !group_col %in% names(data)) {
     group_col <- NULL
   }
-
+  
   variable_types <- diagnose_variable_type(data, group_col = group_col, max_unique_values = max_unique_values)
   num_cols <- variable_types$numeric_vars
-
+  
   if (!is.null(sub_var)) {
     sub_var <- intersect(sub_var, num_cols)
-
     if (length(sub_var) == 0) {
       stop("No valid variables in sub_var for plotting.")
     }
-
     num_cols <- sub_var
   }
-
+  
   if (length(num_cols) == 0) {
     stop("No numeric variables found after filtering with sub_var\n")
   }
-
-  melted_data <- melt(data, id.vars = group_col, measure.vars = num_cols)
-
+  
+  melted_data <- reshape2::melt(data, id.vars = group_col, measure.vars = num_cols)
+  
   if (!is.null(group_col)) {
     melted_data$group <- melted_data[[group_col]]
   } else {
     melted_data$group <- "Default Group"
   }
-
+  
   num_vars <- length(num_cols)
   num_groups <- ceiling(num_vars / vars_per_plot)
   var_groups <- split(num_cols, rep(1:num_groups, each = vars_per_plot, length.out = num_vars))
-
-  pal <- wes_palette(palette_name, 100, type = "continuous")
+  
+  pal <- wesanderson::wes_palette(palette_name, 100, type = "continuous")
   plot_list <- list()
-
+  
   for (i in seq_along(var_groups)) {
     group_vars <- var_groups[[i]]
     group_data <- melted_data[melted_data$variable %in% group_vars, ]
     group_data$group <- as.factor(group_data$group)
+    
     if (nrow(group_data) > 0) {
-      p <- ggplot(group_data, aes(x = value, y = group, fill = after_stat(density))) +
-        geom_density_ridges_gradient(scale = 3, rel_min_height = 0.00) +
-        scale_fill_gradientn(colours = pal) +
-        facet_wrap(~variable, scales = "free_x", ncol = 1) +
-        ggplot2::theme_classic(base_size = base_size) +
-        labs(title = paste("Density Ridge Plots  - Part", i),
-             x = "Value",
-             y = ifelse(!is.null(group_col), group_col, "Group"))
-
+      p <- ggplot2::ggplot(group_data,
+                           ggplot2::aes(x = value, y = group, fill = ggplot2::after_stat(density))) +
+        ggridges::geom_density_ridges_gradient(scale = 3, rel_min_height = 0.00) +
+        ggplot2::scale_fill_gradientn(colours = pal) +
+        ggplot2::facet_wrap(~variable, scales = "free_x", ncol = 1) +
+        ggprism::theme_prism(base_size = base_size) +
+        ggplot2::labs(title = paste("Density Ridge Plots - Part", i),
+                      x = "Value",
+                      y = ifelse(!is.null(group_col), group_col, "Group"))
+      
       plot_list[[i]] <- p
-
+      
       if (save_plots) {
         if (!dir.exists(save_dir)) {
           dir.create(save_dir, recursive = TRUE)
         }
-
-        ggsave(paste0(save_dir, "/density_ridge_plot_part_", i, ".pdf"),
-               plot = p,
-               width = plot_width,
-               height = plot_height,
-               device = "pdf")
-        cat("Saved plots to: ", save_dir, "\n")
+        ggplot2::ggsave(paste0(save_dir, "/density_ridge_plot_part_", i, ".pdf"),
+                        plot = p,
+                        width = plot_width,
+                        height = plot_height,
+                        device = "pdf")
+        cat("Saved ridge plot part", i, "\n")
       }
     }
   }
-
+  
   return(plot_list)
 }
 
@@ -670,20 +647,14 @@ density_ridge_plots <- function(data,
 #' customizing the number of variables per plot, palette style, and grouping columns, and
 #' saves the plots if required. It provides a flexible approach to visualizing the distribution
 #' of numeric data and comparing different groups.
-#' @import ggplot2
-#' @import wesanderson
-#' @importFrom reshape2 melt
-#' @importFrom ggpubr stat_compare_means
-#' @import here
-#' @import stats
+#'
 #' @param object An object of class `Stat` or a data frame containing numeric data.
 #'   If the object is of class `Stat`, the clean data is extracted from the `Stat` object.
 #' @param vars_per_plot Integer. The number of variables (columns) to include in each
-#'   individual plot. Default is 5.
-#' @param save_dir String. The directory where the plots will be saved. Default is
-#'   `"StatObject/numeric_descriptive"`.
-#' @param palette_name String. The name of the color palette to use. Default is
-#'   `"Zissou1"`.
+#'   individual plot. Default is 1.
+#' @param save_dir String. The directory where the plots will be saved. Default is `NULL`.
+#'   When `save_plots = TRUE` and this is `NULL`, a default figure directory is used.
+#' @param palette_name String. The name of the color palette to use. Default is `"Zissou1"`.
 #' @param group_col String. The name of the column in the data to group the samples by.
 #'   Default is `"group"`. If not provided, no grouping is performed.
 #' @param max_unique_values Integer. The maximum number of unique values allowed for
@@ -691,8 +662,7 @@ density_ridge_plots <- function(data,
 #'   their types.
 #' @param plot_type String. The type of plot to generate. Options are `"violin"` or
 #'   `"ridge"`. Default is `"violin"`.
-#' @param save_plots Logical. If `TRUE`, the plots will be saved as PDF files in
-#'   the specified `save_dir`. Default is `TRUE`.
+#' @param save_plots Logical. If `TRUE`, the plots will be saved as PDF files. Default is `TRUE`.
 #' @param plot_width Numeric. The width of each saved plot (in inches). Default is 5.
 #' @param plot_height Numeric. The height of each saved plot (in inches). Default is 5.
 #' @param base_size Numeric. The base font size for the plot. Default is 14.
@@ -707,7 +677,7 @@ density_ridge_plots <- function(data,
 #' @examples
 #' plot_numeric_descriptive(object = my_stat_object,
 #'                           vars_per_plot = 4,
-#'                           save_dir = here("StatObject", "numeric_descriptive"),
+#'                           save_dir = NULL,
 #'                           palette_name = "Zissou1",
 #'                           group_col = "group",
 #'                           plot_type = "violin",
@@ -716,7 +686,7 @@ density_ridge_plots <- function(data,
 plot_numeric_descriptive <- function(
     object,
     vars_per_plot = 1,
-    save_dir = here("StatObject", "numeric_descriptive"),
+    save_dir = NULL,
     palette_name = "Zissou1",
     group_col = "group",
     max_unique_values = 5,
@@ -726,14 +696,22 @@ plot_numeric_descriptive <- function(
     plot_height = 5,
     base_size = 14,
     sub_var = NULL) {
-
-
+  
+  # ---- Handle default save_dir ----
+  if (save_plots && is.null(save_dir)) {
+    if (exists(".get_viz_output_dir")) {
+      save_dir <- .get_viz_output_dir("Stat")
+    } else {
+      save_dir <- file.path(".", "figures", "Stat")
+    }
+  }
+  
   if (inherits(object, "Stat")) {
     cat("Input is an object of class 'Stat'. Extracting data...\n")
     data <- slot(object, "clean.data")
     if (is.null(data) || nrow(data) == 0) {
       data <- slot(object, "raw.data")
-    } 
+    }
     group_col <- object@group_col
     if (length(group_col) == 0) {
       group_col <- NULL
@@ -745,33 +723,30 @@ plot_numeric_descriptive <- function(
   } else {
     stop("Input must be an object of class 'Stat' or a data frame\n")
   }
-
+  
   if (is.null(data) || nrow(data) == 0) {
     stop("No valid data found in the input\n")
   }
-
-
+  
   variable_types <- diagnose_variable_type(data, group_col = group_col, max_unique_values = max_unique_values)
-
-
+  
   if (length(variable_types$numeric_vars) == 0) {
     stop("No valid numeric variables found after diagnosis\n")
   }
-
+  
   if (!is.null(sub_var)) {
     cat("Filtering numeric variables based on sub_var:", sub_var, "\n")
     numeric_vars <- intersect(variable_types$numeric_vars, sub_var)
   } else {
     numeric_vars <- variable_types$numeric_vars
   }
-
+  
   if (length(numeric_vars) == 0) {
     stop("No valid numeric variables found after filtering with sub_var\n")
   }
-
-
+  
   plots_list <- list()
-
+  
   if (plot_type == "violin") {
     cat("Generating violin plots...\n")
     plots_list <- violin_plots(data,
@@ -801,22 +776,20 @@ plot_numeric_descriptive <- function(
   } else {
     stop("Invalid plot type. Choose either 'violin' or 'ridge'.\n")
   }
-
+  
   if (length(plots_list) > 0) {
     print(plots_list[[1]])
   }
-
+  
   total_plots <- length(plots_list)
   cat("A total of", total_plots, "plots were generated.\n")
-
+  
   if (inherits(object, "Stat")) {
     object@compute.descriptive[[paste0(plot_type, "_plots")]] <- plots_list
     cat("Updating 'Stat' object...\n")
-    cat("The 'Stat' object has been updated with the following slots:\n")
     cat("- 'compute.descriptive' slot updated.\n")
   }
-
-
+  
   return(object)
 }
 
@@ -846,7 +819,7 @@ plot_numeric_descriptive <- function(
 #'
 convert_variables <- function(data, 
                               variable_types,
-                              save_dir = here::here("StatObject","Data"),
+                              save_dir = NULL,
                               save_data = F,
                               csv_filename = "clean_data.csv") {
   stopifnot(is.data.frame(data))
@@ -898,7 +871,7 @@ convert_variables <- function(data,
 stat_convert_variables <- function(object,
                                    group_col = "group",
                                    max_unique_values = 5,
-                                   save_dir = here::here("StatObject","Data"),
+                                   save_dir = NULL,
                                    save_data = TRUE,
                                    csv_filename = "clean_data.csv") {
   if (inherits(object, "Stat")) {
@@ -970,7 +943,7 @@ one_hot_encode <- function(data,
                            
                            group_col = "group",
                            max_unique_values = 5,
-                           save_dir = here::here("StatObject","Data"),
+                           save_dir = NULL,
                            save_data = TRUE,
                            csv_filename = "clean_data.csv"
 ) {
@@ -1048,7 +1021,7 @@ stat_onehot_encode <- function(object,
                                method = 1, 
                                group_col = "group", 
                                max_unique_values = 5,
-                               save_dir = here::here("StatObject","Data"),
+                               save_dir = NULL,
                                save_data = TRUE,
                                csv_filename = "clean_data.csv") {
   cat("Input object class:", class(object), "\n")
