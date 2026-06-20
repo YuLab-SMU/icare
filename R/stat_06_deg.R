@@ -173,7 +173,6 @@ batch_Wilcoxon <- function(mat,
 # ══════════════════════════════════════════════════════════════════════════════
 # 多分类 DEG 分析函数（新增功能）
 # ══════════════════════════════════════════════════════════════════════════════
-
 #' Internal function: Wilcoxon test for two specific groups
 #'
 #' Helper function that performs Wilcoxon test between two groups.
@@ -191,16 +190,22 @@ batch_Wilcoxon <- function(mat,
                                  logfc_mat = NULL,
                                  logfc_type = "log2ratio") {
   
-  # Ensure exactly 2 groups
-  group_levels <- unique(na.omit(as.character(mat[[group_col]])))
+  # 保留外部设定的因子水平，若未设置则按数据出现顺序创建（不自动排序）
+  if (!is.factor(mat[[group_col]])) {
+    # 按照数据中出现的顺序创建因子（不排序）
+    mat[[group_col]] <- factor(mat[[group_col]], levels = unique(mat[[group_col]]))
+  }
+  
+  # 获取因子水平（已按正确顺序）
+  group_levels <- levels(mat[[group_col]])
   if (length(group_levels) != 2) {
     stop("Internal .wilcoxon_two_groups requires exactly 2 groups, found: ",
          paste(group_levels, collapse = ", "))
   }
   
-  # Wilcoxon test function
+  # Wilcoxon test function (使用因子水平顺序：第一个为参考组，第二个为实验组)
   test.fun <- function(dat, col) {
-    index <- unique(dat[[group_col]])
+    index <- levels(dat[[group_col]])
     sigs  <- wilcox.test(
       dat[dat[[group_col]] == index[1], col],
       dat[dat[[group_col]] == index[2], col]
@@ -217,7 +222,7 @@ batch_Wilcoxon <- function(mat,
     )
   }
   
-  mat[[group_col]] <- as.factor(as.character(mat[[group_col]]))
+  # 提取数值列
   numeric_cols <- sapply(mat, is.numeric)
   numeric_cols[group_col] <- FALSE
   mat_num <- mat[, c(names(numeric_cols)[numeric_cols], group_col)]
@@ -226,13 +231,22 @@ batch_Wilcoxon <- function(mat,
   tests     <- do.call(rbind, lapply(feat_cols, function(x) test.fun(mat_num, x)))
   rownames(tests) <- feat_cols
   
-  # Adjust p-values
+  # 调整 p 值
   tests$p.adjust <- p.adjust(tests$p, method = "bonferroni")
   
   # ── logFC computation ─────────────────────────────────────────────────────
   ref_mat <- if (!is.null(logfc_mat) && nrow(logfc_mat) > 0) logfc_mat else mat_num
-  ref_mat[[group_col]] <- as.factor(as.character(ref_mat[[group_col]]))
   
+  # 确保 ref_mat 的分组列因子水平与 mat 一致（顺序相同）
+  if (!is.factor(ref_mat[[group_col]])) {
+    ref_mat[[group_col]] <- factor(ref_mat[[group_col]], levels = unique(ref_mat[[group_col]]))
+  } else {
+    if (!identical(levels(ref_mat[[group_col]]), group_levels)) {
+      ref_mat[[group_col]] <- factor(ref_mat[[group_col]], levels = group_levels)
+    }
+  }
+  
+  # 自动降级处理：若数据含负数且要求 log2ratio，则改为 diff
   if (logfc_type == "log2ratio") {
     raw_check <- unlist(ref_mat[, colnames(ref_mat) != group_col])
     if (any(raw_check < 0, na.rm = TRUE)) {
@@ -243,6 +257,7 @@ batch_Wilcoxon <- function(mat,
   if (logfc_type == "log2ratio") {
     log2_means <- .compute_log2_means(ref_mat, group_col)
     shared <- intersect(rownames(tests), colnames(log2_means))
+    # 第一个水平 = 参考组，第二个水平 = 实验组 => logFC = 实验组 - 参考组
     logFC  <- log2_means[2, shared, drop = FALSE] - log2_means[1, shared, drop = FALSE]
   } else {
     raw_means <- ref_mat %>%
@@ -1194,7 +1209,7 @@ VarFeature_volcano <- function(object,
 }
 
 
-#' Generate Violin Plot for Differentially Expressed Genes
+#' Generate box Plot for Differentially Expressed Genes
 #'
 #' This function generates a violin plot for the top differentially expressed genes based on their log-fold change
 #' and statistical significance. It also calculates the Wilcoxon test p-values for group comparisons and annotates
@@ -1226,9 +1241,9 @@ VarFeature_volcano <- function(object,
 #' @export
 #'
 #' @examples
-#' plot_deg_violinplot(last_test_sig = sig_results, data = expression_data)
-#' plot_deg_violinplot(last_test_sig = sig_results, data = expression_data, top_n = 10)
-plot_deg_violinplot <- function(last_test_sig,
+#' plot_deg_boxplot(last_test_sig = sig_results, data = expression_data)
+#' plot_deg_boxlot(last_test_sig = sig_results, data = expression_data, top_n = 10)
+plot_deg_boxplot <- function(last_test_sig,
                                 data,
                                 control = 'health',
                                 case = 'cancer',
@@ -1305,7 +1320,7 @@ plot_deg_violinplot <- function(last_test_sig,
   cat("Drawing violin plot...\n")
   # [FIX #3] Use log10(value + pseudocount) instead of bare log10(value) to avoid NaN
   p <- ggplot(data = box_test, aes(x = id, y = log10(value + pseudocount), fill = .data[[group_col]])) +
-    geom_violin(trim = FALSE, linewidth = 0.3) +
+    geom_boxplot(outlier.alpha = 0) +
     geom_text(data = box_test, aes(x = id, y = y_position, label = significance),
               size = 3, color = "black") +
     scale_fill_manual(values = wes_palette(palette_name)) +
@@ -1336,7 +1351,7 @@ plot_deg_violinplot <- function(last_test_sig,
   return(p)
 }
 
-#' Generate Violin Plot for Differential Features (fixed)
+#' Generate Boxplot Plot for Differential Features (fixed)
 #'
 #' @param object Stat object or data frame.
 #' @param control Control group label.
@@ -1355,7 +1370,7 @@ plot_deg_violinplot <- function(last_test_sig,
 #'
 #' @return Updated Stat object or ggplot.
 #' @export
-VarFeature_violinplot <- function(object,
+VarFeature_boxplot <- function(object,
                                   control = 'health',
                                   case = 'cancer',
                                   top_n = 5,
@@ -1408,7 +1423,7 @@ VarFeature_violinplot <- function(object,
     stop("No valid data found in last_test_sig.")
   
   # ---- Call the core plotting function ----
-  violinplot <- plot_deg_violinplot(
+  boxplot <- plot_deg_boxplot(
     last_test_sig = last_test_sig,
     data = data,
     control = control,
@@ -1425,14 +1440,14 @@ VarFeature_violinplot <- function(object,
     pseudocount = pseudocount
   )
   
-  print(violinplot)
+  print(boxplot)
   
   if (inherits(object, "Stat")) {
-    object@var.result[["violinplot"]] <- violinplot
+    object@var.result[["boxplot"]] <- boxplot
     return(object)
   }
   
-  return(violinplot)
+  return(boxplot)
 }
 
 #' Plot ROC Curve for Differential Expression Gene Analysis
