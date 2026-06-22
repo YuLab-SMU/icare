@@ -37,3 +37,5 @@ Imports:
     plsRcox,
     superpc,
     rmda
+Remotes:
+    mdbrown/rmda
