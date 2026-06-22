@@ -29,13 +29,27 @@ Imports:
     reshape2,
     ggpubr,
     ggridges,
+    ggtext,
     here,
+    maxstat,
+    mclust,
     scales,
     stats,
     grDevices,
+    patchwork,
+    nortest,
+    NMF,
+    Rtsne,
+    doParallel,
+    factoextra,
+    foreach,
     randomForestSRC,
     plsRcox,
+    rcssci,
+    rlang,
     superpc,
-    rmda
+    rmda,
+    umap,
+    viridis
 Remotes:
     mdbrown/rmda
