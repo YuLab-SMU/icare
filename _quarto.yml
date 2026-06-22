@@ -1,0 +1,27 @@
+project:
+  type: book
+
+book:
+  title: "ICARE Guide"
+  author: "Huaichao Luo"
+  date: "2026/6/2"
+  chapters:
+    - index.qmd
+    - intro.qmd
+    - Module1.qmd
+    - Module2.qmd
+    - Module3.qmd
+    - Module4.qmd
+    - summary.qmd
+    - references.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme: cosmo
+  pdf:
+    documentclass: scrreprt
+
+editor: visual
+
