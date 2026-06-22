@@ -257,138 +257,227 @@ ExtractRawData <- function(object) {
 
 #' Diagnose Variable Types in Data
 #'
-#' This function analyzes a data frame to classify variables into numeric,
-#' categorical, and variables that need encoding based on their unique values.
-#' It also ensures that the specified grouping column (if provided) is excluded from
-#' the analysis.
+#' Analyzes a data frame to classify variables into numeric and categorical
+#' types based on both their storage mode and cardinality. Unlike the original
+#' version, this function respects numeric columns and only converts them to
+#' categorical upon explicit request.
 #'
-#' @param data A data frame that contains the data to be analyzed. Each column represents a variable.
-#' @param group_col A character string specifying the name of the grouping column (default is "group").
-#'                  This column will be excluded from the analysis.
-#' @param max_unique_values A numeric value specifying the maximum number of unique values a column can have
-#'                           to be considered as categorical. Columns with fewer unique values than this threshold
-#'                           will be treated as categorical variables (default is 5).
+#' The function excludes a specified grouping column (if present) from analysis.
+#' Categorical variables (character, factor, logical) are always recognized as
+#' such. Numeric columns are kept as numeric by default, unless
+#' `treat_low_card_numeric_as_categorical = TRUE` is set, in which case numeric
+#' columns with few distinct values become categorical.
 #'
-#' @returns A list containing three elements:
-#'   - `numeric_vars`: A character vector of numeric variables.
-#'   - `categorical_vars`: A character vector of categorical variables.
-#'   - `vars_to_encode`: A character vector of categorical variables that have more than 3 unique values
-#'                       and should be encoded.
+#' @param data A data frame.
+#' @param group_col A character string naming the grouping column to be excluded
+#'   (default is `"group"`). Set to `NULL` to skip exclusion.
+#' @param max_unique_values Numeric, maximum number of unique values a column
+#'   may have to be considered "low cardinality" when
+#'   `treat_low_card_numeric_as_categorical = TRUE`. Default is 5.
+#' @param encode_threshold Numeric, minimum number of unique values for a
+#'   categorical variable to be flagged for encoding. Default is 10.
+#' @param treat_low_card_numeric_as_categorical Logical, whether to treat
+#'   low‑cardinality numeric columns (e.g. 0/1, 1–5 ratings) as categorical
+#'   variables. Default is `FALSE`.
+#'
+#' @return A list with three components:
+#' \item{numeric_vars}{Character vector of variable names classified as numeric.}
+#' \item{categorical_vars}{Character vector of variable names classified as
+#'   categorical (includes characters, factors, logicals, and optionally
+#'   low‑cardinality numerics).}
+#' \item{vars_to_encode}{Character vector of categorical variables that have
+#'   more than `encode_threshold` unique values and may need encoding.}
 #'
 #' @export
 #'
 #' @examples
-#' # Example 1: Diagnose variables in a data frame
-#' result <- diagnose_variable_type(data_frame, group_col = "group", max_unique_values = 5)
-#' print(result)
+#' \dontrun{
+#' # Example data
+#' df <- data.frame(
+#'   group = rep(1:2, each = 5),
+#'   age = c(25, 30, 35, 40, 45, 50, 55, 60, 65, 70),
+#'   rating = c(1,2,1,2,3,2,1,3,2,1),   # low‑cardinality numeric
+#'   city = c("A","B","A","C","D","E","F","G","H","I"),
+#'   stringsAsFactors = FALSE
+#' )
 #'
-#' # Example 2: Diagnose variables without a grouping column
-#' result_no_group <- diagnose_variable_type(data_frame, group_col = NULL)
+#' # Default: rating stays numeric
+#' res <- diagnose_variable_type(df, group_col = "group")
+#' print(res)
+#'
+#' # Force low‑cardinality numerics to categorical
+#' res2 <- diagnose_variable_type(df, group_col = "group",
+#'                                treat_low_card_numeric_as_categorical = TRUE)
+#' print(res2)
+#' }
 diagnose_variable_type <- function(data,
                                    group_col = "group",
-                                   max_unique_values = 5) {
-  numeric_vars <- vector("list")
-  categorical_vars <- vector("list")
-  vars_to_encode <- vector()
-  is_group_col_present <- !is.null(group_col) && group_col %in% names(data)
+                                   max_unique_values = 5,
+                                   encode_threshold = 10,
+                                   treat_low_card_numeric_as_categorical = FALSE) {
+  # ----- Input validation -------------------------------------------------
+  if (!is.data.frame(data)) {
+    stop("`data` must be a data frame.", call. = FALSE)
+  }
+  if (!is.null(group_col)) {
+    if (length(group_col) != 1L || !is.character(group_col)) {
+      stop("`group_col` must be a single character string or NULL.", call. = FALSE)
+    }
+  }
+  if (!is.numeric(max_unique_values) || length(max_unique_values) != 1L || max_unique_values <= 0) {
+    stop("`max_unique_values` must be a positive numeric scalar.", call. = FALSE)
+  }
+  if (!is.numeric(encode_threshold) || length(encode_threshold) != 1L || encode_threshold <= 0) {
+    stop("`encode_threshold` must be a positive numeric scalar.", call. = FALSE)
+  }
+  if (!is.logical(treat_low_card_numeric_as_categorical) || length(treat_low_card_numeric_as_categorical) != 1L) {
+    stop("`treat_low_card_numeric_as_categorical` must be a logical scalar.", call. = FALSE)
+  }
+  
+  # ----- Initialise result vectors ----------------------------------------
+  numeric_vars <- character()
+  categorical_vars <- character()
+  vars_to_encode <- character()
+  
+  # ----- Loop over columns ------------------------------------------------
   for (col in names(data)) {
-    if (!is_group_col_present || col != group_col) {
-      unique_values <- length(unique(data[[col]]))
-      if (unique_values <= max_unique_values) {
-        categorical_vars[[col]] <- col
-        if (unique_values > 3) {
+    # Skip grouping column
+    if (!is.null(group_col) && col == group_col) next
+    
+    col_data <- data[[col]]
+    n_unique <- length(unique(col_data))
+    is_numeric <- is.numeric(col_data)  # covers integer and numeric
+    
+    if (is_numeric) {
+      if (treat_low_card_numeric_as_categorical && n_unique <= max_unique_values) {
+        # Numeric column treated as categorical because of low cardinality
+        categorical_vars <- c(categorical_vars, col)
+        if (n_unique > encode_threshold) {
           vars_to_encode <- c(vars_to_encode, col)
         }
-      } else if (is.numeric(data[[col]])) {
-        numeric_vars[[col]] <- col
+      } else {
+        # Normal numeric column
+        numeric_vars <- c(numeric_vars, col)
+      }
+    } else {
+      # Non‑numeric columns (character, factor, logical, etc.) are categorical
+      categorical_vars <- c(categorical_vars, col)
+      if (n_unique > encode_threshold) {
+        vars_to_encode <- c(vars_to_encode, col)
       }
     }
   }
-  numeric_vars <- unlist(numeric_vars)
-  categorical_vars <- unlist(categorical_vars)
-  return(list(numeric_vars = numeric_vars,
-              categorical_vars = categorical_vars,
-              vars_to_encode = vars_to_encode))
+  
+  # ----- Return -----------------------------------------------------------
+  list(
+    numeric_vars = numeric_vars,
+    categorical_vars = categorical_vars,
+    vars_to_encode = vars_to_encode
+  )
 }
 
 #' Diagnose Variable Types for 'Stat' Objects or Data Frames
 #'
-#' This function analyzes the variable types (numeric, categorical, and those needing encoding)
-#' of a data frame or an object of class "Stat". If the input is a "Stat" object, it extracts
-#' the raw data and group column from the object. If the input is a data frame, it directly uses
-#' the provided data for diagnosis. It updates the "Stat" object with the diagnosed variable types.
+#' This function analyzes the variable types (numeric, categorical, and those
+#' needing encoding) of a data frame or an object of class "Stat". If the input
+#' is a "Stat" object, it extracts the raw data and group column from the object.
+#' If the input is a data frame, it directly uses the provided data for diagnosis.
+#' It updates the "Stat" object with the diagnosed variable types.
 #'
-#' @param object An object of class "Stat" or a data frame. If the object is of class "Stat",
-#'               the raw data and group column will be extracted from the object.
-#'               If it is a data frame, the function directly operates on the data.
-#' @param group_col A character string specifying the name of the grouping column (default is "group").
-#'                  This column will be excluded from the analysis if present.
-#' @param max_unique_values A numeric value specifying the maximum number of unique values a column can have
-#'                           to be considered as categorical. Columns with fewer unique values than this threshold
-#'                           will be treated as categorical variables (default is 5).
+#' @param object An object of class "Stat" or a data frame. If of class "Stat",
+#'   the raw data and group column will be extracted. If a data frame, the function
+#'   operates directly on it.
+#' @param group_col A character string specifying the grouping column (default "group").
+#'   This column is excluded from analysis if present. When `object` is a "Stat"
+#'   object, the group column stored in the object overrides this argument.
+#' @param max_unique_values Numeric, maximum number of unique values a column may have
+#'   to be considered "low cardinality" when `treat_low_card_numeric_as_categorical = TRUE`.
+#'   Default is 5.
+#' @param encode_threshold Numeric, minimum number of unique values for a categorical
+#'   variable to be flagged for encoding. Default is 10.
+#' @param treat_low_card_numeric_as_categorical Logical, whether to treat low‑cardinality
+#'   numeric columns (e.g. 0/1, 1–5 ratings) as categorical variables. Default is `FALSE`.
 #'
-#' @returns If the input is a "Stat" object, the updated object with the diagnosed variable types
-#'          in the "variable.types" slot. If the input is a data frame, a list containing:
-#'   - `numeric_vars`: A character vector of numeric variables.
-#'   - `categorical_vars`: A character vector of categorical variables.
-#'   - `vars_to_encode`: A character vector of categorical variables that have more than 2 unique values
-#'                       and should be encoded.
+#' @returns If input is a "Stat" object, the updated object with the diagnosed variable
+#'   types stored in the `variable.types` slot. If input is a data frame, a list containing:
+#'   \item{numeric_vars}{Character vector of numeric variables.}
+#'   \item{categorical_vars}{Character vector of categorical variables.}
+#'   \item{vars_to_encode}{Character vector of categorical variables that have more than
+#'     `encode_threshold` unique values and may need encoding.}
 #'
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # Example 1: Diagnose variables in a "Stat" object
 #' stat_obj <- stat_diagnose_variable_type(stat_object, group_col = "group")
 #' print(stat_obj)
 #'
 #' # Example 2: Diagnose variables in a data frame
-#' result <- stat_diagnose_variable_type(data_frame)
+#' result <- stat_diagnose_variable_type(data_frame,
+#'                                       treat_low_card_numeric_as_categorical = TRUE)
 #' print(result)
+#' }
 stat_diagnose_variable_type <- function(object,
                                         group_col = "group",
-                                        max_unique_values = 5) {
-
+                                        max_unique_values = 5,
+                                        encode_threshold = 10,
+                                        treat_low_card_numeric_as_categorical = FALSE) {
+  
+  # ----- Input validation -------------------------------------------------
+  if (!inherits(object, "Stat") && !is.data.frame(object)) {
+    stop("Input must be an object of class 'Stat' or a data frame", call. = FALSE)
+  }
+  
+  # ----- Extract data and group column ------------------------------------
   if (inherits(object, "Stat")) {
-    group_col = slot(object, "group_col")
-    if (length(group_col) == 0) {
+    # For Stat objects, group column is taken from the object's slot
+    group_col_slot <- slot(object, "group_col")
+    if (length(group_col_slot) > 0 && !is.null(group_col_slot)) {
+      group_col <- group_col_slot
+    } else {
       group_col <- NULL
     }
     data <- slot(object, "raw.data")
-  } else if (is.data.frame(object)) {
-    data <- object
   } else {
-    stop("Input must be an object of class 'Stat' or a data frame")
+    # For data frames, use provided group_col
+    data <- object
   }
-
+  
   if (is.null(data) || nrow(data) == 0) {
-    stop("No valid data found in the input")
+    stop("No valid data found in the input", call. = FALSE)
   }
-
-
-  variable_types <- diagnose_variable_type(data, group_col = group_col, max_unique_values = max_unique_values)
-
-
+  
+  # ----- Call the core diagnosis function --------------------------------
+  variable_types <- diagnose_variable_type(
+    data = data,
+    group_col = group_col,
+    max_unique_values = max_unique_values,
+    encode_threshold = encode_threshold,
+    treat_low_card_numeric_as_categorical = treat_low_card_numeric_as_categorical
+  )
+  
+  # ----- Report summary ---------------------------------------------------
   cat("Diagnosed variable types:\n")
   cat("Numeric variables:", length(variable_types$numeric_vars), "\n")
   cat("Categorical variables:", length(variable_types$categorical_vars), "\n")
-
+  cat("Variables flagged for encoding:", length(variable_types$vars_to_encode), "\n")
+  
   if (length(variable_types$numeric_vars) == 0 && length(variable_types$categorical_vars) == 0) {
-    stop("No valid variables found after variable type diagnosis")
+    stop("No valid variables found after variable type diagnosis", call. = FALSE)
   }
-
-
+  
+  # ----- Update Stat object or return list -------------------------------
   if (inherits(object, "Stat")) {
     cat("Updating 'Stat' object...\n")
-
     object@variable.types <- variable_types
     cat("The 'Stat' object has been updated with the following slots:\n")
     cat("- 'variable.types' slot updated.\n")
     return(object)
   }
-
+  
   return(variable_types)
 }
-
 
 
 #' Gaze Analysis for Group Comparison

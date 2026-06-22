@@ -89,7 +89,13 @@ yeojohnson_transform <- function(x) {
 #' @return Processed data frame.
 #' @export
 preprocess_data <- function(data, method = "log", group_col = "group", max_unique_values = 5) {
-  variable_types <- diagnose_variable_type(data, group_col, max_unique_values)
+  # 更新调用：加入 treat_low_card_numeric_as_categorical = TRUE 以保留原行为
+  variable_types <- diagnose_variable_type(
+    data = data,
+    group_col = group_col,
+    max_unique_values = max_unique_values,
+    treat_low_card_numeric_as_categorical = TRUE   # 保持原逻辑：低基数数值列视为分类，不参与变换
+  )
   numeric_vars <- variable_types$numeric_vars
   
   processed_data <- data
@@ -142,7 +148,13 @@ normalize_data <- function(data,
   
   if (!is.data.frame(data)) stop("Input must be a data frame.")
   
-  variable_types <- diagnose_variable_type(data, group_col, max_unique_values)
+  # 更新调用：加入 treat_low_card_numeric_as_categorical = TRUE
+  variable_types <- diagnose_variable_type(
+    data = data,
+    group_col = group_col,
+    max_unique_values = max_unique_values,
+    treat_low_card_numeric_as_categorical = TRUE
+  )
   numeric_vars <- variable_types$numeric_vars
   
   if (length(numeric_vars) == 0) {
@@ -192,7 +204,8 @@ normalize_data <- function(data,
   
   if (save_data) {
     if (!dir.exists(save_dir)) {
-      dir.create(save_dir, recursive = TRUE)}
+      dir.create(save_dir, recursive = TRUE)
+    }
     full_path <- file.path(save_dir, csv_filename)
     write.csv(normalized_data, file = full_path, row.names = FALSE)
     cat("Cleaned data saved to:", full_path, "\n")
@@ -225,7 +238,7 @@ stat_normalize_process <- function(object,
     data <- slot(object, "clean.data")
     if (is.null(data) || nrow(data) == 0) {
       data <- slot(object, "raw.data")
-    }   
+    }
     group_col <- slot(object, "group_col")
     if (length(group_col) == 0) {
       group_col <- NULL
@@ -240,12 +253,13 @@ stat_normalize_process <- function(object,
     stop("No valid data found in the input")
   }
   
+  # normalize_data 内部已更新对 diagnose_variable_type 的调用，这里无需额外修改
   normalized_data <- normalize_data(
     data,
     method = method,
     group_col = group_col,
     max_unique_values = max_unique_values,
-    save_dir =save_dir,
+    save_dir = save_dir,
     save_data = save_data,
     csv_filename = csv_filename
   )

@@ -144,104 +144,365 @@ PlotGroupedDistribution <- function(object,
 }
 
 
-#' Publication‑ready correlation heatmap with advanced colour palettes (enhanced)
+#' Publication‑ready correlation heatmap using the corrplot package (enhanced + stable)
+#'
+#' Generate a highly customisable correlation heatmap leveraging the `corrplot`
+#' package. Supports multiple matrix shapes, visualisation methods, clustering
+#' orders, significance masking, and rectangle drawing.
 #'
 #' @param object A Stat object or data frame.
 #' @param features Features to include (NULL = all numeric, max 40).
-#' @param method "pearson" (default) or "spearman".
+#' @param method Correlation method: `"spearman"` (default) or `"pearson"`.
+#' @param vis_method Visualisation method for the tiles:
+#'   `"circle"`, `"square"`, `"ellipse"`, `"number"`, `"shade"`, `"color"`, `"pie"`.
+#'   Default `"color"`.
+#' @param matrix_type One of `"full"`, `"lower"`, `"upper"`. Default `"lower"`.
+#' @param order Order of variables:
+#'   `"original"`, `"AOE"`, `"FPC"`, `"hclust"`, `"alphabet"`. Default `"hclust"`.
+#' @param hclust_method Agglomeration method for `order = "hclust"`:
+#'   `"ward"`, `"ward.D"`, `"ward.D2"`, `"single"`, `"complete"`, `"average"`,
+#'   `"mcquitty"`, `"median"`, `"centroid"`. Default `"complete"`.
+#' @param addrect Integer, number of rectangles to draw around clusters (requires
+#'   `order = "hclust"`). Default `NULL` (no rectangles).
+#' @param rect.col Colour of rectangle borders. Default `"navy"`.
+#' @param rect.lwd Line width of rectangle borders. Default `2`.
 #' @param p_thresh P‑value threshold for masking non‑significant pairs.
-#' @param palette_name RColorBrewer diverging palette name (used only when
-#'   \code{color_scheme = "brew"}). Default "RdYlBu".
-#' @param color_scheme Colour scheme: \code{"viridis"} (colour‑blind friendly,
-#'   default), \code{"brew"} (traditional RColorBrewer), \code{"gradient"}
-#'   (custom blue‑white‑red gradient).
-#' @param cluster_rows Logical. Hierarchical clustering of rows/cols.
-#' @param base_size Base font size.
-#' @param save_plot Logical. Save the plot? Default \code{FALSE}.
-#' @param save_dir Output directory. When \code{NULL} and \code{save_plot=TRUE}
+#'   Only used when `insig != "n"`.
+#' @param insig Character, how to handle insignificant correlations:
+#'   `"blank"` (hide tile), `"p-value"` (print p-value), `"pch"` (print symbol),
+#'   `"label_sig"` (print significance stars), `"n"` (do nothing). Default `"blank"`.
+#' @param pch Symbol to use when `insig = "pch"`. Default `4` (×).
+#' @param sig.level Significance level(s) for `insig = "label_sig"`. Can be a vector,
+#'   e.g. `c(0.001, 0.01, 0.05)`. Default `0.05`.
+#' @param palette_name RColorBrewer diverging palette name (used when `color_scheme = "brew"`).
+#'   Default `"RdYlBu"`.
+#' @param color_scheme Colour scheme: `"viridis"`, `"brew"`, `"gradient"`, `"scientific"`.
+#'   Default `"scientific"`.
+#' @param tl.cex Size of variable labels. Default `0.8`.
+#' @param tl.srt Rotation angle of variable labels (degrees). Default `45`.
+#' @param tl.col Text color for variable labels. Default `"black"`.
+#' @param cl.cex Size of colour legend labels. Default `0.8`.
+#' @param cl.pos Position of colour legend: `"r"` (right), `"b"` (bottom), `"n"` (none).
+#'   Default `"b"` (bottom).
+#' @param diag Logical, whether to show diagonal tiles. Default `FALSE`.
+#' @param save_plot Logical. Save the plot? Default `FALSE`.
+#' @param save_dir Output directory. When `NULL` and `save_plot = TRUE`,
 #'   the default Stat figure directory is used.
-#' @param width,height Plot dimensions (inches).
-#' @param format File format ("pdf", "png", "svg").
+#' @param width,height Plot dimensions (inches). Default `8` x `7`.
+#' @param format File format (`"pdf"`, `"png"`, `"svg"`). Default `"pdf"`.
+#' @param min_obs Minimum number of observations for pairwise correlations. Default `3`.
 #'
-#' @returns A ggplot object.
+#' @return Invisibly returns the correlation matrix used for plotting.
+#'   The plot is drawn on the current graphics device.
+#'
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Lower triangle with hierarchical clustering and rectangles
+#' # (Color legend now at bottom by default)
+#' PlotCorrelationHeatmap(stat_obj, matrix_type = "lower", order = "hclust",
+#'                        addrect = 3, color_scheme = "scientific")
+#'
+#' # Upper triangle with ellipse method and significance stars
+#' # Black text labels for better readability
+#' PlotCorrelationHeatmap(stat_obj, matrix_type = "upper", vis_method = "ellipse",
+#'                        insig = "label_sig", sig.level = c(0.001, 0.01, 0.05))
+#'
+#' # Custom text color if needed
+#' PlotCorrelationHeatmap(stat_obj, tl.col = "navy", cl.pos = "r")
+#' }
 PlotCorrelationHeatmap <- function(object,
                                    features      = NULL,
-                                   method        = "pearson",
+                                   method        = "spearman",
+                                   vis_method    = c("color", "circle", "square", "ellipse",
+                                                     "number", "shade", "pie"),
+                                   matrix_type   = c("lower", "full", "upper"),
+                                   order         = c("hclust", "original", "AOE", "FPC", "alphabet"),
+                                   hclust_method = "complete",
+                                   addrect       = NULL,
+                                   rect.col      = "navy",
+                                   rect.lwd      = 2,
                                    p_thresh      = 0.05,
+                                   insig         = c("blank", "p-value", "pch", "label_sig", "n"),
+                                   pch           = 4,
+                                   sig.level     = 0.05,
                                    palette_name  = "RdYlBu",
-                                   color_scheme  = c("viridis", "brew", "gradient"),
-                                   cluster_rows  = TRUE,
-                                   base_size     = 11,
+                                   color_scheme  = c("scientific", "viridis", "brew", "gradient"),
+                                   tl.cex        = 0.8,
+                                   tl.srt        = 45,
+                                   tl.col        = "black",
+                                   cl.cex        = 0.8,
+                                   cl.pos        = c("b", "r", "n"),
+                                   diag          = FALSE,
                                    save_plot     = FALSE,
                                    save_dir      = NULL,
                                    width         = 8,
                                    height        = 7,
-                                   format        = "pdf") {
-  cat("Generating correlation heatmap...\n")
-  color_scheme <- match.arg(color_scheme)
-  if (is.null(save_dir) && save_plot) save_dir <- .get_viz_output_dir("Stat")
+                                   format        = "pdf",
+                                   min_obs       = 3) {
   
-  df <- if (inherits(object, "Stat")) object@clean.data else as.data.frame(object)
-  num_cols <- names(df)[sapply(df, is.numeric)]
-  if (is.null(features)) features <- head(num_cols, 40)
-  features <- intersect(features, num_cols)
-  if (length(features) == 0) stop("No numeric features found.")
+  cat("Generating correlation heatmap (corrplot backend)...\n")
+  vis_method    <- match.arg(vis_method)
+  matrix_type   <- match.arg(matrix_type)
+  order         <- match.arg(order)
+  insig         <- match.arg(insig)
+  color_scheme  <- match.arg(color_scheme)
+  cl.pos        <- match.arg(cl.pos)
   
-  mat <- df[, features, drop = FALSE]
-  mat <- mat[, apply(mat, 2, stats::var, na.rm = TRUE) > 0]
+  # ------ 1. Data extraction and validation ------
+  tryCatch({
+    df <- if (inherits(object, "Stat")) object@clean.data else as.data.frame(object)
+    if (!is.data.frame(df)) stop("Input must be a Stat object or data frame.")
+    
+    cat("Original data dimensions:", nrow(df), "x", ncol(df), "\n")
+    
+    numeric_cols <- names(df)[sapply(df, is.numeric)]
+    if (length(numeric_cols) == 0) {
+      stop("No numeric columns found in data.")
+    }
+    
+    if (is.null(features)) {
+      features <- head(numeric_cols, 40)
+    }
+    features <- intersect(features, numeric_cols)
+    if (length(features) == 0) {
+      stop("No valid numeric features found.")
+    }
+    
+    cat("Selected features:", length(features), "\n")
+    
+    # ------ 1a. Handle missing values ------
+    df_numeric <- df[, features, drop = FALSE]
+    
+    # Remove rows that are entirely NA
+    all_na_rows <- apply(df_numeric, 1, function(x) all(is.na(x)))
+    if (any(all_na_rows)) {
+      cat("Warning: Removing", sum(all_na_rows), "rows with all missing values.\n")
+      df_numeric <- df_numeric[!all_na_rows, ]
+    }
+    
+    # Remove columns with excessive missing values (>50%)
+    missing_pct <- colSums(is.na(df_numeric)) / nrow(df_numeric)
+    high_missing <- missing_pct > 0.5
+    if (any(high_missing)) {
+      cat("Warning: Removing columns with >50% missing values:",
+          paste(names(df_numeric)[high_missing], collapse = ", "), "\n")
+      df_numeric <- df_numeric[, !high_missing, drop = FALSE]
+      features <- colnames(df_numeric)
+    }
+    
+    if (nrow(df_numeric) == 0 || ncol(df_numeric) == 0) {
+      stop("No valid data remaining after removing missing values.")
+    }
+    
+    cat("Data dimensions after NA handling:", nrow(df_numeric), "x", ncol(df_numeric), "\n")
+    
+    # ------ 1b. Remove constant columns ------
+    zero_var <- apply(df_numeric, 2, function(x) {
+      var(x, na.rm = TRUE) == 0 || all(is.na(x))
+    })
+    
+    if (any(zero_var)) {
+      cat("Warning: Removing columns with zero variance:",
+          paste(names(df_numeric)[zero_var], collapse = ", "), "\n")
+      df_numeric <- df_numeric[, !zero_var, drop = FALSE]
+      features <- colnames(df_numeric)
+    }
+    
+    if (ncol(df_numeric) < 2) {
+      stop("At least 2 numeric features with variance are required for correlation analysis.")
+    }
+    
+    # ------ 1c. Compute correlation matrix ------
+    corr_mat <- tryCatch({
+      cor(df_numeric, method = method, use = "pairwise.complete.obs")
+    }, error = function(e) {
+      # Fallback: use complete cases only
+      cat("Warning: Using complete cases only due to:", conditionMessage(e), "\n")
+      complete_idx <- complete.cases(df_numeric)
+      if (sum(complete_idx) < min_obs) {
+        stop("Insufficient complete cases for correlation computation (need at least ", min_obs, ")")
+      }
+      cor(df_numeric[complete_idx, ], method = method)
+    })
+    
+    # Validate correlation matrix
+    if (any(is.na(corr_mat))) {
+      stop("Correlation matrix contains NaN values. Check data quality and variance.")
+    }
+    if (any(is.infinite(corr_mat))) {
+      stop("Correlation matrix contains infinite values.")
+    }
+    
+    cat("Correlation matrix computed successfully (",
+        nrow(corr_mat), "x", ncol(corr_mat), ")\n")
+    
+  }, error = function(e) {
+    stop("Error in data preparation: ", conditionMessage(e), call. = FALSE)
+  })
   
-  cor_out <- Hmisc::rcorr(as.matrix(mat), type = method)
-  r_mat   <- cor_out$r
-  p_mat   <- cor_out$P
-  
-  if (cluster_rows) {
-    ord <- hclust(as.dist(1 - r_mat))$order
-    r_mat <- r_mat[ord, ord]
-    p_mat <- p_mat[ord, ord]
+  # ------ 2. Prepare p‑value matrix if needed ------
+  p_mat <- NULL
+  if (insig != "n") {
+    if (!requireNamespace("Hmisc", quietly = TRUE)) {
+      warning("Package 'Hmisc' is required for significance masking. Install with: install.packages('Hmisc')")
+      insig <- "n"
+    } else {
+      tryCatch({
+        # Use the cleaned numeric data for p-value calculation
+        corr_full <- Hmisc::rcorr(as.matrix(df_numeric), type = method)
+        p_mat <- corr_full$P
+        
+        # Ensure p_mat aligns with corr_mat
+        if (!all(rownames(p_mat) == rownames(corr_mat))) {
+          p_mat <- p_mat[rownames(corr_mat), colnames(corr_mat)]
+        }
+        
+        cat("P-value matrix computed successfully.\n")
+        
+        # Issue warning about order constraints
+        if (order != "original") {
+          cat("Note: Using order='hclust' with p-value masking. ",
+              "P-values are aligned based on clustering order.\n")
+        }
+      }, error = function(e) {
+        cat("Warning: Could not compute p-value matrix:", conditionMessage(e), "\n")
+        cat("Proceeding without significance masking.\n")
+        insig <<- "n"
+      })
+    }
   }
   
-  r_mat[upper.tri(r_mat)] <- NA
-  p_mat[upper.tri(p_mat)] <- NA
-  
-  long_r <- reshape2::melt(r_mat, na.rm = TRUE, value.name = "r")
-  long_p <- reshape2::melt(p_mat, na.rm = TRUE, value.name = "p")
-  long_df <- merge(long_r, long_p, by = c("Var1", "Var2"))
-  long_df$sig <- ifelse(long_df$p < p_thresh, "", "×")
-  
-  p <- ggplot2::ggplot(long_df, ggplot2::aes(Var1, Var2, fill = r))
-  
-  if (color_scheme == "viridis") {
-    p <- p + ggplot2::scale_fill_viridis_c(option = "C", limit = c(-1, 1),
-                                           name = paste0(tools::toTitleCase(method), "\n r"))
-  } else if (color_scheme == "brew") {
-    p <- p + ggplot2::scale_fill_distiller(palette = palette_name, limit = c(-1, 1),
-                                           name = paste0(tools::toTitleCase(method), "\n r"))
-  } else if (color_scheme == "gradient") {
-    p <- p + ggplot2::scale_fill_gradient2(low = "#2166AC", mid = "#F7F7F7",
-                                           high = "#B2182B", midpoint = 0,
-                                           limit = c(-1, 1),
-                                           name = paste0(tools::toTitleCase(method), "\n r"))
-  }
-  
-  p <- p +
-    ggplot2::geom_tile(colour = "white", linewidth = 0.5) +
-    ggplot2::geom_text(ggplot2::aes(label = sig), size = 3, colour = "grey30", na.rm = TRUE) +
-    ggplot2::labs(title = "Correlation Heatmap", x = NULL, y = NULL) +
-    ggplot2::coord_fixed() +
-    ggplot2::theme_minimal(base_size = base_size) +
-    ggplot2::theme(
-      axis.text.x   = ggplot2::element_text(angle = 45, hjust = 1, colour = "grey20"),
-      axis.text.y   = ggplot2::element_text(colour = "grey20"),
-      plot.title    = ggplot2::element_text(hjust = 0.5, face = "bold", size = base_size + 1),
-      panel.grid    = ggplot2::element_blank(),
-      legend.title  = ggplot2::element_text(face = "bold")
+  # ------ 3. Colour scheme mapping ------
+  col_vector <- tryCatch({
+    switch(color_scheme,
+           viridis    = {
+             if (!requireNamespace("viridisLite", quietly = TRUE)) {
+               warning("Package 'viridisLite' not found. Using default palette.")
+               grDevices::colorRampPalette(c("#440154", "#31688e", "#35b779", "#fde724"))(200)
+             } else {
+               viridisLite::viridis(200, option = "C", direction = -1)
+             }
+           },
+           brew       = {
+             if (!requireNamespace("RColorBrewer", quietly = TRUE)) {
+               warning("Package 'RColorBrewer' not found. Using default palette.")
+               grDevices::colorRampPalette(c("#2166AC", "#F7F7F7", "#B2182B"))(200)
+             } else {
+               corrplot::COL2(palette_name, 200)
+             }
+           },
+           gradient   = grDevices::colorRampPalette(c("#2166AC", "#F7F7F7", "#B2182B"))(200),
+           scientific = grDevices::colorRampPalette(c("#3B528B", "#5A6BB5", "#8A8DC9", "#F7F7F7",
+                                                      "#EAA582", "#D6604D", "#B2182B"))(200)
     )
+  }, error = function(e) {
+    cat("Warning: Color scheme error, using default palette:", conditionMessage(e), "\n")
+    grDevices::colorRampPalette(c("#2166AC", "#F7F7F7", "#B2182B"))(200)
+  })
   
-  if (save_plot) .save_plot(p, save_dir, "correlation_heatmap", width, height, format)
-  return(p)
+  # ------ 4. Save plot if requested ------
+  if (save_plot) {
+    tryCatch({
+      if (is.null(save_dir)) {
+        save_dir <- getwd()  # Use current working directory as fallback
+        cat("No save_dir specified. Using current directory:", save_dir, "\n")
+      }
+      
+      if (!dir.exists(save_dir)) {
+        dir.create(save_dir, recursive = TRUE)
+        cat("Created output directory:", save_dir, "\n")
+      }
+      
+      plot_file <- file.path(save_dir, paste0("correlation_heatmap_", 
+                                              format(Sys.time(), "%Y%m%d_%H%M%S"), 
+                                              ".", format))
+      
+      # Close any open devices
+      if (!is.null(dev.list())) {
+        try(grDevices::dev.off(), silent = TRUE)
+      }
+      
+      # Open appropriate device
+      if (format == "pdf") {
+        grDevices::pdf(plot_file, width = width, height = height)
+      } else if (format == "png") {
+        grDevices::png(plot_file, width = width, height = height, units = "in", res = 300)
+      } else if (format == "svg") {
+        grDevices::svg(plot_file, width = width, height = height)
+      } else {
+        stop("Unsupported format. Use 'pdf', 'png', or 'svg'.")
+      }
+      
+      on.exit({
+        if (!is.null(dev.list())) {
+          try(grDevices::dev.off(), silent = TRUE)
+        }
+      }, add = TRUE)
+      
+    }, error = function(e) {
+      stop("Error setting up plot output: ", conditionMessage(e), call. = FALSE)
+    })
+  }
+  
+  # ------ 5. Build and execute corrplot call ------
+  tryCatch({
+    # Base arguments with defaults
+    args <- list(
+      corr         = corr_mat,
+      method       = vis_method,
+      type         = matrix_type,
+      order        = if (order == "original") "original" else order,
+      col          = col_vector,
+      col.lim      = c(-1, 1),
+      tl.cex       = tl.cex,
+      tl.srt       = tl.srt,
+      tl.col       = tl.col,
+      cl.cex       = cl.cex,
+      cl.pos       = cl.pos,
+      diag         = diag,
+      addgrid.col  = "grey90",
+      mar          = c(0, 0, 0, 0),
+      na.label     = "?"     # Label NA cells
+    )
+    
+    # Add hierarchical clustering method if needed
+    if (order %in% c("hclust", "AOE", "FPC")) {
+      args$hclust.method <- hclust_method
+    }
+    
+    # Add p‑value and significance arguments (only if p_mat is available)
+    if (!is.null(p_mat) && insig != "n") {
+      args$p.mat <- p_mat
+      args$sig.level <- p_thresh
+      args$insig <- insig
+      if (insig == "pch") args$pch <- pch
+      if (insig == "label_sig") args$sig.level <- sig.level
+    }
+    
+    # Add rectangle arguments if requested (only valid with hclust order)
+    if (!is.null(addrect) && addrect > 0 && order == "hclust") {
+      args$addrect <- addrect
+      args$rect.col <- rect.col
+      args$rect.lwd <- rect.lwd
+    }
+    
+    # Execute the plot
+    cat("Drawing correlation heatmap...\n")
+    do.call(corrplot::corrplot, args)
+    
+    if (save_plot) {
+      cat("✓ Heatmap saved to:", plot_file, "\n")
+    }
+    
+  }, error = function(e) {
+    stop("Error generating corrplot: ", conditionMessage(e), call. = FALSE)
+  })
+  
+  cat("✓ Correlation heatmap completed successfully.\n")
+  invisible(corr_mat)
 }
-
 #' PCA scatter plot coloured by metadata (zero‑variance safe, colour‑named, enhanced)
 #'
 #' @param object     A \code{Stat} object or numeric data frame.
@@ -522,109 +783,415 @@ PlotDegBoxplot <- function(deg_results,
   if (save_plot) .save_plot(p, save_dir, "deg_boxplot", width, height, format)
   return(p)
 }
-#' Feature heatmap (top DEGs or selected markers) - enhanced with progress message
+
+#' Feature Heatmap with Annotations and Marker Highlighting
 #'
-#' @param object       A \code{Stat} object or numeric matrix / data frame.
-#' @param features     Features to display. Defaults to top 50 by variance.
-#' @param group_col    Annotation column for sample grouping bar.
-#' @param scale_rows   Z-score scale across samples. Default \code{TRUE}.
-#' @param cluster_rows Cluster rows (features). Default \code{TRUE}.
-#' @param cluster_cols Cluster columns (samples). Default \code{TRUE}.
-#' @param palette_name RColorBrewer diverging palette. Default \code{"RdYlBu"}.
-#' @param ann_palette  Named colour vector for the annotation bar. Auto if \code{NULL}.
-#' @param show_rownames Show row (feature) names. Default \code{TRUE}.
-#' @param show_colnames Show column (sample) names. Default \code{FALSE}.
-#' @param base_fontsize Font size in heatmap.
-#' @param save_plot    Logical. Save the plot? Default \code{FALSE}.
-#' @param save_dir     Output directory. When \code{NULL} and \code{save_plot=TRUE}
-#'   the default Stat figure directory is used.
-#' @param width,height Inches.
-#' @param format       File format.
-#' @returns A \code{pheatmap} object (invisibly).
+#' Creates a heatmap of selected features (e.g., genes, proteins) with optional
+#' sample annotations (top/bottom) and feature annotations (left/right). Supports
+#' highlighting specific marker features using annotation marks on the left side.
+#'
+#' @param object A data frame (samples × features), numeric matrix, or a `Stat` object
+#'   (which must contain a `clean.data` component with numeric columns).  
+#'   Rows = samples, columns = features.
+#' @param features Character vector of feature names to display.  
+#'   If `NULL`, the top 50 features with highest variance are selected.
+#' @param group_col (Legacy) Character string; column name in the `Stat` object's
+#'   info data used for sample grouping. This will be added to the top annotation.
+#' @param clinical_data Data frame with sample annotations (rows = samples).  
+#'   Column names are variable names, row names must match sample names in `object`.
+#'   Added as top annotation.
+#' @param left_annotation,right_annotation,top_annotation,bottom_annotation  
+#'   Data frames for row/column annotations.  
+#'   - Row annotations (left/right): row names must match feature names (colnames of `object`).  
+#'   - Column annotations (top/bottom): row names must match sample names (rownames of `object`).
+#' @param left_columns,right_columns,top_columns,bottom_columns  
+#'   Character vectors specifying which columns to use from the corresponding
+#'   annotation data frames. If `NULL`, all columns are used.
+#' @param marker_features Character vector of feature names to highlight on the left side
+#'   using `anno_mark`. If `NULL`, no marker annotation is added.
+#' @param marker_cex Font size for marker labels. If `NULL`, automatically scaled
+#'   based on the number of markers (range 0.5–1.2).
+#' @param scale_features Logical. Should each feature (column) be Z-score scaled
+#'   across samples? Default `TRUE`.
+#' @param exclude_constant Logical. If `TRUE`, features with zero variance
+#'   (constant values) are removed before analysis. Default `TRUE`.
+#' @param cluster_rows Logical. Cluster rows (features). Default `TRUE`.
+#' @param cluster_cols Logical. Cluster columns (samples). Default `TRUE`.
+#' @param show_rownames Logical. Show row (feature) names. Default `FALSE`
+#'   (often hidden when using `marker_features`).
+#' @param show_colnames Logical. Show column (sample) names. Default `FALSE`.
+#' @param palette_name RColorBrewer diverging palette name, used when `color_palette = NULL`.
+#'   Default `"RdYlBu"`.
+#' @param color_palette Character vector of 4 colours:  
+#'   `c(NA_colour, low_colour, mid_colour, high_colour)`.  
+#'   Default: `c("grey90", "#7B1FA2", "#000000", "#FFEB3B")` (purple–black–yellow).
+#' @param color_range Numeric vector of length 3 (low, mid, high) for colour mapping.
+#'   If `NULL`, the 5\% and 95\% quantiles of the data are used, with mid = 0.
+#' @param na_col Colour for missing values (NA). Default `"grey90"`.
+#' @param ann_colors Optional named list of colours for annotations.  
+#'   For discrete variables: a named vector (levels → colours).  
+#'   For continuous variables: a `colorRamp2` function.  
+#'   Example: `list(Sex = c(M = "blue", F = "red"), Age = colorRamp2(c(20,50,80), c("blue","white","red")))`.
+#' @param ann_continuous_palette Character; RColorBrewer palette for continuous annotation
+#'   variables when `ann_colors` is not provided. Default `"RdYlBu"`.
+#' @param base_fontsize Base font size for legends and annotation labels.
+#' @param save_plot Logical. Save the plot to a file? Default `FALSE`.
+#' @param save_dir Output directory. If `NULL` and `save_plot = TRUE`, files are written
+#'   to `"./plots"`.
+#' @param width,height Dimensions of the saved plot in inches.
+#' @param format File format: `"pdf"` or `"png"`.
+#' @param ... Additional arguments passed to `ComplexHeatmap::Heatmap`.
+#'
+#' @return Invisibly, a `ComplexHeatmap::Heatmap` object. The heatmap is drawn
+#'   (or saved) as a side effect.
+#'
+#' @examples
+#' \donttest{
+#' # Example with a simple data frame
+#' set.seed(123)
+#' expr <- data.frame(
+#'   Gene1 = rnorm(20), Gene2 = rnorm(20), Gene3 = rnorm(20),
+#'   Gene4 = rnorm(20), Gene5 = rnorm(20)
+#' )
+#' rownames(expr) <- paste0("Sample", 1:20)
+#'
+#' # Clinical annotation
+#' clin <- data.frame(
+#'   Age = sample(20:80, 20, replace = TRUE),
+#'   Sex = sample(c("M","F"), 20, replace = TRUE),
+#'   row.names = rownames(expr)
+#' )
+#'
+#' # Basic heatmap
+#' PlotFeatureHeatmap(expr, clinical_data = clin)
+#'
+#' # Highlight specific markers
+#' markers <- c("Gene1", "Gene5")
+#' PlotFeatureHeatmap(expr, clinical_data = clin, marker_features = markers)
+#'
+#' # Custom annotation colours (like your example)
+#' my_colors <- list(
+#'   Sex = c(M = "#fc8d62", F = "#8da0cb"),
+#'   Age = circlize::colorRamp2(c(20, 50, 80), c("#ef8a62", "#ffffff", "#999999"))
+#' )
+#' PlotFeatureHeatmap(expr, clinical_data = clin, ann_colors = my_colors)
+#'
+#' # Using a Stat object (assuming it exists)
+#' # PlotFeatureHeatmap(stat_obj, clinical_data = stat_obj@clean.data[, c("GENDER","SWAB")])
+#' }
+#'
+#' @importFrom ComplexHeatmap Heatmap rowAnnotation anno_mark max_text_width ht_opt
+#' @importFrom circlize colorRamp2
+#' @importFrom RColorBrewer brewer.pal
+#' @importFrom grid gpar unit
 #' @export
 PlotFeatureHeatmap <- function(object,
-                               features      = NULL,
-                               group_col     = NULL,
-                               scale_rows    = TRUE,
-                               cluster_rows  = TRUE,
-                               cluster_cols  = TRUE,
-                               palette_name  = "RdYlBu",
-                               ann_palette   = NULL,
-                               show_rownames = TRUE,
-                               show_colnames = FALSE,
-                               base_fontsize = 10,
-                               save_plot     = FALSE,
-                               save_dir      = NULL,
-                               width         = 9,
-                               height        = 8,
-                               format        = "pdf") {
+                               features          = NULL,
+                               group_col         = NULL,
+                               clinical_data     = NULL,
+                               left_annotation   = NULL,
+                               right_annotation  = NULL,
+                               top_annotation    = NULL,
+                               bottom_annotation = NULL,
+                               left_columns      = NULL,
+                               right_columns     = NULL,
+                               top_columns       = NULL,
+                               bottom_columns    = NULL,
+                               marker_features   = NULL,
+                               marker_cex        = NULL,
+                               scale_features    = TRUE,
+                               exclude_constant  = TRUE,
+                               cluster_rows      = TRUE,
+                               cluster_cols      = TRUE,
+                               show_rownames     = FALSE,
+                               show_colnames     = FALSE,
+                               palette_name      = "RdYlBu",
+                               color_palette     =  c("lightgray", "steelblue","#7B1FA2", "black", "gold"),
+                               color_range       = NULL,
+                               na_col            = "grey90",
+                               ann_colors        = NULL,
+                               ann_continuous_palette = "RdYlBu",
+                               base_fontsize     = 10,
+                               save_plot         = FALSE,
+                               save_dir          = NULL,
+                               width             = 9,
+                               height            = 8,
+                               format            = "pdf",
+                               ...) {
+  if (!requireNamespace("ComplexHeatmap", quietly = TRUE))
+    stop("Package 'ComplexHeatmap' is required.")
+  if (!requireNamespace("circlize", quietly = TRUE))
+    stop("Package 'circlize' is required.")
+  if (!requireNamespace("RColorBrewer", quietly = TRUE))
+    stop("Package 'RColorBrewer' is required.")
+  
+  tryCatch({
+    ComplexHeatmap::ht_opt$message <- FALSE
+    ComplexHeatmap::ht_opt$verbose <- FALSE
+  }, error = function(e) NULL)
+  
   cat("Generating feature heatmap...\n")
-  if (is.null(save_dir) && save_plot) save_dir <- .get_viz_output_dir("Stat")
   
+  if (save_plot && is.null(save_dir)) {
+    save_dir <- "./plots"
+    if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
+  }
+  
+  # ------------------------- 1. Extract numeric matrix -------------------------
   if (inherits(object, "Stat")) {
-    mat      <- t(object@clean.data[, sapply(object@clean.data, is.numeric)])
-    info     <- object@info.data
-    group_col <- if (is.null(group_col)) object@group_col else group_col
+    if (isS4(object)) {
+      raw <- object@clean.data
+      info <- object@info.data
+      if (is.null(group_col) && !is.null(object@group_col)) group_col <- object@group_col
+    } else {
+      raw <- object$clean.data
+      info <- object$info.data
+      if (is.null(group_col) && !is.null(object$group_col)) group_col <- object$group_col
+    }
+    if (is.null(raw)) stop("No 'clean.data' found in Stat object.")
+    # 只保留数值列
+    num_idx <- sapply(raw, is.numeric)
+    if (sum(num_idx) == 0) stop("No numeric columns in clean.data.")
+    mat <- as.matrix(raw[, num_idx, drop = FALSE])
+    if (is.null(info)) info <- data.frame()
   } else {
-    mat   <- t(as.data.frame(object)[, sapply(as.data.frame(object), is.numeric)])
-    info  <- data.frame()
+    raw <- as.data.frame(object)
+    num_idx <- sapply(raw, is.numeric)
+    if (sum(num_idx) == 0) stop("No numeric columns found in object.")
+    mat <- as.matrix(raw[, num_idx, drop = FALSE])
+    info <- data.frame()
   }
   
+  if (is.null(rownames(mat))) rownames(mat) <- as.character(seq_len(nrow(mat)))
+  if (is.null(colnames(mat))) colnames(mat) <- paste0("Var", seq_len(ncol(mat)))
+  
+  # ------------------------- 2. Filter constant features -------------------------
+  if (exclude_constant) {
+    feat_var <- apply(mat, 2, var, na.rm = TRUE)
+    const_feats <- names(feat_var[feat_var == 0 | is.na(feat_var)])
+    if (length(const_feats) > 0) {
+      warning(paste("Excluded", length(const_feats), "constant features:",
+                    paste(head(const_feats, 5), collapse = ", ")))
+      mat <- mat[, !colnames(mat) %in% const_feats, drop = FALSE]
+    }
+  }
+  
+  # ------------------------- 3. Select top features -------------------------
   if (is.null(features)) {
-    var_ord  <- order(apply(mat, 1, var, na.rm = TRUE), decreasing = TRUE)
-    features <- rownames(mat)[head(var_ord, 50)]
+    feat_var <- apply(mat, 2, var, na.rm = TRUE)
+    features <- names(sort(feat_var, decreasing = TRUE))[1:min(50, length(feat_var))]
   }
-  features <- intersect(features, rownames(mat))
-  mat <- mat[features, , drop = FALSE]
+  features <- intersect(features, colnames(mat))
+  if (length(features) == 0) stop("No valid features found.")
+  mat <- mat[, features, drop = FALSE]
   
-  if (scale_rows) {
-    mat <- t(scale(t(mat)))
+  # ------------------------- 4. Scale features (columns) -------------------------
+  if (scale_features) {
+    col_mean <- colMeans(mat, na.rm = TRUE)
+    col_sd   <- apply(mat, 2, sd, na.rm = TRUE)
+    col_sd[col_sd == 0] <- 1
+    mat <- sweep(mat, 2, col_mean, "-")
+    mat <- sweep(mat, 2, col_sd, "/")
     mat[is.nan(mat)] <- 0
   }
   
-  ann_col <- NULL
-  ann_colors <- list()
-  if (!is.null(group_col) && nrow(info) > 0 && group_col %in% colnames(info)) {
-    ann_col <- data.frame(Group = as.factor(info[[group_col]]),
-                          row.names = rownames(info))
-    grp_lvls <- levels(ann_col$Group)
-    grp_cols <- .get_palette("Darjeeling1", length(grp_lvls))
-    names(grp_cols) <- grp_lvls
-    ann_colors[["Group"]] <- if (!is.null(ann_palette)) ann_palette else grp_cols
+  # ------------------------- 5. Helper: generate colors for annotation -------------------------
+  generate_anno_colors <- function(df, columns, provided_colors = ann_colors) {
+    if (is.null(df)) return(NULL)
+    if (!is.data.frame(df)) return(NULL)
+    if (!is.null(columns)) {
+      columns <- intersect(columns, colnames(df))
+      if (length(columns) == 0) return(NULL)
+      df <- df[, columns, drop = FALSE]
+    }
+    col_map <- list()
+    for (col in colnames(df)) {
+      if (!is.null(provided_colors) && col %in% names(provided_colors)) {
+        col_map[[col]] <- provided_colors[[col]]
+        next
+      }
+      if (is.factor(df[[col]]) || is.character(df[[col]])) {
+        vals <- unique(df[[col]])
+        n <- length(vals)
+        palettes <- c("Set3", "Paired", "Set2")
+        colors_all <- unlist(lapply(palettes, function(p) {
+          RColorBrewer::brewer.pal(min(12, RColorBrewer::brewer.pal.info[p, "maxcolors"]), p)
+        }))
+        if (n > length(colors_all)) colors_all <- c(colors_all, rainbow(n))
+        cols <- colors_all[1:n]
+        names(cols) <- as.character(vals)
+        col_map[[col]] <- cols
+      } else if (is.numeric(df[[col]])) {
+        rng <- range(df[[col]], na.rm = TRUE)
+        if (diff(rng) == 0) rng <- c(rng[1] - 1, rng[1] + 1)
+        col_map[[col]] <- circlize::colorRamp2(
+          breaks = c(rng[1], mean(rng), rng[2]),
+          colors = RColorBrewer::brewer.pal(3, ann_continuous_palette)
+        )
+      }
+    }
+    return(col_map)
   }
   
-  color_ramp <- rev(RColorBrewer::brewer.pal(11, palette_name))
+  make_annotation <- function(df, columns, which_dim, orientation, col_map) {
+    if (is.null(df)) return(NULL)
+    if (!is.data.frame(df)) {
+      warning("Annotation must be a data frame.")
+      return(NULL)
+    }
+    # 匹配 ID
+    if (which_dim == "feature") {
+      ids <- colnames(mat)
+      df_ids <- rownames(df)
+    } else {
+      ids <- rownames(mat)
+      df_ids <- rownames(df)
+    }
+    common <- intersect(df_ids, ids)
+    if (length(common) == 0) {
+      warning("No overlapping IDs between annotation and ", which_dim, "s.")
+      return(NULL)
+    }
+    df <- df[common, , drop = FALSE]
+    df <- df[ids, , drop = FALSE]  # 按热图顺序重排
+    if (!is.null(columns)) {
+      columns <- intersect(columns, colnames(df))
+      if (length(columns) == 0) return(NULL)
+      df <- df[, columns, drop = FALSE]
+    }
+    # 字符转因子
+    for (col in colnames(df)) {
+      if (is.character(df[[col]])) df[[col]] <- as.factor(df[[col]])
+    }
+    ComplexHeatmap::HeatmapAnnotation(
+      df = df,
+      col = col_map,
+      which = orientation,
+      annotation_name_gp = grid::gpar(fontsize = base_fontsize),
+      annotation_legend_param = list(
+        title_gp = grid::gpar(fontsize = base_fontsize),
+        labels_gp = grid::gpar(fontsize = base_fontsize - 1)
+      ),
+      show_annotation_name = TRUE
+    )
+  }
   
-  ph <- pheatmap::pheatmap(
-    mat,
-    color            = colorRampPalette(color_ramp)(100),
-    cluster_rows     = cluster_rows,
-    cluster_cols     = cluster_cols,
-    annotation_col   = ann_col,
-    annotation_colors= ann_colors,
-    show_rownames    = show_rownames,
-    show_colnames    = show_colnames,
-    fontsize         = base_fontsize,
-    fontsize_row     = base_fontsize - 1,
-    border_color     = NA,
-    silent           = TRUE
+  # ------------------------- 6. Build annotations -------------------------
+  # 将 group_col 和 clinical_data 合并到 top_annotation
+  if (!is.null(group_col) && nrow(info) > 0 && group_col %in% colnames(info)) {
+    legacy_ann <- data.frame(Group = info[[group_col]], row.names = rownames(info))
+    clinical_data <- if (is.null(clinical_data)) legacy_ann else cbind(clinical_data, legacy_ann)
+  }
+  if (!is.null(clinical_data)) {
+    top_annotation <- if (is.null(top_annotation)) clinical_data else cbind(top_annotation, clinical_data)
+  }
+  
+  left_colors   <- generate_anno_colors(left_annotation, left_columns)
+  right_colors  <- generate_anno_colors(right_annotation, right_columns)
+  top_colors    <- generate_anno_colors(top_annotation, top_columns)
+  bottom_colors <- generate_anno_colors(bottom_annotation, bottom_columns)
+  
+  left_ha   <- make_annotation(left_annotation,  left_columns,  "feature", "row", left_colors)
+  right_ha  <- make_annotation(right_annotation, right_columns, "feature", "row", right_colors)
+  top_ha    <- make_annotation(top_annotation,   top_columns,   "sample",  "column", top_colors)
+  bottom_ha <- make_annotation(bottom_annotation, bottom_columns, "sample", "column", bottom_colors)
+  
+  # Marker annotation (left)
+  if (!is.null(marker_features)) {
+    hm_mat <- t(mat)
+    marker_pos <- which(rownames(hm_mat) %in% marker_features)
+    if (length(marker_pos) > 0) {
+      marker_labels <- rownames(hm_mat)[marker_pos]
+      if (is.null(marker_cex)) {
+        n_markers <- length(marker_pos)
+        marker_cex <- max(0.5, min(1.2, 30 * 0.65 / max(n_markers, 25)))
+      }
+      marker_ha <- ComplexHeatmap::rowAnnotation(
+        link = ComplexHeatmap::anno_mark(
+          at = marker_pos,
+          labels = marker_labels,
+          labels_gp = grid::gpar(cex = marker_cex, fontface = "italic"),
+          link_gp = grid::gpar(col = "black"),
+          side = "left",
+          extend = c(0, 0.3),
+          link_width = grid::unit(0.5, "in")
+        ),
+        width = grid::unit(0.5, "in") + ComplexHeatmap::max_text_width(marker_labels,
+                                                                       gp = grid::gpar(cex = marker_cex))
+      )
+      left_ha <- if (is.null(left_ha)) marker_ha else c(left_ha, marker_ha)
+    } else {
+      warning("None of the marker_features found in the selected feature set.")
+    }
+  }
+  
+  # ------------------------- 7. Heatmap body colors -------------------------
+  hm_mat <- t(mat)
+  mat_vals <- as.vector(hm_mat)
+  if (is.null(color_range)) {
+    q05 <- quantile(mat_vals, 0.05, na.rm = TRUE)
+    q95 <- quantile(mat_vals, 0.95, na.rm = TRUE)
+    if (q05 == q95) {
+      q05 <- q05 - 1e-6
+      q95 <- q95 + 1e-6
+    }
+    color_range <- c(q05, 0, q95)
+  }
+  if (length(color_palette) != 4) {
+    warning("color_palette should be length 4 (NA, low, mid, high). Using default.")
+    color_palette <- c("grey90", "#7B1FA2", "#000000", "#FFEB3B")
+  }
+  col_fun <- circlize::colorRamp2(breaks = color_range, colors = color_palette[2:4])
+  
+  # ------------------------- 8. Build main heatmap -------------------------
+  ht <- ComplexHeatmap::Heatmap(
+    matrix = hm_mat,
+    name = if (scale_features) "Z-score" else "Expression",
+    col = col_fun,
+    na_col = color_palette[1],
+    cluster_rows = cluster_rows,
+    cluster_columns = cluster_cols,
+    show_row_names = show_rownames,
+    show_column_names = show_colnames,
+    row_names_gp = grid::gpar(fontsize = base_fontsize - 1),
+    column_names_gp = grid::gpar(fontsize = base_fontsize - 1),
+    heatmap_legend_param = list(
+      title = if (scale_features) "Z-score" else "Expression",
+      title_gp = grid::gpar(fontsize = base_fontsize),
+      labels_gp = grid::gpar(fontsize = base_fontsize - 1),
+      direction = "horizontal",
+      legend_width = grid::unit(1.5, "in"),
+      title_position = "topcenter"
+    ),
+    left_annotation = left_ha,
+    right_annotation = right_ha,
+    top_annotation = top_ha,
+    bottom_annotation = bottom_ha,
+    use_raster = nrow(hm_mat) * ncol(hm_mat) > 200000,
+    ...
   )
   
-  if (save_plot) {
+  # ------------------------- 9. Draw and save -------------------------
+  if (!save_plot) {
+    ComplexHeatmap::draw(ht, heatmap_legend_side = "bottom")
+  } else {
     if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
     path <- file.path(save_dir, paste0("feature_heatmap.", format))
     if (format == "pdf") {
-      pdf(path, width = width, height = height)
-      grid::grid.draw(ph$gtable)
-      dev.off()
+      grDevices::pdf(path, width = width, height = height)
+      ComplexHeatmap::draw(ht, heatmap_legend_side = "bottom")
+      grDevices::dev.off()
+    } else if (format == "png") {
+      grDevices::png(path, width = width, height = height, units = "in", res = 150)
+      ComplexHeatmap::draw(ht, heatmap_legend_side = "bottom")
+      grDevices::dev.off()
     } else {
-      png(path, width = width * 100, height = height * 100, res = 100)
-      grid::grid.draw(ph$gtable)
-      dev.off()
+      stop("Unsupported format. Use 'pdf' or 'png'.")
     }
     cat("Heatmap saved to:", path, "\n")
   }
-  return(ph)
+  
+  invisible(ht)
 }
 
 
@@ -632,22 +1199,24 @@ PlotFeatureHeatmap <- function(object,
 ##  § 2  TRAIN_MODEL  ── ROC · confusion matrix · feature importance · calibration
 ## ═════════════════════════════════════════════════════════════════════════════
 
-#' Multi-model ROC comparison
+#' Plot ROC Curves for Multiple Models
 #'
-#' Plots ROC curves for all models stored in \code{train.models}, with AUC
-#' values in the legend. A combined AUC summary table is returned invisibly.
+#' Generates a comparison plot of ROC curves across all trained models.
+#' Handles both original and converted factor levels.
 #'
-#' @param object       A \code{Train_Model} object.
-#' @param test_data    Optional: data frame for evaluation. When \code{NULL}
-#'   the \code{split.data$test} slot is used.
-#' @param palette_name Colour palette.
-#' @param show_ci      Draw 95 \% bootstrap CI bands. Default \code{FALSE}.
-#' @param base_size    Base font size.
-#' @param save_plot    Logical.
-#' @param save_dir     Output directory.
-#' @param width,height Inches.
-#' @param format       File format.
-#' @returns A \code{ggplot} object.
+#' @param object        A Train_Model object with trained models.
+#' @param test_data     Test data (optional). If NULL, uses object@split.data$test.
+#' @param palette_name  Color palette name (e.g., "Darjeeling1").
+#' @param show_ci       Logical. Show confidence intervals (currently unused).
+#' @param base_size     ggplot2 base font size.
+#' @param save_plot     Logical. Save the plot to file?
+#' @param save_dir      Directory to save plot. If NULL, auto-detects.
+#' @param width         Plot width in inches.
+#' @param height        Plot height in inches.
+#' @param format        File format ("pdf", "png", "jpg").
+#'
+#' @return A ggplot2 object showing ROC curves.
+#'
 #' @export
 PlotMultiROC <- function(object,
                          test_data    = NULL,
@@ -655,126 +1224,515 @@ PlotMultiROC <- function(object,
                          show_ci      = FALSE,
                          base_size    = 13,
                          save_plot    = FALSE,
-                         save_dir = NULL,  # default: auto-detect from config
+                         save_dir     = NULL,
                          width        = 7,
                          height       = 6,
                          format       = "pdf") {
-  if (is.null(save_dir)) save_dir <- .get_viz_output_dir("Model")
-
-  if (!inherits(object, "Train_Model"))
+  
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 输入验证
+  # ─────────────────────────────────────────────────────────────────────────────
+  if (is.null(save_dir)) {
+    save_dir <- .get_viz_output_dir("Model")
+  }
+  
+  if (!inherits(object, "Train_Model")) {
     stop("'object' must be a Train_Model.")
-  if (length(object@train.models) == 0)
+  }
+  
+  if (length(object@train.models) == 0) {
     stop("No trained models found in object@train.models.")
-
-  td <- if (!is.null(test_data)) test_data else object@split.data$test
-  if (is.null(td)) stop("Provide 'test_data' or populate split.data$test.")
-
+  }
+  
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 准备测试数据
+  # ─────────────────────────────────────────────────────────────────────────────
+  td <- if (!is.null(test_data)) {
+    test_data
+  } else {
+    object@split.data$test
+  }
+  
+  if (is.null(td)) {
+    stop("Provide 'test_data' or populate split.data$test.")
+  }
+  
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 提取真实标签（处理因子水平变化）
+  # ─────────────────────────────────────────────────────────────────────────────
   group_col <- as.character(object@group_col)
-  truth     <- factor(td[[group_col]])
-  pos_level <- levels(truth)[2]
-
+  truth <- factor(td[[group_col]])
+  
+  # 获取正例标签（第二个水平）
+  # 无论原始水平是 "0"/"1" 还是 "X0"/"X1"，都用第二个
+  truth_levels <- levels(truth)
+  
+  if (length(truth_levels) != 2) {
+    stop(sprintf("Expected 2 factor levels, got %d. This function is for binary classification.",
+                 length(truth_levels)))
+  }
+  
+  pos_level <- truth_levels[2]
+  
+  cat(sprintf("Truth factor levels: %s, %s\n", truth_levels[1], truth_levels[2]))
+  cat(sprintf("Using '%s' as positive class\n\n", pos_level))
+  
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 计算每个模型的 ROC 曲线
+  # ─────────────────────────────────────────────────────────────────────────────
   roc_list <- lapply(names(object@train.models), function(nm) {
+    cat(sprintf("Processing model: %s\n", nm))
+    
     model <- object@train.models[[nm]]
-    probs <- tryCatch(
-      stats::predict(model, newdata = td, type = "prob")[, pos_level],
-      error = function(e)
-        as.numeric(stats::predict(model, newdata = td, type = "raw") == pos_level)
-    )
-    roc_obj <- pROC::roc(truth, probs, levels = levels(truth), quiet = TRUE)
+    
+    # 获取预测概率
+    probs <- tryCatch({
+      # 方法 1：尝试用列名查找（可能失败如果列名被转换了）
+      prob_matrix <- stats::predict(model, newdata = td, type = "prob")
+      
+      # 检查列是否存在
+      if (pos_level %in% colnames(prob_matrix)) {
+        prob_matrix[, pos_level]
+      } else {
+        # 方法 2：如果列名不匹配，用第二列（更健壮）
+        cat(sprintf("  Warning: Column '%s' not found. Using 2nd column instead.\n", pos_level))
+        prob_matrix[, 2]
+      }
+    }, error = function(e) {
+      # 方法 3：如果 type="prob" 失败，尝试 type="raw"
+      cat(sprintf("  Note: Using raw predictions instead of probabilities\n"))
+      as.numeric(stats::predict(model, newdata = td, type = "raw") == pos_level)
+    })
+    
+    # 验证概率
+    if (length(probs) != nrow(td)) {
+      stop(sprintf("Prediction length mismatch for model %s", nm))
+    }
+    
+    if (any(is.na(probs))) {
+      warning(sprintf("Model %s produced NA predictions", nm))
+      probs[is.na(probs)] <- 0.5
+    }
+    
+    # ───────────────────────────────────────────────────────────────────────────
+    # 计算 ROC 曲线
+    # ───────────────────────────────────────────────────────────────────────────
+    roc_obj <- pROC::roc(truth, probs, 
+                         levels = levels(truth), 
+                         quiet = TRUE)
+    
     auc_val <- round(as.numeric(pROC::auc(roc_obj)), 3)
-    coords  <- pROC::coords(roc_obj, "all", ret = c("specificity", "sensitivity"))
-    data.frame(Model       = paste0(nm, " (AUC=", auc_val, ")"),
-               Specificity = coords$specificity,
-               Sensitivity = coords$sensitivity)
+    coords <- pROC::coords(roc_obj, "all", 
+                           ret = c("specificity", "sensitivity"))
+    
+    cat(sprintf("  ✓ AUC = %.3f\n", auc_val))
+    
+    data.frame(
+      Model       = paste0(nm, " (AUC=", auc_val, ")"),
+      Specificity = coords$specificity,
+      Sensitivity = coords$sensitivity,
+      stringsAsFactors = FALSE
+    )
   })
-
+  
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 合并所有 ROC 数据
+  # ─────────────────────────────────────────────────────────────────────────────
   roc_df <- dplyr::bind_rows(roc_list)
-  cols   <- .get_palette(palette_name, length(object@train.models))
-
+  
+  if (nrow(roc_df) == 0) {
+    stop("No ROC data generated. Check your models and test data.")
+  }
+  
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 获取配色方案
+  # ─────────────────────────────────────────────────────────────────────────────
+  cols <- .get_palette(palette_name, length(object@train.models))
+  
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 绘制 ROC 曲线
+  # ─────────────────────────────────────────────────────────────────────────────
   p <- ggplot2::ggplot(roc_df,
-    ggplot2::aes(1 - Specificity, Sensitivity, colour = Model)) +
+                       ggplot2::aes(x = 1 - Specificity, y = Sensitivity, colour = Model)) +
     ggplot2::geom_line(linewidth = 1) +
     ggplot2::geom_abline(slope = 1, intercept = 0,
-                         linetype = "dashed", colour = "grey50") +
+                         linetype = "dashed", colour = "grey50", linewidth = 0.8) +
     ggplot2::scale_colour_manual(values = cols) +
     ggplot2::coord_equal() +
-    ggplot2::labs(title = "ROC Curves — Model Comparison",
-                  x     = "1 – Specificity (FPR)",
-                  y     = "Sensitivity (TPR)",
-                  colour = NULL) +
+    ggplot2::labs(
+      title = "ROC Curves — Model Comparison",
+      x = "1 – Specificity (FPR)",
+      y = "Sensitivity (TPR)",
+      colour = NULL
+    ) +
     .pub_theme(base_size) +
     ggplot2::theme(legend.position = c(0.72, 0.22))
-
-  if (save_plot)
+  
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 保存图表
+  # ─────────────────────────────────────────────────────────────────────────────
+  if (save_plot) {
+    .safe_dir(save_dir)
     .save_plot(p, save_dir, "multi_ROC", width, height, format)
+    cat(sprintf("\n✓ Plot saved to: %s\n", save_dir))
+  }
+  
   return(p)
 }
 
 
-#' Confusion matrix heatmap
+#' Plot Confusion Matrix for a Single Model
 #'
-#' Renders a tile-based confusion matrix with cell counts and row-wise
-#' percentages.
+#' Generates a confusion matrix heatmap for a trained model.
+#' Supports both direct class predictions (type = "raw") and probability-based
+#' predictions with user‑defined threshold. Additionally calculates positive and
+#' negative predictive values, optionally adjusted for a given population prevalence.
 #'
-#' @param object     A \code{Train_Model} object.
-#' @param model_name Name of the model in \code{train.models}. When \code{NULL}
-#'   the best model is used.
-#' @param test_data  Optional evaluation data frame.
-#' @param palette    Two-colour gradient: \code{c(low, high)}.
-#' @param base_size  Base font size.
-#' @param save_plot  Logical.
-#' @param save_dir   Output directory.
-#' @param width,height Inches.
-#' @param format     File format.
-#' @returns A \code{ggplot} object.
+#' @param object      A Train_Model object with trained models.
+#' @param model_name  Name of the model to plot. If NULL, uses first model.
+#' @param test_data   Test data (optional). If NULL, uses object@split.data$test.
+#' @param threshold   Numeric threshold for probability predictions (0‑1).
+#'                    If provided, predictions are obtained via type = "prob"
+#'                    and binarised using this threshold.
+#'                    If NULL (default), type = "raw" is used.
+#' @param prob_class  Character string indicating which class is considered
+#'                    positive when using threshold. If NULL, the second level
+#'                    of the true labels is used as positive class.
+#' @param prevalence  Optional population prevalence (0‑1) of the positive class.
+#'                    If provided, the function calculates adjusted positive and
+#'                    negative predictive values using Bayes' theorem.
+#' @param palette     Vector of 2 colors (low, high) for the gradient.
+#' @param base_size   ggplot2 base font size.
+#' @param save_plot   Logical. Save the plot to file?
+#' @param save_dir    Directory to save plot. If NULL, auto-detects.
+#' @param width       Plot width in inches.
+#' @param height      Plot height in inches.
+#' @param format      File format ("pdf", "png", "jpg").
+#'
+#' @return A ggplot2 object showing the confusion matrix.
+#'
 #' @export
 PlotConfusionMatrix <- function(object,
-
                                 model_name = NULL,
                                 test_data  = NULL,
-                                palette    = c("#EEF3FA", "#1F5FA6"),
+                                threshold  = NULL,
+                                prob_class = NULL,
+                                prevalence = NULL,
+                                palette    = c("#d8b365", "#5ab4ac"),
                                 base_size  = 13,
                                 save_plot  = FALSE,
-                                save_dir = NULL,  # default: auto-detect from config
+                                save_dir   = NULL,
                                 width      = 5,
                                 height     = 4.5,
                                 format     = "pdf") {
-  if (is.null(save_dir)) save_dir <- .get_viz_output_dir("Model")
-
-  if (!inherits(object, "Train_Model"))
+  
+  # ───────────────────────────────────────────────────────────────────────────
+  # Input Validation
+  # ───────────────────────────────────────────────────────────────────────────
+  if (is.null(save_dir)) {
+    save_dir <- .get_viz_output_dir("Model")
+  }
+  
+  if (!inherits(object, "Train_Model")) {
     stop("'object' must be a Train_Model.")
-
-  nm    <- if (is.null(model_name)) names(object@train.models)[1] else model_name
+  }
+  
+  if (length(object@train.models) == 0) {
+    stop("No trained models found.")
+  }
+  
+  if (!is.null(prevalence) && (prevalence <= 0 || prevalence >= 1)) {
+    warning("Prevalence should be between 0 and 1 (exclusive). Adjusted PPV/NPV may be unreliable.")
+  }
+  
+  # ───────────────────────────────────────────────────────────────────────────
+  # Select Model
+  # ───────────────────────────────────────────────────────────────────────────
+  nm <- if (is.null(model_name)) {
+    cat(sprintf("No model specified. Using first model: %s\n", 
+                names(object@train.models)[1]))
+    names(object@train.models)[1]
+  } else {
+    model_name
+  }
+  
+  if (!nm %in% names(object@train.models)) {
+    stop(sprintf("Model '%s' not found. Available models: %s",
+                 nm, paste(names(object@train.models), collapse = ", ")))
+  }
+  
   model <- object@train.models[[nm]]
-  td    <- if (!is.null(test_data)) test_data else object@split.data$test
-  if (is.null(td)) stop("Provide test_data or populate split.data$test.")
-
+  
+  # ───────────────────────────────────────────────────────────────────────────
+  # Prepare Test Data
+  # ───────────────────────────────────────────────────────────────────────────
+  td <- if (!is.null(test_data)) {
+    test_data
+  } else {
+    object@split.scale.data$test
+  }
+  
+  if (is.null(td)) {
+    stop("Provide 'test_data' or populate split.data$test.")
+  }
+  
+  # ───────────────────────────────────────────────────────────────────────────
+  # Extract True Labels
+  # ───────────────────────────────────────────────────────────────────────────
   group_col <- as.character(object@group_col)
-  truth     <- factor(td[[group_col]])
-  pred      <- stats::predict(model, newdata = td, type = "raw")
-
-  cm      <- table(Predicted = factor(pred, levels(truth)),
-                   Actual    = truth)
-  cm_df   <- as.data.frame(cm)
-  cm_df   <- cm_df %>%
+  
+  # Ensure true labels are factor
+  truth_raw <- td[[group_col]]
+  if (!is.factor(truth_raw)) {
+    truth_raw <- factor(truth_raw)
+  }
+  
+  truth_levels <- levels(truth_raw)
+  
+  if (length(truth_levels) != 2) {
+    stop(sprintf("Expected 2 factor levels, got %d. This function is for binary classification.",
+                 length(truth_levels)))
+  }
+  
+  truth <- factor(truth_raw, levels = truth_levels)
+  
+  cat(sprintf("True labels - Levels: [%s]\n", paste(truth_levels, collapse = ", ")))
+  
+  # Determine positive class for threshold-based predictions
+  if (is.null(prob_class)) {
+    pos_class <- truth_levels[2]   # second level as positive by convention
+    neg_class <- truth_levels[1]
+  } else {
+    if (!prob_class %in% truth_levels) {
+      stop(sprintf("prob_class = '%s' not found in true label levels: %s",
+                   prob_class, paste(truth_levels, collapse = ", ")))
+    }
+    pos_class <- prob_class
+    neg_class <- setdiff(truth_levels, prob_class)[1]
+  }
+  
+  # ───────────────────────────────────────────────────────────────────────────
+  # Get Predictions (Threshold vs. Raw)
+  # ───────────────────────────────────────────────────────────────────────────
+  if (!is.null(threshold)) {
+    # --- Use probability predictions and threshold ---
+    cat(sprintf("Using probability predictions with threshold = %.3f\n", threshold))
+    cat(sprintf("Positive class: %s | Negative class: %s\n", pos_class, neg_class))
+    
+    prob_pred <- tryCatch({
+      stats::predict(model, newdata = td, type = "prob")
+    }, error = function(e) {
+      # Fallback for glm / similar (type = "response")
+      stats::predict(model, newdata = td, type = "response")
+    })
+    
+    # Convert to vector of probabilities for the positive class
+    if (is.matrix(prob_pred) || is.data.frame(prob_pred)) {
+      # Multi-column output (e.g., randomForest, rpart, lda)
+      col_names <- colnames(prob_pred)
+      if (ncol(prob_pred) == 2) {
+        # Try to locate positive class column
+        if (pos_class %in% col_names) {
+          prob_pos <- prob_pred[, pos_class]
+        } else {
+          # Assume second column is positive (common default)
+          cat("Assuming second column corresponds to positive class.\n")
+          prob_pos <- prob_pred[, 2]
+        }
+      } else {
+        stop("Probability output has more than 2 columns. Please specify 'prob_class'.")
+      }
+    } else if (is.numeric(prob_pred)) {
+      # Single numeric vector (glm, etc.) – assumed to be probability of positive class
+      prob_pos <- prob_pred
+    } else {
+      stop("Unable to extract positive class probabilities from model predictions.")
+    }
+    
+    # Binarise using threshold
+    pred_char <- ifelse(prob_pos > threshold, pos_class, neg_class)
+    pred_raw <- factor(pred_char, levels = truth_levels)
+    
+    # For consistency with raw path, store as character for later mapping
+    pred_char <- as.character(pred_raw)
+    pred_levels <- levels(pred_raw)
+    
+    cat(sprintf("Predicted labels (thresholded) - Levels: [%s]\n", 
+                paste(pred_levels, collapse = ", ")))
+    
+  } else {
+    # --- Original raw prediction path ---
+    pred_raw <- tryCatch({
+      stats::predict(model, newdata = td, type = "raw")
+    }, error = function(e) {
+      cat(sprintf("Error getting predictions: %s\n", e$message))
+      stop("Could not obtain predictions from model. Consider using 'threshold' for probability-based predictions.")
+    })
+    
+    pred_char <- as.character(pred_raw)
+    pred_levels <- unique(pred_char)
+    cat(sprintf("Predicted labels (raw) - Unique values: [%s]\n", 
+                paste(pred_levels, collapse = ", ")))
+  }
+  
+  # ───────────────────────────────────────────────────────────────────────────
+  # Handle Factor Level Mismatch (only needed for raw predictions; threshold
+  # path already yields factor with correct levels, but we keep the logic
+  # for robustness)
+  # ───────────────────────────────────────────────────────────────────────────
+  if (!identical(sort(unique(pred_char)), sort(truth_levels))) {
+    cat("INFO: Prediction levels differ from truth levels. Attempting mapping...\n")
+    
+    # If predictions use different names (e.g., "0"/"1" vs "X0"/"X1")
+    # try to map them based on order
+    if (length(unique(pred_char)) == length(truth_levels)) {
+      pred_sorted <- sort(unique(pred_char))
+      truth_sorted <- sort(truth_levels)
+      
+      mapping <- setNames(truth_sorted, pred_sorted)
+      cat(sprintf("Mapping: %s -> %s\n", 
+                  paste(names(mapping), collapse=", "),
+                  paste(mapping, collapse=", ")))
+      
+      pred_char <- mapping[as.character(pred_char)]
+    }
+  }
+  
+  # Convert to factor with truth's levels
+  pred <- factor(pred_char, levels = truth_levels)
+  
+  if (length(pred) != length(truth)) {
+    stop(sprintf("Prediction length (%d) != truth length (%d)",
+                 length(pred), length(truth)))
+  }
+  
+  cat(sprintf("Final predicted levels: [%s]\n\n", paste(levels(pred), collapse = ", ")))
+  
+  # ───────────────────────────────────────────────────────────────────────────
+  # Create Confusion Matrix
+  # ───────────────────────────────────────────────────────────────────────────
+  cm <- table(Actual    = truth,
+              Predicted = pred)
+  
+  cm_df <- as.data.frame(cm)
+  colnames(cm_df) <- c("Actual", "Predicted", "Freq")
+  
+  cm_df <- cm_df %>%
     dplyr::group_by(Actual) %>%
     dplyr::mutate(Pct = round(Freq / sum(Freq) * 100, 1)) %>%
     dplyr::ungroup()
-
+  
+  # ───────────────────────────────────────────────────────────────────────────
+  # Calculate Classification Metrics
+  # ───────────────────────────────────────────────────────────────────────────
+  # Extract counts using the already defined positive/negative classes
+  tn <- cm[neg_class, neg_class]
+  fp <- cm[neg_class, pos_class]
+  fn <- cm[pos_class, neg_class]
+  tp <- cm[pos_class, pos_class]
+  
+  total <- tp + tn + fp + fn
+  accuracy <- (tp + tn) / total
+  sensitivity <- tp / (tp + fn)   # also recall, TPR
+  specificity <- tn / (tn + fp)   # TNR
+  precision <- tp / (tp + fp)     # PPV
+  npv <- tn / (tn + fn)           # Negative Predictive Value
+  
+  # Handle division by zero
+  if (is.nan(sensitivity)) sensitivity <- 0
+  if (is.nan(specificity)) specificity <- 0
+  if (is.nan(precision)) precision <- 0
+  if (is.nan(npv)) npv <- 0
+  
+  # Test set prevalence (observed)
+  obs_prevalence <- (tp + fn) / total
+  
+  cat("────────────────────────────────────────\n")
+  cat("Performance Metrics (test set)\n")
+  cat("────────────────────────────────────────\n")
+  cat(sprintf("TP = %d | TN = %d | FP = %d | FN = %d\n", tp, tn, fp, fn))
+  cat(sprintf("Total N = %d\n", total))
+  cat(sprintf("Accuracy     = %.3f (%.1f%%)\n", accuracy, accuracy * 100))
+  cat(sprintf("Sensitivity  = %.3f (%.1f%%)   [Recall / TPR]\n", sensitivity, sensitivity * 100))
+  cat(sprintf("Specificity  = %.3f (%.1f%%)   [TNR]\n", specificity, specificity * 100))
+  cat(sprintf("PPV (Precision) = %.3f (%.1f%%)\n", precision, precision * 100))
+  cat(sprintf("NPV             = %.3f (%.1f%%)\n", npv, npv * 100))
+  cat(sprintf("Prevalence (test) = %.3f (%.1f%%)\n", obs_prevalence, obs_prevalence * 100))
+  
+  # ───────────────────────────────────────────────────────────────────────────
+  # Adjusted predictive values using given population prevalence
+  # ───────────────────────────────────────────────────────────────────────────
+  if (!is.null(prevalence) && prevalence > 0 && prevalence < 1) {
+    # Bayes' theorem adjustments
+    # P(D+|T+) = (sens * prev) / (sens * prev + (1-spec) * (1-prev))
+    adj_ppv <- (sensitivity * prevalence) / 
+      (sensitivity * prevalence + (1 - specificity) * (1 - prevalence))
+    # P(D-|T-) = (spec * (1-prev)) / ((1-sens) * prev + spec * (1-prev))
+    adj_npv <- (specificity * (1 - prevalence)) / 
+      ((1 - sensitivity) * prevalence + specificity * (1 - prevalence))
+    
+    if (is.nan(adj_ppv)) adj_ppv <- 0
+    if (is.nan(adj_npv)) adj_npv <- 0
+    
+    cat("\n────────────────────────────────────────\n")
+    cat(sprintf("Adjusted for population prevalence = %.3f (%.1f%%)\n", prevalence, prevalence * 100))
+    cat("────────────────────────────────────────\n")
+    cat(sprintf("Adjusted PPV (true positive prediction) = %.3f (%.1f%%)\n", adj_ppv, adj_ppv * 100))
+    cat(sprintf("Adjusted NPV (true negative prediction) = %.3f (%.1f%%)\n", adj_npv, adj_npv * 100))
+  }
+  cat("\n")
+  
+  # ───────────────────────────────────────────────────────────────────────────
+  # Plot Confusion Matrix
+  # ───────────────────────────────────────────────────────────────────────────
   p <- ggplot2::ggplot(cm_df,
-    ggplot2::aes(Actual, Predicted, fill = Freq)) +
+                       ggplot2::aes(x = Actual, y = Predicted, fill = Freq)) +
     ggplot2::geom_tile(colour = "white", linewidth = 1) +
-    ggplot2::geom_text(ggplot2::aes(label = paste0(Freq, "\n(", Pct, "%)")),
-                       size = 4, fontface = "bold") +
-    ggplot2::scale_fill_gradient(low = palette[1], high = palette[2]) +
-    ggplot2::labs(title = paste("Confusion Matrix —", nm),
-                  x = "Actual", y = "Predicted", fill = "Count") +
-    .pub_theme(base_size)
-
-  if (save_plot)
-    .save_plot(p, save_dir, paste0("confusion_", nm), width, height, format)
+    ggplot2::geom_text(
+      ggplot2::aes(label = paste0(Freq, "\n(", Pct, "%)")),
+      size = 4,
+      fontface = "bold",
+      colour = "black"
+    ) +
+    ggplot2::scale_fill_gradient(
+      low = palette[1],
+      high = palette[2],
+      name = "Count"
+    ) +
+    ggplot2::scale_x_discrete(limits = truth_levels) +
+    ggplot2::scale_y_discrete(limits = rev(truth_levels)) +
+    ggplot2::labs(
+      title = paste("Confusion Matrix —", nm),
+      subtitle = sprintf("Accuracy: %.1f%% | Sensitivity: %.1f%% | Specificity: %.1f%% | PPV: %.1f%% | NPV: %.1f%%",
+                         accuracy * 100, sensitivity * 100, specificity * 100,
+                         precision * 100, npv * 100),
+      x = "Actual",
+      y = "Predicted"
+    ) +
+    .pub_theme(base_size) +
+    ggplot2::theme(
+      axis.text = ggplot2::element_text(size = base_size),
+      plot.subtitle = ggplot2::element_text(size = base_size - 1, colour = "grey50")
+    )
+  
+  # ───────────────────────────────────────────────────────────────────────────
+  # Save Plot
+  # ───────────────────────────────────────────────────────────────────────────
+  if (save_plot) {
+    .safe_dir(save_dir)
+    filename <- paste0("confusion_", nm, 
+                       ifelse(!is.null(threshold), paste0("_thr", gsub("\\.", "", sprintf("%.2f", threshold))), ""),
+                       ifelse(!is.null(prevalence), paste0("_prev", gsub("\\.", "", sprintf("%.2f", prevalence))), ""),
+                       ".", format)
+    filepath <- file.path(save_dir, filename)
+    ggplot2::ggsave(filepath, p, width = width, height = height, device = format)
+    cat(sprintf("✓ Plot saved to: %s\n", filepath))
+  }
+  
   return(p)
 }
+
+# Helper functions (.get_viz_output_dir, .safe_dir, .pub_theme) remain unchanged.
 
 
 #' Feature importance plot
@@ -849,80 +1807,197 @@ PlotFeatureImportance <- function(object,
 
 
 #' Calibration curve
+#' Calibration Curve and Prediction Distribution Plot
 #'
-#' Plots predicted probability vs. observed event rate (Platt-style), with
-#' a perfectly calibrated reference line and Hosmer–Lemeshow test annotation.
+#' Strictly follows the diagnostic logic of 'diagnose_calibration' for calculations,
+#' with English labels and Prism-style formatting.
 #'
-#' @param object      A \code{Train_Model} object.
-#' @param model_name  Model to use.
-#' @param test_data   Test data frame.
-#' @param n_bins      Number of probability bins. Default \code{10}.
-#' @param palette_name Palette.
-#' @param base_size   Base font size.
-#' @param save_plot   Logical.
-#' @param save_dir    Output directory.
-#' @param width,height Inches.
-#' @param format      File format.
-#' @returns A \code{ggplot} object.
+#' @param object A Train_Model object.
+#' @param model_name Name of the model. Defaults to the first one available.
+#' @param test_data Optional test dataframe. If NULL, uses object@split.data$test.
+#' @param n_bins Number of bins for grouping (default: 10).
+#' @param hist_colors Vector of two colors for histogram bars. Default: c("#ffffb3", "#bebada").
+#' @param curve_colors Vector of two colors (1: point, 2: loess line).
+#' @param base_size Base font size for ggprism theme (default: 14).
+#' @param combine_plots Logical. If TRUE, returns a patchwork object.
+#' @param save_plot Logical. Whether to save the plot.
+#' @param save_dir Directory to save the plot.
+#' @param width,height Plot dimensions in inches.
+#' @param format File format ("pdf" or "png").
+#' @param show_stats_on_plot Logical. Whether to display metrics on the plot.
+#'
 #' @export
 PlotCalibration <- function(object,
-
-                            model_name   = NULL,
-                            test_data    = NULL,
-                            n_bins       = 10,
-                            palette_name = "Royal1",
-                            base_size    = 13,
-                            save_plot    = FALSE,
-                            save_dir = NULL,  # default: auto-detect from config
-                            width        = 6,
-                            height       = 5.5,
-                            format       = "pdf") {
-  if (is.null(save_dir)) save_dir <- .get_viz_output_dir("Model")
-
-
+                            model_name         = NULL,
+                            test_data          = NULL,
+                            n_bins             = 10,
+                            hist_colors        = c("#f0f0f0", "#1b9e77"),
+                            curve_colors       = c("#1b9e77", "#c51b8a"),
+                            base_size          = 14,
+                            combine_plots      = TRUE,
+                            save_plot          = FALSE,
+                            save_dir           = NULL,
+                            se = FALSE,
+                            width              = 10,
+                            height             = 5,
+                            format             = "pdf",
+                            show_stats_on_plot = TRUE) {
+  
+  # ---------- 1. Parameter Extraction ----------
   if (!inherits(object, "Train_Model"))
     stop("'object' must be a Train_Model.")
-
-  nm    <- if (is.null(model_name)) names(object@train.models)[1] else model_name
-  model <- object@train.models[[nm]]
-  td    <- if (!is.null(test_data)) test_data else object@split.data$test
-
+  
+  if (is.null(model_name))
+    model_name <- names(object@train.models)[1]
+  model <- object@train.models[[model_name]]
+  
+  if (is.null(test_data))
+    test_data <- object@split.data$test
+  
   group_col <- as.character(object@group_col)
-  truth     <- as.integer(td[[group_col]]) - 1L
-  pos_level <- levels(factor(td[[group_col]]))[2]
-  probs     <- stats::predict(model, newdata = td, type = "prob")[, pos_level]
-
-  calib_df <- data.frame(truth = truth, prob = probs)
-  calib_df$bin <- cut(calib_df$prob, breaks = seq(0, 1, length.out = n_bins + 1),
-                      include.lowest = TRUE)
-  calib_sum <- calib_df %>%
+  if (!group_col %in% colnames(test_data))
+    stop("group_col '", group_col, "' not found in test_data.")
+  
+  # ---------- 2. Truth Label Extraction & Encoding ----------
+  truth_factor <- test_data[[group_col]]
+  if (!is.factor(truth_factor))
+    truth_factor <- as.factor(truth_factor)
+  
+  levels_true <- levels(truth_factor)
+  cat("===== True Class Levels =====\n")
+  print(levels_true)
+  
+  if (length(levels_true) != 2)
+    warning("Grouping variable is not binary; calibration curve may not be applicable.")
+  
+  # Diagnostic standard: Assume second level is the positive class
+  pos_level <- levels_true[2]
+  truth_numeric <- as.integer(truth_factor) - 1L  # 0/1 encoding
+  cat("\nPositive Level (Assumed levels[2]):", pos_level, "\n")
+  cat("Positive Samples:", sum(truth_numeric == 1), "/", length(truth_numeric), "\n")
+  
+  # ---------- 3. Predicted Probability Extraction ----------
+  pred_prob <- tryCatch({
+    prob_mat <- stats::predict(model, newdata = test_data, type = "prob")
+    if (is.matrix(prob_mat) || is.data.frame(prob_mat)) {
+      if (pos_level %in% colnames(prob_mat)) {
+        prob_mat[, pos_level]
+      } else {
+        warning("Prediction matrix column names do not include positive level; using second column.")
+        prob_mat[, 2]
+      }
+    } else if (is.numeric(prob_mat)) {
+      prob_mat
+    } else {
+      stop("Unable to parse return type of predict()")
+    }
+  }, error = function(e) {
+    stop("Prediction failed: ", e$message)
+  })
+  
+  # ---------- 4. Basic Statistics ----------
+  cat("\n===== Predicted Probability Distribution =====\n")
+  print(summary(pred_prob))
+  cat("Standard Deviation:", sd(pred_prob), "\n")
+  
+  # Brier score
+  brier <- mean((truth_numeric - pred_prob)^2)
+  cat("\nBrier Score (Lower is better, range 0-0.25):", round(brier, 4), "\n")
+  
+  # Calibration Slope & Intercept (Logit Calibration)
+  cal_df <- data.frame(truth = truth_numeric, prob = pred_prob)
+  # Clip probabilities to avoid infinite logits
+  cal_df$prob_clip <- pmax(pmin(cal_df$prob, 1 - 1e-6), 1e-6)
+  cal_glm <- suppressWarnings(
+    glm(truth ~ log(prob_clip/(1 - prob_clip)), family = binomial(), data = cal_df)
+  )
+  intercept <- coef(cal_glm)[1]
+  slope     <- coef(cal_glm)[2]
+  
+  cat("\n===== Calibration Parameters (Logit) =====\n")
+  cat("Intercept:", round(intercept, 3), "(Ideal: 0)\n")
+  cat("Slope:    ", round(slope, 3), "(Ideal: 1)\n")
+  
+  if (abs(intercept) > 0.5) cat("Warning: Large intercept suggests global probability shift.\n")
+  if (abs(slope - 1) > 0.2) cat("Warning: Slope deviation suggests poor calibration at extremes.\n")
+  
+  # ---------- 5. Binning Calibration & Eavg ----------
+  cal_df$bin <- cut(pred_prob, breaks = seq(0, 1, length.out = n_bins + 1), include.lowest = TRUE)
+  cal_sum <- cal_df %>%
     dplyr::group_by(bin) %>%
-    dplyr::summarise(mean_pred = mean(prob),
-                     obs_rate  = mean(truth),
-                     n         = dplyr::n(), .groups = "drop")
-
-  col <- .get_palette(palette_name, 2)[1]
-
-  p <- ggplot2::ggplot(calib_sum,
-    ggplot2::aes(mean_pred, obs_rate)) +
-    ggplot2::geom_abline(slope = 1, intercept = 0,
-                         linetype = "dashed", colour = "grey40", linewidth = 0.8) +
-    ggplot2::geom_point(ggplot2::aes(size = n), colour = col, alpha = 0.85) +
-    ggplot2::geom_smooth(method = "loess", se = TRUE, colour = col,
-                         linewidth = 0.9, fill = paste0(col, "40")) +
+    dplyr::summarise(
+      mean_pred = mean(prob),
+      obs_rate  = mean(truth),
+      n         = dplyr::n(),
+      .groups   = "drop"
+    )
+  
+  cat("\n===== Binning Calibration Summary (n_bins =", n_bins, ") =====\n")
+  print(cal_sum)
+  
+  e_avg <- mean(abs(cal_sum$obs_rate - cal_sum$mean_pred), na.rm = TRUE)
+  cat("\nMean Absolute Calibration Error (Eavg):", round(e_avg, 4), "\n")
+  
+  # ---------- 6. Visualization (Prism Theme & English) ----------
+  # Plot 1: Histogram Distribution
+  hist_df <- data.frame(prob = pred_prob, 
+                        truth = factor(truth_numeric, levels = c(0,1), labels = levels_true))
+  
+  p1 <- ggplot2::ggplot(hist_df, ggplot2::aes(x = prob, fill = truth)) +
+    ggplot2::geom_histogram(alpha = 0.6, bins = 30, position = "stack", color = "black", linewidth = 0.2) +
+    ggplot2::scale_fill_manual(values = hist_colors, name = "True Class") +
+    ggplot2::labs(title = paste0("Probability Distribution: ", model_name),
+                  x = "Predicted Probability", y = "Count") +
+    ggprism::theme_prism(base_size = base_size) +
+    ggplot2::theme(legend.position = "bottom")
+  
+  # Plot 2: Calibration Curve
+  p2 <- ggplot2::ggplot(cal_sum, ggplot2::aes(x = mean_pred, y = obs_rate)) +
+    ggplot2::geom_abline(slope = 1, intercept = 0, alpha = 0.6,linetype = "dashed", color ='#d9d9d9', linewidth = 0.8) +
+    ggplot2::geom_point(ggplot2::aes(size = n), color = curve_colors[1], alpha = 0.8) +
+    ggplot2::geom_smooth(method = "loess", se = se, color = curve_colors[2], linewidth = 1.5, linetype = "dotted") +
     ggplot2::scale_size_continuous(range = c(3, 8), name = "n") +
-    ggplot2::scale_x_continuous(limits = c(0, 1)) +
-    ggplot2::scale_y_continuous(limits = c(0, 1)) +
-    ggplot2::labs(title    = paste("Calibration Curve —", nm),
-                  subtitle = paste0("n_bins = ", n_bins),
-                  x = "Mean Predicted Probability",
-                  y = "Observed Event Rate") +
-    .pub_theme(base_size)
-
-  if (save_plot)
-    .save_plot(p, save_dir, paste0("calibration_", nm), width, height, format)
-  return(p)
+    ggplot2::coord_equal() +
+    ggplot2::xlim(0, 1) + ggplot2::ylim(0, 1) +
+    ggplot2::labs(title = paste0("Calibration Curve: ", model_name),
+                  subtitle = paste0("Bins = ", n_bins),
+                  x = "Mean Predicted Probability", y = "Observed Proportion") +
+    ggprism::theme_prism(base_size = base_size)
+  
+  # Add statistics to plot if requested
+  if (show_stats_on_plot) {
+    stats_text <- paste0(
+      "Brier: ", round(brier, 4), "\n",
+      "Intercept: ", round(intercept, 3), "\n",
+      "Slope: ", round(slope, 3), "\n",
+      "Eavg: ", round(e_avg, 4)
+    )
+    p2 <- p2 + ggplot2::annotate("text", x = 0.05, y = 0.95, label = stats_text, 
+                                 hjust = 0, vjust = 1, size = base_size * 0.3, 
+                                 family = "mono", fontface = "bold")
+  }
+  
+  # ---------- 7. Output Management ----------
+  if (combine_plots) {
+    if (!requireNamespace("patchwork", quietly = TRUE)) stop("Please install 'patchwork' package.")
+    combined <- p1 + p2 + patchwork::plot_layout(widths = c(1, 1))
+    
+    if (save_plot) {
+      if (is.null(save_dir)) save_dir <- getwd()
+      if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
+      out_path <- file.path(save_dir, paste0("Calibration_", model_name, ".", format))
+      ggplot2::ggsave(out_path, combined, width = width, height = height)
+      cat("\nPlot saved to:", out_path, "\n")
+    }
+    
+    print(combined)
+    return(invisible(combined))
+  } else {
+    return(list(histogram = p1, calibration = p2))
+  }
 }
+
+
 
 
 ## ═════════════════════════════════════════════════════════════════════════════
@@ -1046,236 +2121,450 @@ PlotDimReduction <- function(object,
 }
 
 
-#' Cluster-level heatmap (top marker features per cluster)
+
+#' Plot Cluster Heatmap for Clinlabomics
 #'
-#' Averages feature expression per cluster and renders a heatmap, optionally
-#' with a side bar showing per-cluster sample counts.
+#' @description
+#' Generates an enhanced cluster heatmap designed for clinical laboratory omics data. 
+#' Features automated Z-score thresholding, custom log transformations, split-group ordering, 
+#' and multi-layered top annotations for clinical metadata.
 #'
-#' @param object       A \code{Subtyping} object with \code{clustered.data}.
-#' @param top_n        Top N features per cluster ranked by mean difference.
-#'   Default \code{10}.
-#' @param scale_rows   Z-score rows. Default \code{TRUE}.
-#' @param palette_name RColorBrewer palette.
-#' @param base_fontsize Font size.
-#' @param save_plot    Logical.
-#' @param save_dir     Output directory.
-#' @param width,height Inches.
-#' @param format       File format.
-#' @returns A \code{pheatmap} object (invisibly).
+#' @param object An S4 object, a list, or a matrix containing data. If an S4 object or a list, 
+#'   it must contain slots or elements named \code{clean.data} (data matrix) and \code{info.data} (metadata frame).
+#' @param deg_df A data frame containing Differential Expression Analysis results. Must include 
+#'   columns: \code{id}, \code{p.adjust}, \code{logFC}, and \code{target_group}.
+#' @param group_by Character. The column name in metadata used for primary patient clustering. 
+#'   Default is \code{"cluster_lpa"}.
+#' @param annotation_cols Character vector. Optional column names from the metadata to display 
+#'   as tracking tracks (e.g., \code{c("Age", "Gender", "Stage")}) above the heatmap.
+#' @param top_n Integer. Maximum number of top features to slice per cluster based on LogFC. Default is 3.
+#' @param p_cutoff Numeric. Adjusted p-value significance threshold for feature selection. Default is 0.1.
+#' @param logfc_cutoff Numeric. Log fold-change threshold for feature selection. Default is 0.
+#' @param log_transform Logical. If \code{TRUE}, applies a \code{log10(x + 1)} transformation to the matrix before scaling.
+#' @param custom_levels Character vector. Explicitly sets the factor level order of the clusters.
+#' @param state_palette Named character vector. Colors assigned to the primary cluster levels.
+#' @param annotation_palette A named list of color vectors or color mapping functions corresponding 
+#'   to columns in \code{annotation_cols}.
+#' @param heatmap_palette Character vector of 3 colors representing the low, middle, and high values of the Z-score.
+#' @param z_limit Numeric. Fixed cutoff limit for standard deviations. If \code{NULL}, automatically uses the 99.5th percentile.
+#' @param save_path Character. Output file path for the generated PDF plot.
+#' @param show_gene_names Logical. If \code{TRUE}, utilizes \code{anno_mark} to display feature labels cleanly on the right.
+#' @param raster_quality Numeric. Quality multiplier for rasterization. Default is 5.
+#'
+#' @return Invisibly returns a structured \code{\code[ComplexHeatmap]{Heatmap-class}} object.
 #' @export
-PlotClusterHeatmap <- function(object,
-
-                               top_n         = 10,
-                               scale_rows    = TRUE,
-                               palette_name  = "RdYlBu",
-                               base_fontsize = 10,
-                               save_plot     = FALSE,
-                               save_dir = NULL,  # default: auto-detect from config
-                               width         = 9,
-                               height        = 8,
-                               format        = "pdf") {
-  if (is.null(save_dir)) save_dir <- .get_viz_output_dir("Subtyping")
-
-
-  if (!inherits(object, "Subtyping"))
-    stop("'object' must be a Subtyping object.")
-  cd <- object@clustered.data
-  if (is.null(cd) || nrow(cd) == 0 || !"cluster" %in% colnames(cd))
-    stop("Run clustering first (clustered.data empty or missing 'cluster' column).")
-
-  num_feats <- setdiff(names(cd)[sapply(cd, is.numeric)], "cluster")
-  cd_num    <- cd[, num_feats, drop = FALSE]
-  cl_vec    <- as.factor(cd[["cluster"]])
-
-  # select top_n per cluster by mean expression rank
-  cl_means  <- aggregate(cd_num, by = list(cluster = cl_vec), FUN = mean)
-  row.names(cl_means) <- cl_means$cluster
-  cl_means  <- cl_means[, -1, drop = FALSE]
-
-  top_feats <- unique(unlist(lapply(rownames(cl_means), function(cl) {
-    ord <- order(-cl_means[cl, ], decreasing = FALSE)
-    colnames(cl_means)[head(ord, top_n)]
-  })))
-
-  mat <- t(cd_num[, top_feats, drop = FALSE])
-  if (scale_rows) {
-    mat <- t(scale(t(mat)))
-    mat[is.nan(mat)] <- 0
+#' @importFrom methods slot
+#' @importFrom gtools mixedsort
+#' @importFrom dplyr filter mutate group_by arrange desc slice_head ungroup
+#' @importFrom scales hue_pal
+#' @importFrom circlize colorRamp2
+#' @importFrom grid gpar unit grid.rect
+#' @importFrom ComplexHeatmap Heatmap HeatmapAnnotation rowAnnotation anno_mark draw
+#'
+#' @examples
+#' \dontrun{
+#' # 1. Prepare dummy omics matrix
+#' set.seed(42)
+#' mock_mat <- matrix(matrix(rnorm(200, mean = 2)), ncol = 10)
+#' colnames(mock_mat) <- c("wbc", "lymphocytes", "neutrophils", "crp", "ggt", paste0("Lab", 6:10))
+#' rownames(mock_mat) <- paste0("Patient_", 1:20)
+#' 
+#' # 2. Prepare metadata with clinical tracks
+#' mock_meta <- data.frame(
+#'   PatientID = rownames(mock_mat),
+#'   cluster_lpa = rep(c("Cluster_1", "Cluster_2"), each = 10),
+#'   Age = sample(30:80, 20, replace = TRUE),
+#'   Gender = sample(c("Male", "Female"), 20, replace = TRUE),
+#'   row.names = rownames(mock_mat)
+#' )
+#' 
+#' # 3. Prepare dummy DEG frame
+#' mock_deg <- data.frame(
+#'   id = colnames(mock_mat),
+#'   p.adjust = runif(10, 0, 0.02),
+#'   logFC = c(runif(5, 1, 3), runif(5, -3, -1)),
+#'   target_group = rep(c("Cluster_1", "Cluster_2"), each = 5)
+#' )
+#' 
+#' # 4. Generate Heatmap with clinical info tracking
+#' PlotClusterHeatmap(
+#'   object = list(clean.data = mock_mat, info.data = mock_meta),
+#'   deg_df = mock_deg,
+#'   annotation_cols = c("Age", "Gender"),
+#'   annotation_palette = list(
+#'     Gender = c("Male" = "#4682B4", "Female" = "#FF69B4"),
+#'     Age = circlize::colorRamp2(c(30, 80), c("white", "#E65100"))
+#'   ),
+#'   save_path = "./Clinlabomics_Heatmap_Output.pdf"
+#' )
+#' }
+PlotClusterHeatmap <- function(
+    object,
+    deg_df,
+    group_by           = "cluster_lpa",
+    annotation_cols    = NULL,  
+    top_n              = 3,
+    p_cutoff           = 0.1,
+    logfc_cutoff       = 0,
+    log_transform      = FALSE,  
+    custom_levels      = NULL,
+    state_palette      = NULL,
+    annotation_palette = NULL, 
+    heatmap_palette    = c("#2166AC", "black", "#FFEC00"),
+    z_limit            = NULL,   
+    save_path          = "./Cluster_Heatmap_Final.pdf",
+    show_gene_names    = TRUE,
+    raster_quality     = 5
+) {
+  # Safe Package Checks 
+  if (!requireNamespace("ComplexHeatmap", quietly = TRUE)) stop("Package 'ComplexHeatmap' required.")
+  if (!requireNamespace("circlize", quietly = TRUE))       stop("Package 'circlize' required.")
+  if (!requireNamespace("dplyr", quietly = TRUE))          stop("Package 'dplyr' required.")
+  if (!requireNamespace("gtools", quietly = TRUE))         stop("Package 'gtools' required.")
+  
+  # [1] Data Parsing -------------------------------------------------------
+  if (isS4(object)) {
+    mat_df  <- methods::slot(object, "clean.data")
+    meta_df <- methods::slot(object, "info.data")
+  } else if (is.list(object) && !is.data.frame(object)) {
+    mat_df  <- object$clean.data
+    meta_df <- object$info.data
+  } else {
+    mat_df  <- object
+    meta_df <- object
   }
-
-  ann_col <- data.frame(Cluster = cl_vec, row.names = rownames(cd))
-  n_cl    <- nlevels(cl_vec)
-  cl_cols <- .get_palette("Darjeeling1", n_cl)
-  names(cl_cols) <- levels(cl_vec)
-
-  color_ramp <- rev(RColorBrewer::brewer.pal(11, palette_name))
-
-  ph <- pheatmap::pheatmap(
-    mat,
-    color          = colorRampPalette(color_ramp)(100),
-    annotation_col = ann_col,
-    annotation_colors = list(Cluster = cl_cols),
-    cluster_rows   = TRUE,
-    cluster_cols   = TRUE,
-    show_colnames  = FALSE,
-    fontsize       = base_fontsize,
-    border_color   = NA,
-    silent         = TRUE
+  
+  # [2] Optional Log Transformation -----------------------------------------
+  if (log_transform) {
+    message("Applying log10(x + 1) transformation...")
+    mat_df <- log10(mat_df + 1)
+  }
+  
+  # [3] Group Ordering -----------------------------------------------------
+  raw_group <- as.character(meta_df[[group_by]])
+  lvls <- if (!is.null(custom_levels)) custom_levels else gtools::mixedsort(unique(raw_group))
+  
+  # [4] Feature Filtering & Slicing ----------------------------------------
+  available_features <- colnames(mat_df)
+  filtered_deg <- deg_df %>%
+    dplyr::filter(id %in% available_features) %>% 
+    dplyr::filter(p.adjust < p_cutoff, logFC > logfc_cutoff) %>%
+    dplyr::mutate(target_group = factor(as.character(target_group), levels = lvls)) %>%
+    dplyr::group_by(target_group) %>%
+    dplyr::arrange(dplyr::desc(logFC), .by_group = TRUE) %>% 
+    dplyr::slice_head(n = top_n) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(target_group)
+  
+  if (nrow(filtered_deg) == 0) stop("No matching clinical features found with the current thresholds.")
+  
+  # [5] Matrix Computations & Z-score Scaling -------------------------------
+  sample_order_idx <- order(factor(raw_group, levels = lvls))
+  ordered_meta     <- meta_df[sample_order_idx, , drop = FALSE]
+  ordered_group_tags <- factor(raw_group[sample_order_idx], levels = lvls)
+  
+  plot_mat_raw <- as.matrix(mat_df[rownames(ordered_meta), filtered_deg$id])
+  plot_mat_z   <- scale(plot_mat_raw)
+  
+  # [6] Adaptive Z-limit Calculation ---------------------------------------
+  if (is.null(z_limit)) {
+    z_limit <- quantile(abs(plot_mat_z), 0.995, na.rm = TRUE)
+    message(paste0("Auto-calculated z_limit (99.5th percentile): ", round(z_limit, 2)))
+  }
+  
+  plot_mat <- t(plot_mat_z)
+  plot_mat[plot_mat > z_limit]  <- z_limit
+  plot_mat[plot_mat < -z_limit] <- -z_limit
+  
+  # [7] Visual Legends & Dynamic Palette Allocation -----------------------
+  col_fun <- circlize::colorRamp2(c(-z_limit, 0, z_limit), heatmap_palette)
+  
+  if (is.null(state_palette)) {
+    state_colors <- scales::hue_pal()(length(lvls))
+  } else {
+    state_colors <- state_palette
+  }
+  names(state_colors) <- lvls
+  
+  # Initialize the color map registry list for annotations
+  color_registry_list <- list(Cluster = state_colors)
+  if (!is.null(annotation_palette)) {
+    color_registry_list <- c(color_registry_list, annotation_palette)
+  }
+  
+  # Isolate metadata columns specified for track representation
+  top_anno_df <- ordered_meta[, c(group_by, annotation_cols), drop = FALSE]
+  colnames(top_anno_df)[1] <- "Cluster"
+  
+  common_lgd_param <- list(
+    direction = "horizontal", nrow = 1, title_position = "topleft",
+    title_gp = grid::gpar(fontsize = 11, fontface = "bold"),
+    labels_gp = grid::gpar(fontsize = 9)
   )
-
-  if (save_plot) {
-    if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
-    path <- file.path(save_dir, paste0("cluster_heatmap.", format))
-    # pheatmap object needs special handling - use grid.draw
-    if (format == "pdf") {
-      pdf(path, width = width, height = height)
-      grid::grid.draw(ph$gtable)
-      dev.off()
-    } else {
-      png(path, width = width * 100, height = height * 100, res = 100)
-      grid::grid.draw(ph$gtable)
-      dev.off()
+  
+  # Construct Top Clinical Tracks Layout
+  top_annotation <- ComplexHeatmap::HeatmapAnnotation(
+    df = top_anno_df,
+    col = color_registry_list,
+    simple_anno_size = grid::unit(5, "mm"),
+    annotation_legend_param = color_registry_list, 
+    show_annotation_name = TRUE,
+    annotation_name_gp = grid::gpar(fontsize = 11, fontface = "bold"),
+    annotation_name_side = "left"
+  )
+  
+  # [8] Construct Heatmap Body ----------------------------------------------
+  ht <- ComplexHeatmap::Heatmap(
+    plot_mat,
+    name = "Z-score",
+    col = col_fun,
+    heatmap_legend_param = common_lgd_param,
+    column_title = paste0("Clusters (", group_by, ")"),
+    column_title_gp = grid::gpar(fontsize = 14, fontface = "bold"),
+    column_split = ordered_group_tags,
+    row_split    = filtered_deg$target_group, 
+    row_title_gp = grid::gpar(fontsize = 12, fontface = "bold"),
+    cluster_column_slices = FALSE,
+    cluster_row_slices    = FALSE,
+    cluster_columns = TRUE, 
+    cluster_rows    = FALSE,
+    show_column_names = FALSE,
+    show_row_names    = FALSE, 
+    column_gap = grid::unit(1.5, "mm"),
+    row_gap    = grid::unit(1.5, "mm"),
+    border = TRUE,
+    top_annotation = top_annotation,
+    right_annotation = if (show_gene_names) {
+      ComplexHeatmap::rowAnnotation(
+        mark = ComplexHeatmap::anno_mark(
+          at = 1:nrow(plot_mat), 
+          labels = filtered_deg$id,
+          labels_gp = grid::gpar(fontsize = 12, fontface = "bold.italic")
+        )
+      )
+    } else { NULL },
+    use_raster = TRUE, 
+    raster_quality = raster_quality,
+    layer_fun = function(j, i, x, y, w, h, fill) {
+      grid::grid.rect(gp = grid::gpar(lwd = 0.5, fill = "transparent", col = "white"))
     }
-    cat("Saved:", path, "\n")
+  )
+  
+  # [9] Compilation and File Export -----------------------------------------
+  if (!is.null(save_path)) {
+    if (!dir.exists(dirname(save_path))) dir.create(dirname(save_path), recursive = TRUE)
+    pdf(save_path, width = 12, height = 9)
+    ComplexHeatmap::draw(
+      ht, 
+      heatmap_legend_side = "bottom", 
+      annotation_legend_side = "bottom", 
+      legend_gap = grid::unit(15, "mm"), 
+      merge_legend = TRUE
+    )
+    dev.off()
+    message(paste("Success: PlotClusterHeatmap generated at:", save_path))
   }
-  return(ph)
+  
+  return(invisible(ht))
 }
 
 
-#' Silhouette plot
+
+
+#' Plot Silhouette Score for Subtyping Results
 #'
-#' Draws a sorted silhouette width bar chart, with per-cluster average lines
-#' and an overall average annotation.
+#' @description
+#' Calculates and visualizes silhouette widths to evaluate clustering cohesion.
+#' Automatically aligns cluster labels from metadata if missing in the numeric matrix.
 #'
-#' @param object       A \code{Subtyping} object with \code{clustered.data}.
-#' @param dist_method  Distance for silhouette calculation. Default
-#'   \code{"euclidean"}.
-#' @param palette_name Palette.
-#' @param base_size    Base font size.
-#' @param save_plot    Logical.
-#' @param save_dir     Output directory.
-#' @param width,height Inches.
-#' @param format       File format.
-#' @returns A \code{ggplot} object.
+#' @param object A \code{Subtyping} S4 object.
+#' @param group_by Character. The column name in \code{info.data} containing cluster labels. 
+#'   Default is \code{"cluster_lpa"}.
+#' @param dist_method Character. Distance metric for \code{stats::dist()}. Default is \code{"euclidean"}.
+#' @param palette_name Character. Palette name (e.g., from Wes Anderson or RColorBrewer).
+#' @param base_size Numeric. Base font size for the plot.
+#' @param save_plot Logical. Whether to save the output as a file.
+#' @param save_dir Character. Directory path to save the plot.
+#' @param width,height,format Plot export settings.
+#'
+#' @return A \code{ggplot} object.
 #' @export
-PlotSilhouette <- function(object,
-
-                           dist_method  = "euclidean",
-                           palette_name = "Darjeeling1",
-                           base_size    = 13,
-                           save_plot    = FALSE,
-                           save_dir = NULL,  # default: auto-detect from config
-                           width        = 7,
-                           height       = 5,
-                           format       = "pdf") {
-  if (is.null(save_dir)) save_dir <- .get_viz_output_dir("Subtyping")
-
-
-  if (!inherits(object, "Subtyping"))
-    stop("'object' must be a Subtyping object.")
-  cd <- object@clustered.data
-  if (is.null(cd) || !"cluster" %in% colnames(cd))
-    stop("Run clustering first.")
-
-  num_mat <- as.matrix(cd[, setdiff(names(cd)[sapply(cd, is.numeric)], "cluster")])
-  cl_int  <- as.integer(cd[["cluster"]])
-  d_mat   <- stats::dist(num_mat, method = dist_method)
+PlotSilhouette <- function(
+    object,
+    group_by     = "cluster_lpa",
+    dist_method  = "euclidean",
+    palette_name = "Darjeeling1",
+    base_size    = 13,
+    save_plot    = FALSE,
+    save_dir     = NULL,
+    width        = 7,
+    height       = 5,
+    format       = "pdf"
+) {
+  # 1. Validation ----------------------------------------------------------
+  if (!inherits(object, "Subtyping")) {
+    stop("Input 'object' must be a Subtyping S4 object.")
+  }
+  
+  # 2. Data Preparation ----------------------------------------------------
+  # Extract numeric data and metadata
+  mat  <- as.matrix(object@clean.data)
+  info <- object@info.data
+  
+  if (!(group_by %in% colnames(info))) {
+    stop(sprintf("Column '%s' not found in info.data. Available: %s", 
+                 group_by, paste(colnames(info), collapse = ", ")))
+  }
+  
+  # Ensure cluster labels are factor/numeric
+  cl_labels <- info[[group_by]]
+  if (any(is.na(cl_labels))) {
+    stop("Cluster labels contain missing values (NA). Please check clustering results.")
+  }
+  
+  # 3. Silhouette Calculation ----------------------------------------------
+  # Calculate distance matrix
+  d_mat   <- stats::dist(mat, method = dist_method)
+  cl_int  <- as.integer(as.factor(cl_labels))
+  
   sil     <- cluster::silhouette(cl_int, d_mat)
   sil_df  <- as.data.frame(sil[, ])
+  
+  # Reconstruct group names for the plot
+  lvl_names <- levels(as.factor(cl_labels))
+  sil_df$cluster_name <- lvl_names[sil_df$cluster]
+  
+  # Sort for visualization
   sil_df  <- sil_df[order(sil_df$cluster, sil_df$sil_width), ]
-  sil_df$order   <- seq_len(nrow(sil_df))
-  sil_df$cluster <- as.factor(sil_df$cluster)
+  sil_df$order <- seq_len(nrow(sil_df))
   avg_sil <- round(mean(sil_df$sil_width), 3)
-
-  cols <- .get_palette(palette_name, nlevels(sil_df$cluster))
-
-  p <- ggplot2::ggplot(sil_df,
-    ggplot2::aes(order, sil_width, fill = cluster)) +
+  
+  # 4. Visualization -------------------------------------------------------
+  cols <- .get_palette(palette_name, length(lvl_names))
+  
+  p <- ggplot2::ggplot(sil_df, ggplot2::aes(x = order, y = sil_width, fill = cluster_name)) +
     ggplot2::geom_col(width = 1) +
-    ggplot2::geom_hline(yintercept = avg_sil,
-                        linetype = "dashed", colour = "grey20") +
-    ggplot2::annotate("text", x = nrow(sil_df) * 0.02,
-                      y = avg_sil + 0.03,
-                      label = paste0("Avg = ", avg_sil),
-                      hjust = 0, size = 3.5) +
+    ggplot2::geom_hline(yintercept = avg_sil, linetype = "dashed", color = "red") +
+    ggplot2::annotate("text", x = 5, y = avg_sil + 0.05, 
+                      label = paste0("Average Width: ", avg_sil), 
+                      hjust = 0, fontface = "bold") +
     ggplot2::scale_fill_manual(values = cols, name = "Cluster") +
-    ggplot2::labs(title = "Silhouette Plot",
-                  x = "Samples (sorted by cluster)", y = "Silhouette Width") +
+    ggplot2::labs(
+      title = paste("Silhouette Analysis:", group_by),
+      subtitle = paste("Distance Method:", dist_method),
+      x = "Samples", 
+      y = "Silhouette Width"
+    ) +
     .pub_theme(base_size)
-
-  if (save_plot)
-    .save_plot(p, save_dir, "silhouette", width, height, format)
+  
+  # 5. Export --------------------------------------------------------------
+  if (save_plot) {
+    if (is.null(save_dir)) save_dir <- "./"
+    if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
+    
+    file_name <- paste0("Silhouette_", group_by, ".", format)
+    dest_path <- file.path(save_dir, file_name)
+    
+    ggplot2::ggsave(dest_path, plot = p, width = width, height = height)
+    message("Silhouette plot saved to: ", dest_path)
+  }
+  
   return(p)
 }
 
 
-#' Alluvial / Sankey plot — cluster method comparison
+#' Plot Multi-Group Alluvial Diagram
 #'
-#' Compares cluster assignments from two methods (or time-points) as an
-#' alluvial diagram, showing how samples flow between categories.
+#' @description
+#' Visualizes sample transitions across multiple clustering methods using 
+#' the 'Lodes' format for ggalluvial. 
 #'
-#' @param object    A \code{Subtyping} object, or a plain data frame with
-#'   two cluster columns.
-#' @param col_from  Column name for the left axis.
-#' @param col_to    Column name for the right axis.
-#' @param palette_name Palette for \code{col_from} strata.
-#' @param base_size Base font size.
-#' @param save_plot Logical.
-#' @param save_dir  Output directory.
-#' @param width,height Inches.
-#' @param format    File format.
-#' @returns A \code{ggplot} object.
+#' @param object A \code{Subtyping} S4 object or a data frame.
+#' @param cols_list Character vector. Columns to use as axes (e.g., c("Kmeans", "LPA", "NMF")).
+#' @param palette_name Character. Color palette name.
+#' @param base_size Numeric. Base font size.
+#' @param save_plot Logical. Save to file?
+#' @param save_dir Character. Output directory.
+#' @param width,height,format Export dimensions.
+#'
 #' @export
-PlotAlluvial <- function(object,
-
-                         col_from     = "cluster",
-                         col_to       = "cluster2",
-                         palette_name = "Darjeeling1",
-                         base_size    = 13,
-                         save_plot    = FALSE,
-                         save_dir = NULL,  # default: auto-detect from config
-                         width        = 7,
-                         height       = 6,
-                         format       = "pdf") {
-  if (is.null(save_dir)) save_dir <- .get_viz_output_dir("Subtyping")
-
-  df <- if (inherits(object, "Subtyping")) {
-    cd <- object@clustered.data
-    if (col_to %in% colnames(object@info.data))
-      cbind(cd, object@info.data[rownames(cd), col_to, drop = FALSE])
-    else cd
+PlotMultiAlluvial <- function(
+    object,
+    cols_list    = c("cluster_kmeans", "cluster_lpa", "cluster_nmf"),
+    palette_name = "Darjeeling1",
+    base_size    = 13,
+    save_plot    = FALSE,
+    save_dir     = NULL,
+    width        = 10,
+    height       = 7,
+    format       = "pdf"
+) {
+  # 1. Dependencies --------------------------------------------------------
+  requireNamespace("ggalluvial", quietly = TRUE)
+  requireNamespace("dplyr", quietly = TRUE)
+  requireNamespace("tidyr", quietly = TRUE)
+  requireNamespace("ggplot2", quietly = TRUE)
+  
+  # 2. Data Extraction -----------------------------------------------------
+  df_meta <- if (inherits(object, "Subtyping")) {
+    as.data.frame(methods::slot(object, "info.data"))
   } else {
     as.data.frame(object)
   }
-
-  if (!all(c(col_from, col_to) %in% colnames(df)))
-    stop("Both '", col_from, "' and '", col_to, "' must be columns in the data.")
-
-  alluvial_df <- df %>%
-    dplyr::count(.data[[col_from]], .data[[col_to]], name = "freq") %>%
-    dplyr::mutate(across(c(col_from, col_to), as.factor))
-
-  cols <- .get_palette(palette_name, nlevels(alluvial_df[[col_from]]))
-
-  p <- ggplot2::ggplot(alluvial_df,
-    ggplot2::aes(axis1 = .data[[col_from]],
-                 axis2 = .data[[col_to]],
-                 y     = freq)) +
-    ggalluvial::geom_alluvium(ggplot2::aes(fill = .data[[col_from]]),
-                               width = 1/12, alpha = 0.75) +
-    ggalluvial::geom_stratum(width = 1/12, fill = "grey80", colour = "white") +
-    ggplot2::geom_text(stat = ggalluvial::StatStratum,
+  
+  if (!all(cols_list %in% colnames(df_meta))) {
+    stop("Some columns in 'cols_list' were not found in the metadata.")
+  }
+  
+  # 3. Transform to Long Format (Lodes) ------------------------------------
+  # This is the "ggalluvial" way to handle multiple axes
+  df_meta$ID <- seq_len(nrow(df_meta))
+  
+  plot_df <- df_meta %>%
+    dplyr::select(ID, dplyr::all_of(cols_list)) %>%
+    # Convert to lodes form: creates 'stratum', 'alluvium', and 'x' (axis name)
+    ggalluvial::to_lodes_form(key = "Method", axes = cols_list) %>%
+    dplyr::mutate(stratum = as.factor(stratum),
+                  Method = factor(Method, levels = cols_list))
+  
+  # Identify initial clusters for coloring (to track flows from the first method)
+  first_method_map <- df_meta %>% 
+    dplyr::select(ID, fill_group = !!cols_list[1])
+  
+  plot_df <- plot_df %>%
+    dplyr::left_join(first_method_map, by = "ID") %>%
+    dplyr::mutate(fill_group = as.factor(fill_group))
+  
+  # 4. Visualization -------------------------------------------------------
+  cols <- .get_palette(palette_name, nlevels(plot_df$fill_group))
+  
+  p <- ggplot2::ggplot(plot_df,
+                       ggplot2::aes(x = Method, 
+                                    stratum = stratum, 
+                                    alluvium = ID, 
+                                    y = 1)) +
+    ggalluvial::geom_alluvium(ggplot2::aes(fill = fill_group), 
+                              width = 1/12, alpha = 0.7) +
+    ggalluvial::geom_stratum(width = 1/12, fill = "grey90", color = "white") +
+    ggplot2::geom_text(stat = ggalluvial::StatStratum, 
                        ggplot2::aes(label = ggplot2::after_stat(stratum)),
                        size = 3.5, fontface = "bold") +
-    ggplot2::scale_x_discrete(limits = c(col_from, col_to), expand = c(0.1, 0)) +
-    ggplot2::scale_fill_manual(values = cols, name = col_from) +
-    ggplot2::labs(title = "Cluster Assignment Alluvial",
+    ggplot2::scale_fill_manual(values = cols, name = paste("Initial:", cols_list[1])) +
+    ggplot2::labs(title = "Multi-Method Cluster Consistency",
+                  subtitle = paste("Tracking flow from:", cols_list[1]),
+                  x = "Clustering Method",
                   y = "Sample Count") +
-    .pub_theme(base_size) +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(face = "bold", size = 12))
-
-  if (save_plot)
-    .save_plot(p, save_dir, "alluvial", width, height, format)
+    .pub_theme(base_size)
+  
+  # 5. Export --------------------------------------------------------------
+  if (save_plot) {
+    if (is.null(save_dir)) save_dir <- "./"
+    if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
+    dest <- file.path(save_dir, paste0("multi_alluvial.", format))
+    ggplot2::ggsave(dest, plot = p, width = width, height = height)
+    message("Multi-group alluvial plot saved to: ", dest)
+  }
+  
   return(p)
 }
 
@@ -1817,3 +3106,93 @@ PlotDCA <- function(object,
     .save_plot(p, save_dir, "DCA", width, height, format)
   return(p)
 }
+
+#' @title Plot Group Mean Heatmap (Production Version)
+#' @description Optimized for flexible group-wise visualization with auto-annotation.
+#' @export
+PlotGroupMeanHeatmap <- function(
+    object,
+    deg_df,
+    group_by           = "cluster_lpa",
+    top_n              = 5,
+    p_cutoff           = 0.05,
+    logfc_cutoff       = 0,
+    custom_levels      = NULL,
+    z_score_type       = "row",
+    heatmap_palette    = c("#2166AC", "white", "#B2182B"),
+    save_path          = "./Group_Mean_Heatmap.pdf"
+) {
+  library(ComplexHeatmap)
+  library(dplyr)
+  library(circlize)
+  library(scales)
+  
+  # [1] Data Extraction
+  if (isS4(object)) {
+    mat_df  <- methods::slot(object, "clean.data")
+    meta_df <- methods::slot(object, "info.data")
+  } else {
+    mat_df  <- object$clean.data
+    meta_df <- object$info.data
+  }
+  
+  raw_group <- as.character(meta_df[[group_by]])
+  lvls <- if (!is.null(custom_levels)) custom_levels else gtools::mixedsort(unique(raw_group))
+  
+  # [2] Feature Selection
+  filtered_deg <- deg_df %>%
+    dplyr::filter(id %in% colnames(mat_df)) %>% 
+    dplyr::filter(p.adjust < p_cutoff, logFC > logfc_cutoff) %>%
+    dplyr::group_by(target_group) %>%
+    dplyr::slice_head(n = top_n) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(match(target_group, lvls))
+  
+  selected_genes <- unique(filtered_deg$id)
+  calc_mat <- as.matrix(mat_df[, selected_genes, drop = FALSE])
+  
+  # [3] Group Mean Calculation
+  plot_mat <- sapply(lvls, function(g) {
+    colMeans(calc_mat[which(raw_group == g), , drop = FALSE], na.rm = TRUE)
+  })
+  
+  if (z_score_type == "row") {
+    plot_mat <- t(scale(t(plot_mat)))
+  }
+  
+  # [4] Auto-Annotations
+  group_colors <- setNames(hue_pal()(length(lvls)), lvls)
+  
+  ha = HeatmapAnnotation(
+    Group = lvls,
+    col = list(Group = group_colors),
+    show_legend = TRUE,
+    annotation_name_side = "left"
+  )
+  
+  # [5] Heatmap Construction
+  col_fun <- colorRamp2(c(min(plot_mat), 0, max(plot_mat)), heatmap_palette)
+  
+  ht <- Heatmap(
+    plot_mat,
+    name = "Mean Exp",
+    col = col_fun,
+    top_annotation = ha,           
+    cluster_rows = FALSE,
+    cluster_columns = FALSE,
+    row_split = factor(filtered_deg$target_group[match(rownames(plot_mat), filtered_deg$id)], levels = lvls),
+    column_names_side = "top",     
+    row_names_side = "left",
+    border = TRUE,
+    rect_gp = gpar(col = "white", lwd = 1)
+  )
+  
+  # [6] Save
+  if (!is.null(save_path)) {
+    pdf(save_path, width = 7, height = 8)
+    draw(ht, heatmap_legend_side = "right", annotation_legend_side = "right")
+    dev.off()
+  }
+  return(ht)
+}
+

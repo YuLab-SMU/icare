@@ -127,3 +127,95 @@
   return(data)
 }
 
+#' Remove constant (zero-variance) columns from a data frame or matrix
+#'
+#' Identifies and removes columns that have only one distinct value (including NA).
+#'
+#' @param data A data frame or matrix.
+#' @param na.rm Logical. If TRUE, NA values are ignored when checking constancy
+#'   (i.e., a column with only one non-NA value and the rest NA is considered constant).
+#'   If FALSE (default), NA is treated as a distinct value.
+#' @param verbose Logical. Print messages about removed columns (default TRUE).
+#' @param allow_empty Logical. If TRUE, allow returning an empty data frame when
+#'   all columns are constant (default FALSE, which raises an error).
+#'
+#' @return A data frame or matrix (same class as input) with constant columns removed.
+#' @export
+#'
+#' @examples
+#' df <- data.frame(a = 1:5, b = rep(2, 5), c = c(1, NA, 1, 1, 1))
+#' remove_constant_columns(df)                 # removes column 'b'
+#' remove_constant_columns(df, na.rm = TRUE)   # also removes column 'c'
+#' remove_constant_columns(df, verbose = FALSE)
+remove_constant_columns <- function(data,
+                                    na.rm   = FALSE,
+                                    verbose = TRUE,
+                                    allow_empty = FALSE) {
+  
+  # Input validation
+  if (!is.data.frame(data) && !is.matrix(data)) {
+    stop("'data' must be a data frame or matrix.")
+  }
+  
+  # Preserve original class for return
+  original_class <- class(data)
+  
+  # Convert to data frame for uniform handling
+  if (is.matrix(data)) {
+    df <- as.data.frame(data, stringsAsFactors = FALSE)
+    was_matrix <- TRUE
+  } else {
+    df <- data
+    was_matrix <- FALSE
+  }
+  
+  if (ncol(df) == 0) {
+    if (verbose) message("No columns to check.")
+    return(data)
+  }
+  
+  # Check each column for constancy
+  is_constant <- sapply(df, function(col) {
+    if (na.rm) {
+      non_na <- col[!is.na(col)]
+      if (length(non_na) == 0) {
+        # All NA -> considered constant
+        return(TRUE)
+      }
+      length(unique(non_na)) == 1
+    } else {
+      length(unique(col)) == 1
+    }
+  })
+  
+  # If all columns are constant and empty not allowed, error
+  if (all(is_constant) && !allow_empty) {
+    stop("All columns are constant. Set allow_empty = TRUE to return an empty object.")
+  }
+  
+  # Remove constant columns
+  if (any(is_constant)) {
+    removed <- names(is_constant)[is_constant]
+    if (verbose) {
+      cat("Removing constant columns:", paste(removed, collapse = ", "), "\n")
+    }
+    df <- df[, !is_constant, drop = FALSE]
+  } else {
+    if (verbose) cat("No constant columns found.\n")
+  }
+  
+  # Restore original format (matrix or data frame)
+  if (was_matrix && ncol(df) > 0) {
+    result <- as.matrix(df)
+    rownames(result) <- rownames(data)
+    colnames(result) <- colnames(df)
+  } else {
+    result <- df
+    if (is.data.frame(result) && !is.data.frame(data)) {
+      result <- as.data.frame(result, stringsAsFactors = FALSE)
+      rownames(result) <- rownames(data)
+    }
+  }
+  
+  return(result)
+}
