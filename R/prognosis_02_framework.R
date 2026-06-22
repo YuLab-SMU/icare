@@ -2750,7 +2750,42 @@ surv_feature_selection_multi <- function(object,
     }
   }
   
-  #' Decision Curve Analysis for One or More Survival Models
+  # ----------------------------------------------------------------------------
+  # 13. Combine results
+  # ----------------------------------------------------------------------------
+  method_names <- names(selection_list)
+  if (length(method_names) == 0) {
+    warning("No method succeeded. Returning all features.")
+    selected_final <- all_features
+  } else {
+    method_table <- data.frame(Feature = all_features)
+    for (m in method_names) {
+      method_table[[m]] <- all_features %in% selection_list[[m]]
+    }
+    
+    if (combine == "union") {
+      selected_final <- unique(unlist(selection_list))
+    } else if (combine == "intersection") {
+      selected_final <- Reduce(intersect, selection_list)
+    } else if (combine == "freq") {
+      counts <- rowSums(method_table[, -1])
+      selected_final <- all_features[counts >= freq_cutoff]
+    }
+    
+    if (verbose) {
+      cat(sprintf("\n[Combined] %s selection: %d features out of %d\n",
+                  toupper(combine), length(selected_final), length(all_features)))
+    }
+  }
+  
+  return(list(
+    selected = selected_final,
+    method_table = method_table,
+    method_results = raw_results
+  ))
+}
+
+#' Decision Curve Analysis for One or More Survival Models
   #'
   #' Computes and plots decision curves at a specified time point for one or more
   #' survival models using standard Kaplan-Meier corrections via the 'dcurves' package.
@@ -2990,40 +3025,7 @@ surv_feature_selection_multi <- function(object,
       summary = summary_stats
     ))
   }
-  # ----------------------------------------------------------------------------
-  # 13. Combine results
-  # ----------------------------------------------------------------------------
-  method_names <- names(selection_list)
-  if (length(method_names) == 0) {
-    warning("No method succeeded. Returning all features.")
-    selected_final <- all_features
-  } else {
-    method_table <- data.frame(Feature = all_features)
-    for (m in method_names) {
-      method_table[[m]] <- all_features %in% selection_list[[m]]
-    }
-    
-    if (combine == "union") {
-      selected_final <- unique(unlist(selection_list))
-    } else if (combine == "intersection") {
-      selected_final <- Reduce(intersect, selection_list)
-    } else if (combine == "freq") {
-      counts <- rowSums(method_table[, -1])
-      selected_final <- all_features[counts >= freq_cutoff]
-    }
-    
-    if (verbose) {
-      cat(sprintf("\n[Combined] %s selection: %d features out of %d\n",
-                  toupper(combine), length(selected_final), length(all_features)))
-    }
-  }
-  
-  return(list(
-    selected = selected_final,
-    method_table = method_table,
-    method_results = raw_results
-  ))
-}
+                           
 #' List all available feature selection methods in surv_feature_selection_multi
 #'
 #' @param verbose If TRUE, prints the table to console. If FALSE, returns the data frame.
