@@ -7,9 +7,7 @@ Maintainer: User <user@example.com>
 Description: A modular framework for clinical statistics, machine learning, clustering, and prognostic modeling.
 License: GPL-3
 Encoding: UTF-8
-LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 Imports:
     methods,
     caret,
@@ -37,6 +35,7 @@ Imports:
     stats,
     grDevices,
     patchwork,
+    mlr3extralearners,
     nortest,
     NMF,
     Rtsne,
@@ -52,4 +51,6 @@ Imports:
     umap,
     viridis
 Remotes:
-    mdbrown/rmda
+    mdbrown/rmda,
+    mlr-org/mlr3extralearners
+Config/roxygen2/version: 8.0.0

@@ -122,7 +122,7 @@ New_Sub_Manager <- function(sub_train_obj) {
 #'
 #' @import shiny
 #' @import shinydashboard
-#' @importFrom DT renderDataTable dataTableOutput datatable formatStyle
+#' @importFrom DT datatable formatStyle
 #' 
 #' @details 
 #' The app uses a dark theme optimized for clinical environments. Batch 

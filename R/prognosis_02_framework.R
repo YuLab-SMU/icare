@@ -3,6 +3,7 @@
 
 #' Helper to extract task from PrognosiX
 surv_extract_task <- function(object) {
+  .check_prognosis_packages()
   if (inherits(object, 'PrognosiX')) {
     data <- object@survival.data
     time_col <- object@time_col
@@ -16,22 +17,46 @@ surv_extract_task <- function(object) {
 
 # ==============================================================================
 
-# 加载必要的包
-suppressPackageStartupMessages({
-  library(mlr3)
-  library(mlr3proba)
-  library(mlr3tuning)
-  library(mlr3learners)
-  library(mlr3extralearners)  # 扩展算法
-  library(survival)
-  library(tidyverse)
-  library(paradox)
-  library(data.table)
-})
+.prognosis_optional_packages <- c(
+  "mlr3", "mlr3proba", "mlr3tuning", "mlr3learners",
+  "mlr3extralearners", "survival", "tidyverse", "paradox", "data.table"
+)
 
-# 查询所有生存分析学习器
-surv_keys = mlr_learners$keys()[grep("^surv\\.", mlr_learners$keys())]
-print(surv_keys)
+.check_prognosis_packages <- function() {
+  missing <- .prognosis_optional_packages[
+    !vapply(.prognosis_optional_packages, requireNamespace, logical(1), quietly = TRUE)
+  ]
+  if (length(missing) > 0) {
+    stop(
+      "Missing packages required for PrognosiX framework: ",
+      paste(missing, collapse = ", "),
+      ". Install them before using prognosis-related functions."
+    )
+  }
+  invisible(TRUE)
+}
+
+# Attach optional prognosis dependencies only when they are installed,
+# so package installation does not fail during lazy loading.
+if (all(vapply(.prognosis_optional_packages, requireNamespace, logical(1), quietly = TRUE))) {
+  suppressPackageStartupMessages({
+    library(mlr3)
+    library(mlr3proba)
+    library(mlr3tuning)
+    library(mlr3learners)
+    library(mlr3extralearners)
+    library(survival)
+    library(tidyverse)
+    library(paradox)
+    library(data.table)
+  })
+}
+
+surv_keys <- if (requireNamespace("mlr3", quietly = TRUE)) {
+  mlr3::mlr_learners$keys()[grep("^surv\\.", mlr3::mlr_learners$keys())]
+} else {
+  character(0)
+}
 # ==============================================================================
 # 1. 配置管理模块
 # ==============================================================================
@@ -41,6 +66,7 @@ print(surv_keys)
 #' @param task Optional, mlr3 survival task to allow dynamic parameter scaling
 #' @return ParamSet object
 surv_get_search_space <- function(learner_id, object = NULL) {
+  .check_prognosis_packages()
   task <- if (!is.null(object)) surv_extract_task(object) else NULL
   
   # Get the number of features for dynamic scaling of parameters like mtry
@@ -109,6 +135,7 @@ surv_get_search_space <- function(learner_id, object = NULL) {
 #' @param tuning_budget 调优预算（评估次数）
 #' @return 包含调优器和终止器的列表
 surv_get_tuning_config <- function(learner_id, tuning_budget = 50) {
+  .check_prognosis_packages()
   # 根据算法特性选择合适的调优策略
   complex_learners <- c("surv.ranger", "surv.xgboost", "surv.gbm", "surv.cforest")
   
@@ -145,6 +172,7 @@ surv_get_tuning_config <- function(learner_id, tuning_budget = 50) {
 #' @param id String, task ID
 #' @return A TaskSurv object
 surv_create_surv_task <- function(data, time_col, event_col, id = "survival_task") {
+  .check_prognosis_packages()
   # Coerce to data.table for optimized performance in mlr3
   data <- as.data.table(data)
   
@@ -2444,8 +2472,6 @@ surv_plot_comparison_auc <- function(learner, train_task, val_task) {
 #' @importFrom MASS stepAIC
 #' @importFrom mlr3 lrn
 #' @importFrom mlr3proba TaskSurv
-#' @importFrom mlr3learners lrn
-#' @importFrom mlr3extralearners lrn
 #' @importFrom randomForestSRC vimp
 #' @importFrom c060 stabpath
 #' @importFrom praznik MRMR

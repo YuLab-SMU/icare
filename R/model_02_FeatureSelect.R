@@ -18,8 +18,9 @@
 }
 
 # ── Internal helpers ─────────────────────────────────────────────────────────
-.get_output_dir <- get("get_output_dir", envir = .GlobalEnv, 
-                       inherits = TRUE)
+.get_output_dir <- function(...) {
+  get_output_dir(...)
+}
 
 .safe_dir <- function(save_dir) {
   if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)

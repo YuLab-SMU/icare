@@ -2155,7 +2155,7 @@ PlotDimReduction <- function(object,
 #' @export
 #' @importFrom methods slot
 #' @importFrom gtools mixedsort
-#' @importFrom dplyr filter mutate group_by arrange desc slice_head ungroup
+#' @importFrom dplyr mutate group_by arrange desc slice_head ungroup
 #' @importFrom scales hue_pal
 #' @importFrom circlize colorRamp2
 #' @importFrom grid gpar unit grid.rect

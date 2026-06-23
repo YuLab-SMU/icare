@@ -247,10 +247,14 @@ Sub_kmeans_with_optimal_k <- function(object,
 
   # Merge group column back onto raw_data (preserves row names)
   raw_rn  <- tibble::rownames_to_column(as.data.frame(raw_data),  "sample_id")
-  grp_rn  <- tibble::rownames_to_column(as.data.frame(kmeans_result$clustered_data), "sample_id") |>
-    dplyr::select(sample_id, group)
-  combined_data <- dplyr::left_join(raw_rn, grp_rn, by = "sample_id") |>
-    tibble::column_to_rownames("sample_id")
+  grp_rn  <- dplyr::select(
+    tibble::rownames_to_column(as.data.frame(kmeans_result$clustered_data), "sample_id"),
+    sample_id, group
+  )
+  combined_data <- tibble::column_to_rownames(
+    dplyr::left_join(raw_rn, grp_rn, by = "sample_id"),
+    "sample_id"
+  )
 
   # Write cluster_kmeans into info.data
   cluster_df <- data.frame(

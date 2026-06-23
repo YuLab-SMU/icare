@@ -106,7 +106,7 @@ ModelDeployment <- function(object, preproc = NULL,
 #' @param deployment A ModelDeployment object.
 #' @param title Character string for the application window title.
 #'
-#' @import shiny bslib plotly jsonlite
+#' @import shiny bslib
 #' @export
 deploy_clinlab_app <- function(deployment, title = "Clinical Omics Terminal") {
   
@@ -169,7 +169,7 @@ deploy_clinlab_app <- function(deployment, title = "Clinical Omics Terminal") {
                     layout_column_wrap(
                       width = 1/2,
                       uiOutput("res_ui"),
-                      plotlyOutput("plot", height = "300px")
+                      plotly::plotlyOutput("plot", height = "300px")
                     )
                   ),
                   card(
@@ -215,12 +215,12 @@ deploy_clinlab_app <- function(deployment, title = "Clinical Omics Terminal") {
       )
     })
     
-    output$plot <- renderPlotly({
+    output$plot <- plotly::renderPlotly({
       req(res <- report_data())
       p_vals <- unlist(res$probabilities)
-      plot_ly(x = names(p_vals), y = as.numeric(p_vals), type = "bar", 
-              marker = list(color = c('#e0e0e0', '#00dfc0'))) %>%
-        layout(
+      plotly::plot_ly(x = names(p_vals), y = as.numeric(p_vals), type = "bar", 
+                      marker = list(color = c('#e0e0e0', '#00dfc0'))) %>%
+        plotly::layout(
           yaxis = list(title = "Probability", range = c(0, 1), gridcolor = "#f0f0f0"),
           xaxis = list(title = ""),
           paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'
