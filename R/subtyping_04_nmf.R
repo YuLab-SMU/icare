@@ -21,6 +21,11 @@
 #' @importFrom ggplot2 ggplot aes geom_line geom_point labs scale_x_continuous ggsave
 #' @importFrom gridExtra grid.arrange
 #' @export
+#' @examples
+#' \dontrun{
+#'   # Assuming 'estimate' is an NMF.rank object from NMF::nmf()
+#'   generate_nmf_rank_plots(estimate, save_dir = "./nmf_results")
+#' }
 generate_nmf_rank_plots <- function(estimate,
                                     save_dir  = NULL,
                                     width     = 10,
@@ -67,9 +72,7 @@ generate_nmf_rank_plots <- function(estimate,
   ggplot2::ggsave(file.path(save_dir, "nmf_rank_metrics.png"),
                   combined, width = width, height = height, dpi = 150)
   cat("- NMF rank metrics saved to:", save_dir, "\n")
-
   grid::grid.newpage(); grid::grid.draw(combined)
-
   return(invisible(combined))
 }
 
@@ -87,6 +90,11 @@ generate_nmf_rank_plots <- function(estimate,
 #' @param base_size  Base font size for plots.
 #' @importFrom NMF nmf
 #' @export
+#' @examples
+#' \dontrun{
+#'   # Assuming 'obj' is a Subtyping object with scale.data
+#'   obj <- Sub_nmf_estimate(subtype_obj_test, rank_range = 2:5, nrun = 10)
+#' }
 Sub_nmf_estimate <- function(object,
                              rank_range = 2:4,
                              seed       = 8891,
@@ -143,6 +151,11 @@ Sub_nmf_estimate <- function(object,
 #' @importFrom pheatmap pheatmap
 #' @importFrom NMF consensus
 #' @export
+#' @examples
+#' \dontrun{
+#'   # Assuming 'fit' is a fitted NMF object
+#'   nmf_consensus_heatmap(fit, save_dir = ".", k = 3)
+#' }
 nmf_consensus_heatmap <- function(fit,
                                   save_dir = NULL,
                                   width    = 8,
@@ -195,6 +208,11 @@ nmf_consensus_heatmap <- function(fit,
 #' @importFrom NMF basis
 #' @importFrom pheatmap pheatmap
 #' @importFrom wesanderson wes_palette
+#' @examples
+#' \dontrun{
+#'   # Assuming 'fit' is a fitted NMF object with rank 3
+#'   nmf_basis_heatmap(fit, save_dir = "./nmf_results", k = 3, top_n = 20)
+#' }
 #' @export
 nmf_basis_heatmap <- function(fit,
                               save_dir     = NULL,
@@ -282,6 +300,11 @@ nmf_basis_heatmap <- function(fit,
 #' @param k             Rank.
 #' @importFrom NMF coef
 #' @importFrom pheatmap pheatmap
+#' @examples
+#' \dontrun{
+#'   # Assuming 'fit' is a fitted NMF object with rank 3
+#'   nmf_coef_heatmap(fit, save_dir = "./nmf_results", k = 3)
+#' }
 #' @export
 nmf_coef_heatmap <- function(fit,
                              save_dir     = NULL,
@@ -364,6 +387,12 @@ nmf_coef_heatmap <- function(fit,
 #' @importFrom cluster silhouette
 #' @importFrom NMF consensus
 #' @importFrom ggplot2 ggplot aes geom_bar geom_hline geom_text labs ylim ggsave
+#' @examples
+#' \dontrun{
+#'   # Assuming 'fit' is a fitted NMF object with rank 3
+#'   sil_info <- nmf_silhouette_plot(fit, save_dir = "./nmf_results", k = 3)
+#'   print(sil_info$avg_width)
+#' }
 #' @export
 nmf_silhouette_plot <- function(fit,
                                 save_dir     = NULL,
@@ -432,6 +461,11 @@ nmf_silhouette_plot <- function(fit,
 #' @param palette_name  wesanderson palette.
 #' @param save_dir      Output directory.
 #' @importFrom NMF nmf
+#' @examples
+#' \dontrun{
+#'   # Assuming 'obj' is a Subtyping object with nmf.result already computed
+#'   obj <- Sub_nmf_best_rank(obj, nrun = 20, palette_name = "Zissou1")
+#' }
 #' @export
 Sub_nmf_best_rank <- function(object,
                               nrun         = 10,
@@ -494,6 +528,12 @@ Sub_nmf_best_rank <- function(object,
 #' component with highest coefficient weight (same logic as EcoTyper).
 #'
 #' @param object Subtyping object.
+#' @examples
+#' \dontrun{
+#'   # Assuming 'obj' is a Subtyping object with best NMF estimate
+#'   obj <- Sub_nmf_assign_subtypes(obj)
+#'   table(obj@info.data$cluster_nmf)
+#' }
 #' @export
 Sub_nmf_assign_subtypes <- function(object) {
 
@@ -542,6 +582,11 @@ Sub_nmf_assign_subtypes <- function(object) {
 #' @param model_name File stem for the saved model (.rds).
 #' @param save_dir   Output directory.
 #' @importFrom NMF nmf basis consensus coef
+#' @examples
+#' \dontrun{
+#'   # Assuming 'obj' is a Subtyping object with best_k already determined
+#'   obj <- Sub_nmf_train_model(obj, best_k = 3, nrun = 50, save_dir = "./nmf_model")
+#' }
 #' @export
 Sub_nmf_train_model <- function(object,
                                 best_k,
@@ -626,6 +671,12 @@ Sub_nmf_train_model <- function(object,
 #' @param new_data   New data matrix: samples × features (rows = samples).
 #' @return Data frame with predicted subtypes and membership probabilities.
 #' @importFrom nnls nnls
+#' @examples
+#' \dontrun{
+#'   # Assuming 'new_data' is a data frame with same features as training data
+#'   pred <- Sub_nmf_predict("./nmf_model/nmf_model.rds", new_data)
+#'   head(pred)
+#' }
 #' @export
 Sub_nmf_predict <- function(model_path, new_data) {
 
@@ -678,6 +729,11 @@ Sub_nmf_predict <- function(model_path, new_data) {
 #' @importFrom ggplot2 ggplot aes geom_boxplot geom_jitter labs
 #' @importFrom pheatmap pheatmap
 #' @importFrom gridExtra grid.arrange
+#' @examples
+#' \dontrun{
+#'   # Assuming 'pred' is from Sub_nmf_predict()
+#'   Sub_nmf_plot_prediction(pred, save_dir = "./nmf_results")
+#' }
 #' @export
 Sub_nmf_plot_prediction <- function(pred_df,
                                     save_dir     = NULL,
@@ -742,6 +798,11 @@ Sub_nmf_plot_prediction <- function(pred_df,
 #' @param save_dir Output directory.
 #' @param width    PDF width.
 #' @param height   PDF height.
+#' @examples
+#' \dontrun{
+#'   # Assuming 'obj' is a Subtyping object with nmf.result
+#'   Sub_nmf_plot_eval(obj, save_dir = "./nmf_results")
+#' }
 #' @export
 Sub_nmf_plot_eval <- function(object,
                               save_dir = NULL,

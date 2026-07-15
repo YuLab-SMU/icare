@@ -34,6 +34,12 @@
 #'   \code{"normalization_info"} attribute is absent (default \code{"min_max"}).
 #' @param verbose  Print a summary (default \code{TRUE}).
 #' @return Named list of per-variable normalisation parameters.
+#' @examples
+#' \dontrun{
+#'   # Assuming 'obj' is a trained Subtyping object with scale.data
+#'   norm_params <- Sub_extract_norm_params(obj, verbose = TRUE)
+#'   print(norm_params[[1]])
+#' }
 #' @export
 Sub_extract_norm_params <- function(object,
                                     normalize_method = "min_max",
@@ -136,6 +142,11 @@ Sub_extract_norm_params <- function(object,
 #'   the legacy \code{list(var = list(min=, max=))} format.
 #' @param verbose     Print progress messages (default \code{TRUE}).
 #' @return The updated \code{Subtyping} object with \code{scale.data} filled.
+#' @examples
+#' \dontrun{
+#'   # Assuming 'val_obj' is a validation Subtyping object and 'norm_params' from training
+#'   val_obj <- Sub_apply_norm_params(val_obj, norm_params = norm_params)
+#' }
 #' @export
 Sub_apply_norm_params <- function(object,
                                   norm_params,
@@ -258,6 +269,13 @@ Sub_apply_norm_params <- function(object,
 #' @param verbose      Print progress (default \code{TRUE}).
 #' @return The updated validation \code{Subtyping} object.
 #' @importFrom stats dist
+#' @examples
+#' \dontrun{
+#'   # Assuming 'val_obj' is a validation Subtyping object and 'train_obj' is trained
+#'   val_obj <- Sub_predict_subtypes(val_obj, train_obj, method = "kmeans")
+#'   val_obj <- Sub_predict_subtypes(val_obj, train_obj, method = "lpa")
+#'   val_obj <- Sub_predict_subtypes(val_obj, train_obj, method = "nmf")
+#' }
 #' @export
 Sub_predict_subtypes <- function(object,
                                  train_object,
@@ -419,6 +437,17 @@ Sub_predict_subtypes <- function(object,
 #' @param prefix      Subtype label prefix for NMF (default \code{"S"}).
 #' @param verbose     Print progress (default \code{TRUE}).
 #' @return A fully populated validation \code{Subtyping} object.
+#' @examples
+#' \dontrun{
+#'   # Assuming 'train_obj' is a trained Subtyping object and 'norm_params' extracted
+#'   val_obj <- Sub_create_val_object(
+#'     clean.data = val_clean,
+#'     info.data = val_info,
+#'     norm_params = norm_params,
+#'     train_object = train_obj,
+#'     methods = c("kmeans", "lpa", "nmf")
+#'   )
+#' }
 #' @export
 Sub_create_val_object <- function(clean.data,
                                   info.data    = data.frame(),

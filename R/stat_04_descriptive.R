@@ -13,20 +13,23 @@
 #' @param max_unique_values The maximum number of unique values a variable can have to be considered categorical (default is 5).
 #'
 #' @returns A list containing the following components:
+#' \describe{
 #' \item{Group_Counts}{The counts of each group if a `group_col` is provided.}
 #' \item{Count_Results}{A list of counts for each categorical variable.}
 #' \item{Num_Results}{A list of descriptive statistics for numeric variables, including separate statistics for normal and non-normal distributions.}
 #' \item{Normality_Test}{A list of p-values and normality test results for numeric variables.}
+#' }
 #'
 #' @export
 #'
 #' @examples
+#'my_data=stat_obj_test@clean.data
+#'my_data=my_data[,-9]
 #' # Example 1: Compute descriptive statistics for a data frame
-#' result <- compute_descriptive_stats(data = my_data, count_feature = TRUE, group_col = "group")
+#'result <- compute_descriptive_stats(data = my_data, count_feature = TRUE, group_col = "SWAB")
 #'
 #' # Example 2: Compute overall descriptive statistics without considering group
-#' result <- compute_descriptive_stats(data = my_data, count_feature = FALSE)
-#'
+#'result <- compute_descriptive_stats(data = my_data, count_feature = FALSE)
 compute_descriptive_stats <- function(data,
                                       count_feature = TRUE,
                                       group_col = "group",
@@ -133,9 +136,6 @@ compute_descriptive_stats <- function(data,
   return(result)
 }
 
-
-
-
 #' Compute Descriptive Statistics for 'Stat' Object or Data Frame
 #'
 #' This function computes descriptive statistics for numeric and categorical variables in the input data. It can handle both
@@ -156,11 +156,15 @@ compute_descriptive_stats <- function(data,
 #' @export
 #'
 #' @examples
-#' # Example 1: Compute descriptive statistics for a 'Stat' object
-#' updated_stat <- stat_compute_descriptive(object = my_stat, count_feature = TRUE, group_col = "group")
-#'
-#' # Example 2: Compute descriptive statistics for a data frame
-#' result <- stat_compute_descriptive(object = my_data, count_feature = TRUE)
+#' \dontrun{
+#' data("mtcars")
+#' mtcars$cyl <- factor(mtcars$cyl)
+#' mtcars$vs  <- factor(mtcars$vs, labels = c("V-shaped", "Straight"))
+#' # Create a Stat object with "vs" as the grouping variable
+#' stat_obj <- CreateStatObject(raw.data = mtcars, group_col = "vs")
+#' #Compute descriptive statistics for a 'Stat' object
+#' updated_stat <- stat_compute_descriptive(object = stat_obj, count_feature = TRUE, group_col = "group")
+#' }
 stat_compute_descriptive <- function(
     object,
     count_feature = TRUE,
@@ -230,6 +234,10 @@ stat_compute_descriptive <- function(
 #' @returns If object is a Stat object, the updated Stat object with
 #'   `compute.descriptive$count_plots` slot. Otherwise, a list of plots.
 #' @export
+#' @examples
+#' \dontrun{
+#' plot_categorical_descriptive(stat_obj_test, save_plots = FALSE)
+#' }
 plot_categorical_descriptive <- function(
     object,
     group_col = "group",
@@ -409,6 +417,10 @@ plot_categorical_descriptive <- function(
 #' @returns A list of ggplot objects containing the generated violin plots.
 #'   If `save_plots` is `TRUE`, the plots are also saved as PDF files.
 #' @export
+#' @examples
+#' \dontrun{
+#' vplots <- violin_plots(stat_obj_test@clean.data, group_col = "SWAB", save_plots = FALSE)
+#' }
 violin_plots <- function(data,
                          vars_per_plot = 1,
                          save_dir = NULL,
@@ -550,6 +562,10 @@ violin_plots <- function(data,
 #' @returns A list of ggplot objects containing the generated density ridge plots.
 #'   If `save_plots` is `TRUE`, the plots are also saved as PDF files.
 #' @export
+#' @examples
+#' \dontrun{
+#' rplots <- density_ridge_plots(stat_obj_test@clean.data, group_col = "SWAB", save_plots = FALSE)
+#' }
 density_ridge_plots <- function(data,
                                 vars_per_plot = 1,
                                 save_dir = NULL,
@@ -675,14 +691,15 @@ density_ridge_plots <- function(data,
 #' @export
 #'
 #' @examples
-#' plot_numeric_descriptive(object = my_stat_object,
-#'                           vars_per_plot = 4,
+#' \dontrun{
+#' plot_numeric_descriptive(object = stat_obj_test,
+#'                           vars_per_plot = 1,
 #'                           save_dir = NULL,
 #'                           palette_name = "Zissou1",
 #'                           group_col = "group",
 #'                           plot_type = "violin",
 #'                           save_plots = TRUE)
-#'
+#'}
 plot_numeric_descriptive <- function(
     object,
     vars_per_plot = 1,
@@ -812,11 +829,12 @@ plot_numeric_descriptive <- function(
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # Example of usage
 #' data <- data.frame(a = c(1, 2, 3), b = c("low", "medium", "high"))
 #' variable_types <- list(numeric_vars = c("a"))
 #' converted_data <- convert_variables(data, variable_types)
-#'
+#' }
 convert_variables <- function(data, 
                               variable_types,
                               save_dir = NULL,
@@ -863,11 +881,9 @@ convert_variables <- function(data,
 #' @export
 #'
 #' @examples
-#' # Example of usage
-#' data <- data.frame(a = c(1, 2, 3), b = c("low", "medium", "high"))
-#' stat_object <- Stat$new(clean.data = data, group_col = "group")
-#' updated_stat_object <- stat_convert_variables(stat_object)
-#'
+#' \dontrun{
+#' updated_stat_object <- stat_convert_variables(stat_obj_test,save_dir = ".")
+#' }
 stat_convert_variables <- function(object,
                                    group_col = "group",
                                    max_unique_values = 5,
@@ -915,10 +931,6 @@ stat_convert_variables <- function(object,
   return(data)
 }
 
-
-
-
-
 #' One-Hot Encode Categorical Variables in a Data Frame
 #'
 #' This function performs one-hot encoding on categorical variables with limited unique values,
@@ -937,10 +949,9 @@ stat_convert_variables <- function(object,
 #'
 #' @examples
 #' \dontrun{
-#' one_hot_encode(iris, group_col = "Species", max_unique_values = 5)
+#' one_hot_encode(iris, group_col = "Species", max_unique_values = 2,save_dir = ".")
 #' }
 one_hot_encode <- function(data, 
-                           
                            group_col = "group",
                            max_unique_values = 5,
                            save_dir = NULL,
@@ -1010,13 +1021,6 @@ one_hot_encode <- function(data,
 #'          one-hot encoded `data.frame`.
 #'
 #' @export
-#'
-#' @examples
-#' \dontrun{
-#' stat_onehot_encode(my_data, group_col = "status")
-#' stat_onehot_encode(my_stat_object)
-#' }
-#'
 stat_onehot_encode <- function(object, 
                                method = 1, 
                                group_col = "group", 

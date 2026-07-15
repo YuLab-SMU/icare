@@ -52,6 +52,7 @@ if (!exists("%||%")) `%||%` <- function(a, b) if (!is.null(a) && length(a) > 0) 
 #'
 #' @return A \code{PrognosiX} S4 object ready for \code{run_prognosis_pipeline()}.
 #'
+#' @export
 #' @examples
 #' \dontrun{
 #' library(survival)
@@ -66,7 +67,6 @@ if (!exists("%||%")) `%||%` <- function(a, b) if (!is.null(a) && length(a) > 0) 
 #'                                time_col   = "time",
 #'                                status_col = "status")
 #' }
-#' @export
 Stat_to_PrognosiX <- function(stat_obj,
                               time_col,
                               status_col,
@@ -236,7 +236,7 @@ Stat_to_PrognosiX <- function(stat_obj,
 #' @return Invisible named list:
 #'   \code{prog_obj}, \code{best_learner}, \code{filter_result},
 #'   \code{benchmark_table}, \code{km_plot}, \code{auc_data}, \code{output_dir}.
-#'
+#' @export
 #' @examples
 #' \dontrun{
 #' # --- Minimal call (PrognosiX object) ---
@@ -252,7 +252,6 @@ Stat_to_PrognosiX <- function(stat_obj,
 #'   cutoff_method = "tertile"
 #' )
 #' }
-#' @export
 run_prognosis_pipeline <- function(
     object,
     time_col      = NULL,
@@ -474,6 +473,11 @@ run_prognosis_pipeline <- function(
 #' @param font_size_base Base font size in px
 #' @return Invisibly stores the theme in options("prog_app_theme_css")
 #' @export
+#' 
+#' @examples
+#' \dontrun{
+#' set_prog_app_theme(primary_color = "#2c7fb8", background_color = "#f8f9fa")
+#' }
 set_prog_app_theme <- function(
     primary_color = "#2c7fb8",
     background_color = "#f8f9fa",
@@ -538,6 +542,10 @@ set_prog_app_theme <- function(
 }
 
 #' Predefined theme: advanced grey (light background, dark text)
+#' @examples
+#' \dontrun{
+#' use_app_theme_grey()
+#' }
 #' @export
 use_app_theme_grey <- function() {
   set_prog_app_theme()
@@ -545,6 +553,10 @@ use_app_theme_grey <- function() {
 
 #' Predefined theme: dark (original dark background)
 #' @export
+#' @examples
+#' \dontrun{
+#' use_app_theme_dark()
+#' }
 use_app_theme_dark <- function() {
   set_prog_app_theme(
     primary_color = "#58a6ff",
@@ -566,6 +578,10 @@ use_app_theme_dark <- function() {
 }
 
 #' Predefined theme: light (clean white, blue accents)
+#' @examples
+#' \dontrun{
+#' use_app_theme_light()
+#' }
 #' @export
 use_app_theme_light <- function() {
   set_prog_app_theme(
@@ -590,6 +606,10 @@ use_app_theme_light <- function() {
 # ---- 2. Text customization ----
 #' Set custom text for the Prognosis Terminal
 #' @param ... Named arguments for text keys (see default list)
+#' @examples
+#' \dontrun{
+#' set_prog_app_text(title = "My Prognosis App", prediction_portal = "Risk Calculator")
+#' }
 #' @export
 set_prog_app_text <- function(...) {
   default_text <- list(
@@ -774,6 +794,11 @@ predict_prognosix <- function(prog_obj, newdata, impute = TRUE) {
 #' @param custom_cutoffs Numeric vector (length >=1). For length >2, labels become "Low Risk", "Medium Risk 1", ..., "High Risk"
 #' @param return_scores Logical, include raw risk scores
 #' @return Data frame with SampleID, risk_group, and optionally risk_score
+#' @examples
+#' \dontrun{
+#' # Requires a trained PrognosiX object
+#' # risk_df <- predict_risk_groups(prog_obj, new_data, cutoff_method = "median")
+#' }
 #' @export
 predict_risk_groups <- function(prog_obj, newdata, 
                                 cutoff_method = c("median", "tertile", "custom"),
@@ -814,6 +839,11 @@ predict_risk_groups <- function(prog_obj, newdata,
 #' @param cutoff_method One of `"median"`, `"tertile"`, `"custom"`
 #' @param custom_cutoffs Numeric vector for custom thresholds
 #' @param return_scores Logical
+#' @examples
+#' \dontrun{
+#' # Legacy compatibility wrapper
+#' # result <- Prog_deploy_dispatcher(prog_obj, new_data, cutoff_method = "tertile")
+#' }
 #' @export
 Prog_deploy_dispatcher <- function(prog_train_obj,
                                    newdata,
@@ -827,6 +857,12 @@ Prog_deploy_dispatcher <- function(prog_train_obj,
 #' Create a deployment manager
 #' @param prog_train_obj A `PrognosiX` object with a trained model
 #' @return An S3 object of class `"Prog_Manager"`
+#' @examples
+#' \dontrun{
+#' # Requires a trained PrognosiX object
+#' # mgr <- New_Prog_Manager(prog_obj)
+#' # result <- mgr$prog_predict(new_data)
+#' }
 #' @export
 New_Prog_Manager <- function(prog_train_obj) {
   if (!inherits(prog_train_obj, "PrognosiX"))
@@ -873,6 +909,12 @@ New_Prog_Manager <- function(prog_train_obj) {
 #' @param var_dict Data frame with columns Feature, Description, Units
 #' @param project_info List with elements `abstract` and `citation`
 #' @return Runs the Shiny app
+#' @examples
+#' \dontrun{
+#' # Requires a Prog_Manager object
+#' # mgr <- New_Prog_Manager(prog_obj)
+#' # launch_prog_deploy_app(mgr)
+#' }
 #' @export
 launch_prog_deploy_app <- function(prog_manager,
                                    title = NULL,
@@ -883,8 +925,6 @@ launch_prog_deploy_app <- function(prog_manager,
   for (pkg in c("shiny", "shinydashboard", "DT"))
     if (!requireNamespace(pkg, quietly = TRUE))
       stop(sprintf("'%s' required: install.packages('%s')", pkg, pkg))
-  library(shiny); library(shinydashboard); library(DT)
-  
   # Apply default theme if none set
   if (is.null(getOption("prog_app_theme_css"))) use_app_theme_grey()
   

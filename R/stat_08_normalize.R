@@ -2,7 +2,6 @@
 #'
 #' @param x Numeric vector.
 #' @return Log-transformed vector.
-#' @export
 log_transform <- function(x) {
   if (any(x <= 0, na.rm = TRUE)) {
     warning("Data contains non-positive values. Adding constant before log transformation.")
@@ -15,7 +14,6 @@ log_transform <- function(x) {
 #'
 #' @param x Numeric vector.
 #' @return Scaled vector.
-#' @export
 min_max_scale <- function(x) {
   return((x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE)))
 }
@@ -24,7 +22,6 @@ min_max_scale <- function(x) {
 #'
 #' @param x Numeric vector.
 #' @return Standardized vector.
-#' @export
 z_score_standardize <- function(x) {
   return((x - mean(x, na.rm = TRUE)) / sd(x, na.rm = TRUE))
 }
@@ -33,7 +30,6 @@ z_score_standardize <- function(x) {
 #'
 #' @param x Numeric vector.
 #' @return Centered vector.
-#' @export
 center_data <- function(x) {
   return(x - mean(x, na.rm = TRUE))
 }
@@ -42,7 +38,6 @@ center_data <- function(x) {
 #'
 #' @param x Numeric vector.
 #' @return Scaled vector.
-#' @export
 scale_data <- function(x) {
   return(x / sd(x, na.rm = TRUE))
 }
@@ -51,7 +46,6 @@ scale_data <- function(x) {
 #'
 #' @param x Numeric vector.
 #' @return Scaled vector.
-#' @export
 max_abs_scale <- function(x) {
   return(x / max(abs(x), na.rm = TRUE))
 }
@@ -60,7 +54,6 @@ max_abs_scale <- function(x) {
 #'
 #' @param x Numeric vector.
 #' @return Transformed vector.
-#' @export
 boxcox_transform <- function(x) {
   if (any(x <= 0, na.rm = TRUE)) {
     warning("Data contains non-positive values. Adding constant before Box-Cox transformation.")
@@ -74,7 +67,6 @@ boxcox_transform <- function(x) {
 #'
 #' @param x Numeric vector.
 #' @return Transformed vector.
-#' @export
 yeojohnson_transform <- function(x) {
   yj <- caret::preProcess(data.frame(x), method = "YeoJohnson")
   return(predict(yj, data.frame(x))[, 1])
@@ -88,13 +80,16 @@ yeojohnson_transform <- function(x) {
 #' @param max_unique_values Max unique values.
 #' @return Processed data frame.
 #' @export
+#' @examples
+#' \dontrun{
+#' proc <- preprocess_data(stat_obj_test@clean.data, method = "z_score", group_col = "SWAB")
+#' }
 preprocess_data <- function(data, method = "log", group_col = "group", max_unique_values = 5) {
-  # 更新调用：加入 treat_low_card_numeric_as_categorical = TRUE 以保留原行为
   variable_types <- diagnose_variable_type(
     data = data,
     group_col = group_col,
     max_unique_values = max_unique_values,
-    treat_low_card_numeric_as_categorical = TRUE   # 保持原逻辑：低基数数值列视为分类，不参与变换
+    treat_low_card_numeric_as_categorical = TRUE   
   )
   numeric_vars <- variable_types$numeric_vars
   
@@ -126,7 +121,7 @@ preprocess_data <- function(data, method = "log", group_col = "group", max_uniqu
   return(processed_data)
 }
 
-#' Normalize Data (Auto Selection)
+#' Normalize Data 
 #'
 #' @param data Data frame.
 #' @param method Normalization method ("auto" or specific).
@@ -137,6 +132,11 @@ preprocess_data <- function(data, method = "log", group_col = "group", max_uniqu
 #' @param csv_filename Filename.
 #' @return Normalized data frame.
 #' @export
+#' @examples
+#' \dontrun{
+#' nor <- normalize_data(stat_obj_test@clean.data, method = "z_score", group_col = "SWAB")
+#' print(nor)
+#' }
 normalize_data <- function(data,
                            method = "auto",
                            group_col = "group",
@@ -148,7 +148,6 @@ normalize_data <- function(data,
   
   if (!is.data.frame(data)) stop("Input must be a data frame.")
   
-  # 更新调用：加入 treat_low_card_numeric_as_categorical = TRUE
   variable_types <- diagnose_variable_type(
     data = data,
     group_col = group_col,
@@ -225,6 +224,10 @@ normalize_data <- function(data,
 #' @param save_data Logical.
 #' @param csv_filename Filename.
 #' @export
+#' @examples
+#' \dontrun{
+#' stat_obj_test <- stat_normalize_process(stat_obj_test, method = "z_score")
+#' }
 stat_normalize_process <- function(object,
                                    method = "auto",
                                    group_col = "group",
@@ -253,7 +256,6 @@ stat_normalize_process <- function(object,
     stop("No valid data found in the input")
   }
   
-  # normalize_data 内部已更新对 diagnose_variable_type 的调用，这里无需额外修改
   normalized_data <- normalize_data(
     data,
     method = method,
@@ -280,6 +282,10 @@ stat_normalize_process <- function(object,
 #'
 #' @param object Stat object.
 #' @export
+#' @examples
+#' \dontrun{
+#' data <- ExtractScaleData(stat_obj_test)
+#' }
 ExtractScaleData <- function(object) {
   if (inherits(object, "Stat")) {
     return(object@scale.data)
@@ -292,6 +298,10 @@ ExtractScaleData <- function(object) {
 #'
 #' @param object Stat object.
 #' @export
+#' @examples
+#' \dontrun{
+#' data <- ExtractCleanData(stat_obj_test)
+#' }
 ExtractCleanData <- function(object) {
   if (inherits(object, "Stat")) {
     return(object@clean.data)

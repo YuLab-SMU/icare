@@ -277,6 +277,7 @@ PlotROCCompare <- function(truth,
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # 1. Generate synthetic data
 #' set.seed(123)
 #' labels <- factor(sample(c("Health", "Sick"), 200, replace = TRUE))
@@ -284,8 +285,9 @@ PlotROCCompare <- function(truth,
 #' p_new  <- pmin(p_ref + rnorm(200, 0.05, 0.03), 1) # Improved model
 #' 
 #' # 2. Run function (Assuming BootstrapROC is available in your environment)
-#' # res <- PlotIDICurve(truth = labels, ref_prob = p_ref, new_prob = p_new, positive = "Sick")
-#' # plot(res$plot)
+#' res <- PlotIDICurve(truth = labels, ref_prob = p_ref, new_prob = p_new, positive = "Sick")
+#' plot(res$plot)
+#' }
 PlotIDICurve <- function(truth,
                          ref_prob,
                          new_prob,
@@ -691,12 +693,3 @@ NRI_IDI_Analysis <- function(model_obj_ref = NULL,
   
   invisible(list(nri = nri_res, idi = idi_res))
 }
-
-# ── Load message ───────────────────────────────────────────────────────────
-cat("\n================================================\n")
-cat("  model_nri_idi.R loaded\n")
-cat("  Functions: CalculateCategoryNRI, BootstrapROC,\n")
-cat("    PlotROCCompare, PlotIDICurve, PlotNRIHeatmap,\n")
-cat("    PlotNRIBars, PlotPredDist, PlotThresholdNRI,\n")
-cat("    NRI_IDI_Analysis\n")
-cat("================================================\n")

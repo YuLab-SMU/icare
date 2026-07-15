@@ -29,18 +29,12 @@
 #' @return A data frame with columns: \code{parameter}, \code{label}, 
 #'   \code{class}, and \code{default_range} (a character hint).
 #' @export
-#'
-#' @examples
-#' InspectHyperParams("rf")
-#' InspectHyperParams("xgbTree")
 InspectHyperParams <- function(method) {
   .check_tune_pkgs()
   
   info <- caret::getModelInfo(method, regex = FALSE)[[1]]
   if (is.null(info)) stop("Model '", method, "' not found in caret.")
-  
   params <- info$parameters
-  
   # Add a suggestive default range based on parameter type and common practice
   params$default_range <- sapply(params$parameter, function(p) {
     switch(p,
@@ -92,11 +86,12 @@ InspectHyperParams <- function(method) {
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' bounds <- BuildTuningBounds(
 #'   mtry        = c(2, 10),
 #'   n.trees     = c(50, 500),
-#'   shrinkage   = c(0.001, 0.1)
-#' )
+#'   shrinkage   = c(0.001, 0.1) )
+#'   }
 BuildTuningBounds <- function(...) {
   bounds <- list(...)
   
@@ -139,12 +134,11 @@ BuildTuningBounds <- function(...) {
 #' @param seed Integer. Random seed for reproducibility.
 #' @param verbose Logical. Whether to print detailed training logs.
 #'
-#' @return Returns the updated \code{model_obj} with fine-tuned results.
-#' @export
-#'
 #' @importFrom caret train trainControl getModelInfo twoClassSummary
 #' @importFrom rBayesianOptimization BayesianOptimization
 #' @importFrom stats as.formula
+#' @return Returns the updated \code{model_obj} with fine-tuned results.
+#' @export
 FineTuneModel <- function(model_obj,
                           method,
                           bounds,
@@ -666,12 +660,3 @@ PlotTunedCalibration <- function(tuned_model,
   return(p)
 }
 
-# ── Load message ────────────────────────────────────────────────────────────
-cat("\n================================================\n")
-cat("  model_hyperparameter_tuning.R loaded\n")
-cat("  Functions available:\n")
-cat("    InspectHyperParams(method)        – view tunable parameters\n")
-cat("    BuildTuningBounds(...)            – create bounds list\n")
-cat("    FineTuneModel(model_obj, ...)     – run Bayesian optimization\n")
-cat("    PlotTuningHistory(model_obj)      – visualize optimization\n")
-cat("================================================\n")

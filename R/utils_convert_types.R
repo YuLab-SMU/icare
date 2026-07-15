@@ -7,6 +7,11 @@
 #' @param group_col The name of the group column.
 #' @param csv_filename The name of the CSV file.
 #' @export
+#' @examples
+#' \dontrun{
+#' types <- diagnose_variable_type(stat_obj_test@clean.data, group_col = "SWAB")
+#' converted <- convert_variables(stat_obj_test@clean.data, types, group_col = "SWAB", save_data = FALSE)
+#' }
 convert_variables <- function(data,
                               variable_types,
                               save_dir = NULL,
@@ -59,8 +64,6 @@ convert_variables <- function(data,
   return(df)
 }
 
-
-
 #' One hot encode
 #'
 #' @param data A data frame or an S4 object (Stat, Train_Model, Subtyping, PrognosiX).
@@ -70,6 +73,10 @@ convert_variables <- function(data,
 #' @param save_data Logical.
 #' @param csv_filename Filename.
 #' @export
+#' @examples
+#' \dontrun{
+#' encoded <- one_hot_encode(stat_obj_test@clean.data, group_col = "SWAB", save_data = FALSE)
+#' }
 one_hot_encode <- function(data,
                            group_col = "group",
                            max_unique_values = 5,
@@ -136,7 +143,6 @@ one_hot_encode <- function(data,
     if (inherits(data, "Subtyping")) data@clean.data <- encoded_data else
     if (inherits(data, "PrognosiX")) {
       data@clean.data <- encoded_data
-      # 同步更新 survival.data
       time_col <- data@time_col
       status_col <- data@status_col
       if (!is.null(time_col) && !is.null(status_col) && 

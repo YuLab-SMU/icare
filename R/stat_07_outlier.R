@@ -9,6 +9,11 @@
 #' @param save_data Logical.
 #' @param csv_filename Filename.
 #' @export
+#' @examples
+#' \dontrun{
+#' out_info <- detect_and_mark_outliers(stat_obj_test@clean.data, 
+#' group_col = "SWAB", method = "zscore", threshold = 3)
+#' }
 detect_and_mark_outliers <- function(data,
                                      method = "zscore",
                                      threshold = 3,
@@ -90,6 +95,10 @@ detect_and_mark_outliers <- function(data,
 #' @param save_data Logical.
 #' @param csv_filename Filename.
 #' @export
+#' @examples
+#' \dontrun{
+#' out_info <- stat_detect_and_mark_outliers(stat_obj_test, method = "zscore", threshold = 3)
+#' }
 stat_detect_and_mark_outliers <- function(object,
                                           method = "zscore",
                                           threshold = 3,
@@ -142,6 +151,10 @@ stat_detect_and_mark_outliers <- function(object,
 #'
 #' @param object Stat object.
 #' @export
+#' @examples
+#' \dontrun{
+#' out_info <- extract_outlier_data (stat_obj_test)
+#' }
 extract_outlier_data <- function(object) {
   if (inherits(object, "Stat")) {
     outlier_info <- object@process.info[["outlier_detection"]]
@@ -165,6 +178,11 @@ extract_outlier_data <- function(object) {
 #' @param save_data Logical.
 #' @param csv_filename Filename.
 #' @export
+#' @examples
+#' \dontrun{
+#' out_info <- extract_outlier_data (stat_obj_test)
+#' clean_after <- handle_outliers(stat_obj_test@clean.data, out_info, method = "remove", save_data = FALSE)
+#' }
 handle_outliers <- function(data,
                             outlier_info,
                             method = "remove",
@@ -232,6 +250,11 @@ handle_outliers <- function(data,
 #' @param save_data Logical.
 #' @param csv_filename Filename.
 #' @export
+#' @examples
+#' \dontrun{
+#' stat_obj <- stat_handle_outliers(stat_obj_test, method = "remove")
+#' stat_obj <- stat_handle_outliers(stat_obj_test, method = "impute")
+#' }
 stat_handle_outliers <- function(object,
                                  method = "remove",
                                  impute_value = "median",

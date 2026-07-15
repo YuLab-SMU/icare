@@ -73,6 +73,7 @@
 #' @param verbose   Print DALEX verbose output? Default \code{FALSE}.
 #'
 #' @return A \code{DALEX::explainer} object.
+#' 
 #' @export
 #'
 #' @examples
@@ -108,8 +109,6 @@
 #' ExplainSHAPBeeswarm(explainer_stack, N = 50,
 #'                     save_plots = TRUE, save_dir = "./Explain/Ensemble/")
 #' }
-#' Create a DALEX Explainer (Unified Entry for Single & Ensemble Models)
-#' 
 CreateExplainer <- function(object,
                             model     = NULL,
                             data      = NULL,
@@ -305,9 +304,6 @@ ExplainModelPerformance <- function(explainer,
 
 
 # ── 3. ExplainVariableImportance ──────────────────────────────────────────────
-
-
-
 #' Variable Importance (Permutation) – Universal for Any Caret Model (Fixed)
 #'
 #' @param explainer     A DALEX explainer.
@@ -1160,18 +1156,3 @@ ExplainAll <- function(object,
     cat("Plot saved to:", path, "\n")
     invisible(path)
 }
-
-# ── Load message ─────────────────────────────────────────────────────────────
-cat("\n================================================\n")
-cat("  model_04_explain.R loaded\n")
-cat("================================================\n\n")
-cat("Quick start:\n")
-cat("  exp     <- CreateExplainer(object_model)\n")
-cat("  results <- ExplainAll(object_model)          # one-click full pipeline\n\n")
-cat("Individual calls:\n")
-cat("  ExplainSHAPBeeswarm(exp, N = 100)            # beeswarm\n")
-cat("  ExplainSHAP(exp, new_observation = 1)        # single SHAP\n")
-cat("  ExplainVariableImportance(exp, B = 15)       # permutation importance\n")
-cat("  ExplainBreakDown(exp, new_observation = 1)   # Break Down\n")
-cat("  ExplainCeterisParibus(exp, new_observation = 1)  # What‑if\n")
-cat("  ExplainPartialDependence(exp, type='accumulated') # ALE\n\n")

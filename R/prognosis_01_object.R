@@ -18,6 +18,15 @@
 #' @slot best.model List.
 #' @slot subgroup.risk List.
 #' @export
+#' @examples
+#' \dontrun{
+#'   # Create a PrognosiX object
+#'   obj <- new("PrognosiX",
+#'              clean.data = data.frame(gene1 = c(1, 2, 3)),
+#'              info.data = data.frame(time = c(10, 20, 30), status = c(1, 0, 1)),
+#'              time_col = "time",
+#'              status_col = "status")
+#' }
 PrognosiX <- setClass(
   Class = 'PrognosiX',
   slots = c(
@@ -156,7 +165,22 @@ save_plot_sur <- function(p, name, w=8, h=6) {
 #' @param best.model Best model.
 #' @param subgroup.risk Subgroup risk.
 #' @param object Input object.
+#' @return A PrognosiX S4 object.
 #' @export
+#' 
+#' @examples
+#' \dontrun{
+#'   # Create from data frames
+#'   clean <- data.frame(gene1 = c(1, 2, 3), gene2 = c(4, 5, 6),
+#'                       row.names = c("S1", "S2", "S3"))
+#'   info <- data.frame(time = c(10, 20, 30), status = c(1, 0, 1),
+#'                      row.names = c("S1", "S2", "S3"))
+#'   obj <- CreatePrognosiXObject(clean.data = clean, info.data = info,
+#'                                time_col = "time", status_col = "status")
+#'
+#'   # Create from existing Stat object
+#'   # obj <- CreatePrognosiXObject(object = stat_obj, time_col = "time", status_col = "status")
+#' }
 CreatePrognosiXObject <- function(
     clean.data = NULL,
     info.data = data.frame(),

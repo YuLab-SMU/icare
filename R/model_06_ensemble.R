@@ -693,13 +693,3 @@ PredictEnsemble <- function(model_obj, newdata) {
   ens$predict_fn(newdata)
 }
 
-
-
-# ── Load message ────────────────────────────────────────────────────────────
-cat("\n================================================\n")
-cat("  model_final_ensemble.R loaded\n")
-cat("  Functions available:\n")
-cat("    PlotTopModelAUC, PlotModelRadar, PlotProbDensity, PlotProbStrip,\n")
-cat("    PlotModelDashboard\n")
-cat("    TrainEnsemble, PredictEnsemble\n")
-cat("================================================\n")

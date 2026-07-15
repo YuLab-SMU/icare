@@ -39,11 +39,13 @@
 #' @export
 #'
 #' @examples
-#' # Generate missing data plots for the mtcars dataset
-#' missing_info <- plot_missing_data(data = mtcars, save_plots = TRUE)
-#'
+#' \dontrun{
+#' data("stat_obj_test")
+#' missing_info <- plot_missing_data(data = stat_obj_test@raw.data, save_plots =FALSE)
 #' # Generate missing data plots with customized parameters
-#' missing_info <- plot_missing_data(data = mtcars, palette_name = "Zissou1", alpha = 0.7, plot_width = 6, plot_height = 6)
+#' missing_info <- plot_missing_data(data = stat_obj_test@raw.data, save_plots =FALSE,
+#'                               palette_name = "Zissou1", alpha = 0.7, plot_width = 6, plot_height = 6)
+#'}
 plot_missing_data <- function(data,
                               palette_name = 'Royal1',
                               alpha = 0.9,
@@ -175,11 +177,13 @@ plot_missing_data <- function(data,
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' data("stat_obj_test")
 #' # Generate missing data plots for a Stat object
-#' updated_stat <- state_plot_missing_data(stat_object, save_plots = TRUE)
-#'
+#'updated_stat <- state_plot_missing_data(stat_obj_test, save_plots = TRUE)
 #' # Generate missing data plots for a data frame
-#' missing_info <- state_plot_missing_data(data_frame, save_plots = FALSE)
+#'missing_info <- state_plot_missing_data(stat_obj_test@raw.data, save_plots = FALSE)
+#'}
 state_plot_missing_data <- function(
     object,
     palette_name = 'Royal1',
@@ -244,11 +248,11 @@ state_plot_missing_data <- function(
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' data("stat_obj_test")
 #' # Assuming 'stat_object' is a valid Stat object
-#' raw_data <- ExtractRawData(stat_object)
-#'
-#' # If the object does not have raw.data, it will return NULL
-#' missing_data <- ExtractRawData(non_stat_object)
+#' raw_data <- ExtractRawData(stat_obj_test)
+#' }
 ExtractRawData <- function(object) {
   data <- tryCatch(slot(object, "raw.data"), error = function(e) NULL)
   return(data)
@@ -281,12 +285,14 @@ ExtractRawData <- function(object) {
 #'   variables. Default is `FALSE`.
 #'
 #' @return A list with three components:
+#' \describe{
 #' \item{numeric_vars}{Character vector of variable names classified as numeric.}
 #' \item{categorical_vars}{Character vector of variable names classified as
 #'   categorical (includes characters, factors, logicals, and optionally
 #'   low‑cardinality numerics).}
 #' \item{vars_to_encode}{Character vector of categorical variables that have
 #'   more than `encode_threshold` unique values and may need encoding.}
+#' }
 #'
 #' @export
 #'
@@ -400,21 +406,23 @@ diagnose_variable_type <- function(data,
 #'
 #' @returns If input is a "Stat" object, the updated object with the diagnosed variable
 #'   types stored in the `variable.types` slot. If input is a data frame, a list containing:
+#'   \describe{
 #'   \item{numeric_vars}{Character vector of numeric variables.}
 #'   \item{categorical_vars}{Character vector of categorical variables.}
 #'   \item{vars_to_encode}{Character vector of categorical variables that have more than
 #'     `encode_threshold` unique values and may need encoding.}
+#'   }
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' # Example 1: Diagnose variables in a "Stat" object
-#' stat_obj <- stat_diagnose_variable_type(stat_object, group_col = "group")
+#' stat_obj <- stat_diagnose_variable_type(stat_obj_test, group_col = "group")
 #' print(stat_obj)
 #'
 #' # Example 2: Diagnose variables in a data frame
-#' result <- stat_diagnose_variable_type(data_frame,
+#' result <- stat_diagnose_variable_type(stat_obj_test@raw.data,
 #'                                       treat_low_card_numeric_as_categorical = TRUE)
 #' print(result)
 #' }
@@ -508,21 +516,16 @@ stat_diagnose_variable_type <- function(object,
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#'my_data=stat_obj_test@clean.data
 #' # Example 1: Performing gaze analysis with a formula and custom settings
-#' result <- gaze_analysis(data = my_data,
-#'                         formula = ~ group + age + gender,
-#'                         digits = 2,
-#'                         show.p = TRUE,
-#'                         gaze_method = 3,
-#'                         save_word = TRUE,
-#'                         save_dir = "path/to/save")
-#'
+#'result <- gaze_analysis(data = my_data,formula = ~ SWAB + AGE,digits = 2,show.p = TRUE,
+#'                     gaze_method = 3,save_word = TRUE, save_dir = "./")
 #' # Example 2: Using the default formula based on group columns
-#' result <- gaze_analysis(data = my_data,
-#'                         group_cols = c("group"),
-#'                         digits = 1,
-#'                         show.p = FALSE,
-#'                         gaze_method = 1)
+#'  result <- gaze_analysis(data = my_data,group_cols = c("SWAB"),
+#'                         digits = 1,show.p = FALSE,save_word = TRUE,
+#'                         save_dir = "./",gaze_method = 1)
+#' }
 gaze_analysis <- function(data,
                           formula = NULL,
                           group_cols = NULL,
@@ -611,11 +614,12 @@ gaze_analysis <- function(data,
 #' @param save_word Logical. Save Word file?
 #' @param save_dir Output directory. If \code{NULL} and \code{save_word = TRUE},
 #'   uses \code{./tables/}.
-#'
 #' @return Updated \code{Stat} object or flextable.
+#' 
 #' @export
-#' #' @examples
+#' 
 #' @examples
+#' \dontrun{
 #' # --- Prepare example data ---
 #' library(autoReg)
 #' library(flextable)
@@ -658,12 +662,10 @@ gaze_analysis <- function(data,
 #'                                save_word = FALSE)
 #' 
 #' # --- Example 5: Save as Word document with custom directory ---
-#' \dontrun{
 #' stat_obj <- stat_gaze_analysis(stat_obj,
 #'                                save_word = TRUE,
 #'                                save_dir = "my_results/tables")
 #' # The file is saved as my_results/tables/gaze_analysis.docx
-#' }
 #' 
 #' # --- Example 6: Suppress p‑values (descriptive statistics only) ---
 #' stat_obj <- stat_gaze_analysis(stat_obj,
@@ -676,6 +678,7 @@ gaze_analysis <- function(data,
 #'                                    digits = 2,
 #'                                    show.p = TRUE,
 #'                                    save_word = FALSE)
+#'}
 stat_gaze_analysis <- function(object,
                                formula = NULL,
                                group_col = "group",

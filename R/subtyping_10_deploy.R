@@ -140,10 +140,6 @@ New_Sub_Manager <- function(sub_train_obj) {
 #' @export
 launch_sub_deploy_app <- function(sub_manager, title = "Subtyping Terminal", 
                                   var_dict = NULL, project_info = NULL) {
-  library(shiny)
-  library(shinydashboard)
-  library(DT)
-  
   # --- Data Extraction ---
   # Safely get training features and their medians for default inputs
   train_data <- sub_manager$trained_obj@clean.data

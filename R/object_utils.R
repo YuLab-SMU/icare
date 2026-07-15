@@ -87,22 +87,11 @@
 #' @returns An object of the requested class.
 #' @export
 #' @examples
-#' ## Stat → every other class
-#' model_obj <- ConvertObject(stat_obj, to = "Train_Model")
-#' sub_obj   <- ConvertObject(stat_obj, to = "Subtyping")
-#' prog_obj  <- ConvertObject(stat_obj, to = "PrognosiX",
-#'                            time_col = "OS", status_col = "event")
-#'
-#' ## Subtyping → PrognosiX  (clustered.data is used automatically)
-#' prog_obj  <- ConvertObject(sub_obj,  to = "PrognosiX",
-#'                            time_col = "time", status_col = "status")
-#'
-#' ## Reverse conversions
-#' stat_obj2 <- ConvertObject(sub_obj,   to = "Stat")
-#' stat_obj3 <- ConvertObject(prog_obj,  to = "Stat")
-#' sub_obj2  <- ConvertObject(prog_obj,  to = "Subtyping")
-#' stat_obj4 <- ConvertObject(model_obj, to = "Stat",  group_col = "group")
-#' sub_obj3  <- ConvertObject(model_obj, to = "Subtyping")
+#' \dontrun{
+#' Subtem=ConvertObject(stat_obj_test,to='Subtyping')
+#' Protem=ConvertObject(stat_obj_test,to='PrognosiX')
+#' Traintem=ConvertObject(stat_obj_test,to='Train_Model')
+#' }
 ConvertObject <- function(object,
                           to,
                           time_col   = "time",
@@ -295,14 +284,9 @@ ConvertObject <- function(object,
 #' @returns A subsetted object of the same class.
 #' @export
 #' @examples
-#' ## keep specific samples
-#' SubsetObject(stat_obj,  samples = c("s1", "s2", "s3"))
-#'
-#' ## keep specific features
-#' SubsetObject(sub_obj,   features = sig_genes)
-#'
-#' ## combine both
-#' SubsetObject(prog_obj,  samples = hi_risk_ids, features = model_genes)
+#' \dontrun{
+#' sub_obj <- SubsetObject(stat_obj_test, samples = rownames(stat_obj_test@clean.data)[1:5])
+#' }
 SubsetObject <- function(object, samples = NULL, features = NULL) {
   
   .check_class(object, c("Stat", "Train_Model", "Subtyping", "PrognosiX"))
@@ -373,17 +357,9 @@ SubsetObject <- function(object, samples = NULL, features = NULL) {
 #' @returns An object of the same class containing only the filtered samples.
 #' @export
 #' @examples
-#' ## keep group "A" only
-#' FilterByMeta(stat_obj, col = "group", values = "A")
-#'
-#' ## keep multiple groups
-#' FilterByMeta(prog_obj, col = "risk_group", values = c("high", "medium"))
-#'
-#' ## numeric range filter (age 40–65)
-#' FilterByMeta(stat_obj, col = "age", range = c(40, 65))
-#'
-#' ## exclude a batch
-#' FilterByMeta(sub_obj, col = "batch", values = "bad_batch", invert = TRUE)
+#' \dontrun{
+#' sub_obj <- FilterByMeta(stat_obj_test, col = "SWAB", values = "0")
+#' }
 FilterByMeta <- function(object, col, values = NULL, range = NULL,
                          invert = FALSE) {
   
@@ -440,9 +416,9 @@ FilterByMeta <- function(object, col, values = NULL, range = NULL,
 #' @returns An object of the same class.
 #' @export
 #' @examples
-#' FilterByFeature(stat_obj, feature = "BMI",    threshold = 25,  direction = "above")
-#' FilterByFeature(prog_obj, feature = "score",  threshold = 0.5, direction = "below")
-#' FilterByFeature(sub_obj,  feature = "gene_X", threshold = 0,   direction = "above")
+#' \dontrun{
+#' stat_obj <- FilterByFeature(stat_obj_test, feature = "AGE", threshold = 10, direction = "above")
+#' }
 FilterByFeature <- function(object, feature, threshold,
                             direction = c("above", "below", "equal"),
                             invert = FALSE) {
@@ -482,15 +458,9 @@ FilterByFeature <- function(object, feature, threshold,
 #' @returns A named list of objects, one element per unique level of \code{col}.
 #' @export
 #' @examples
-#' ## split Stat by cohort batch
-#' batch_list <- SplitByMeta(stat_obj, col = "batch")
-#' batch_list$batch1  # access individual object
-#'
-#' ## split Subtyping by cluster label
-#' cluster_list <- SplitByMeta(sub_obj, col = "cluster")
-#'
-#' ## split PrognosiX by risk group
-#' risk_list <- SplitByMeta(prog_obj, col = "risk_group")
+#' \dontrun{
+#' split_list <- SplitByMeta(stat_obj_test, col = "SWAB")
+#' }
 SplitByMeta <- function(object, col) {
   
   .check_class(object, c("Stat", "Train_Model", "Subtyping", "PrognosiX"))
@@ -529,14 +499,9 @@ SplitByMeta <- function(object, col) {
 #' @returns A downsampled object of the same class.
 #' @export
 #' @examples
-#' ## 100 samples total
-#' DownsampleObject(stat_obj, n = 100)
-#'
-#' ## 50 samples per group
-#' DownsampleObject(prog_obj, n = 50, per_group = TRUE)
-#'
-#' ## 30 per cluster (Subtyping)
-#' DownsampleObject(sub_obj, n = 30, per_group = TRUE, group_col = "cluster")
+#' \dontrun{
+#' down <- DownsampleObject(stat_obj_test, n = 10)
+#' }
 DownsampleObject <- function(object, n, per_group = FALSE,
                              group_col = NULL, seed = 42) {
   
@@ -590,8 +555,9 @@ DownsampleObject <- function(object, n, per_group = FALSE,
 #' @returns Object with only the selected features.
 #' @export
 #' @examples
-#' SelectFeatures(stat_obj, features = sig_gene_list)
-#' SelectFeatures(sub_obj,  pattern  = "^ERBB")
+#' \dontrun{
+#' selected <- SelectFeatures(stat_obj_test, features = c("AGE"))
+#' }
 SelectFeatures <- function(object, features = NULL, pattern = NULL) {
   .check_class(object, c("Stat", "Train_Model", "Subtyping", "PrognosiX"))
   
@@ -621,8 +587,9 @@ SelectFeatures <- function(object, features = NULL, pattern = NULL) {
 #' @returns Object without the removed features.
 #' @export
 #' @examples
-#' RemoveFeatures(stat_obj,  features = batch_gene_list)
-#' RemoveFeatures(prog_obj,  pattern  = "^HIST")
+#' \dontrun{
+#' selected <- RemoveFeatures(stat_obj_test, features = c("AGE"))
+#' }
 RemoveFeatures <- function(object, features = NULL, pattern = NULL) {
   .check_class(object, c("Stat", "Train_Model", "Subtyping", "PrognosiX"))
   
@@ -655,9 +622,9 @@ RemoveFeatures <- function(object, features = NULL, pattern = NULL) {
 #' @returns Object with renamed features.
 #' @export
 #' @examples
-#' RenameFeatures(stat_obj,
-#'                old = c("V1", "V2", "V3"),
-#'                new = c("BMI", "Age", "Glucose"))
+#' \dontrun{
+#' selected <- RenameFeatures(stat_obj_test, old = "AGE", new = "age")
+#' }
 RenameFeatures <- function(object, old, new) {
   .check_class(object, c("Stat", "Train_Model", "Subtyping", "PrognosiX"))
   if (length(old) != length(new))
@@ -709,9 +676,9 @@ RenameFeatures <- function(object, old, new) {
 #' @returns Object with the updated metadata.
 #' @export
 #' @examples
-#' AddMetadata(stat_obj,  col = "batch",      values = batch_vector)
-#' AddMetadata(prog_obj,  col = "risk_score",  values = score_vector)
-#' AddMetadata(sub_obj,   col = "subtype",     values = subtype_labels)
+#' \dontrun{
+#'stat_obj <- AddMetadata(stat_obj_test, col = "new_meta", values = sample(1:2, nrow(stat_obj_test@clean.data), replace=TRUE))
+#'}
 AddMetadata <- function(object, col, values) {
   .check_class(object, c("Stat", "Train_Model", "Subtyping", "PrognosiX"))
   
@@ -749,17 +716,9 @@ AddMetadata <- function(object, col, values) {
 #' @returns A merged object of the same class.
 #' @export
 #' @examples
-#' ## merge two Stat objects
-#' merged_stat <- MergeObjects(stat_cohort1, stat_cohort2)
-#'
-#' ## merge a list of Stat objects
-#' merged_stat <- MergeObjects(stat_a, list(stat_b, stat_c))
-#'
-#' ## merge Subtyping objects (clustering slots reset)
-#' merged_sub  <- MergeObjects(sub_batch1, sub_batch2)
-#'
-#' ## merge PrognosiX objects (model slots reset)
-#' merged_prog <- MergeObjects(prog_train, prog_external)
+#' \dontrun{
+#'stat_obj <- MergeObjects(stat_obj_test, stat_obj_test)
+#'}
 MergeObjects <- function(x, y = NULL) {
   
   # normalise to a flat list
@@ -841,10 +800,9 @@ MergeObjects <- function(x, y = NULL) {
 #' @returns \code{invisible(object)} (called for side-effects).
 #' @export
 #' @examples
-#' InspectObject(stat_obj)
-#' InspectObject(model_obj)
-#' InspectObject(sub_obj)
-#' InspectObject(prog_obj)
+#' \dontrun{
+#'stat_obj <- InspectObject(stat_obj_test)
+#'}
 InspectObject <- function(object) {
   .check_class(object, c("Stat", "Train_Model", "Subtyping", "PrognosiX"))
   

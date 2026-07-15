@@ -18,9 +18,6 @@
 #' @slot best.model.result A `list` containing the best model and its performance.
 #'
 #' @export
-#'
-#' @examples
-#' object_model <- new("Train_Model")
 Train_Model <- setClass(
   Class = 'Train_Model',
   slots = c(
@@ -110,10 +107,6 @@ Train_Model <- setClass(
 #' or `NULL` if extraction fails.
 #'
 #' @export
-#'
-#' @examples
-#' clean_df <- ExtractCleanData(my_stat_object)
-#'
 ExtractCleanData <- function(object) {
   if (!inherits(object, "Stat")) {
     stop("The input object must be of class 'Stat'.")
@@ -144,16 +137,6 @@ ExtractCleanData <- function(object) {
 #' @returns A `Train_Model` S4 object, which contains the data and grouping information for further modeling.
 #'
 #' @export
-#'
-#' @examples
-#' \dontrun{
-#' # Create a model object from a data frame
-#' df <- data.frame(a = c(1, 2), b = c(3, 4))
-#' object_model <- CreateModelObject(data = df, group_col = "a")
-#'
-#' # Create a model object from a Stat object (assuming a Stat object exists)
-#' object_model <- CreateModelObject(object = object_stat)
-#' }
 CreateModelObject <- function(
     data = NULL,
     object = NULL,
@@ -270,7 +253,6 @@ CreateModelObject <- function(
     group_col = group_col
   )
   
-  # ── FIX: also populate clean.df so the object can be used immediately ──
   Train_Model_instance@clean.df <- data.df
   
   cat("Model object created successfully.\n")
@@ -296,16 +278,15 @@ CreateModelObject <- function(
 #'   \item \code{model_metrics} - Performance metrics (if available)
 #'   \item \code{feature_importance} - Feature importance scores (if available)
 #' }
-#'
+#' @export
+#' @seealso \code{\link{validate_binary_classification}} for validating the extracted dataset
+#' 
 #' @examples
 #' \dontrun{
 #' # Assuming 'trained_model' is a valid Train_Model object
 #' extracted <- ExtractModel(trained_model)
 #' print(extracted$best_model)
 #' }
-#'
-#' @export
-#' @seealso \code{\link{validate_binary_classification}} for validating the extracted dataset
 ExtractModel <- function(object) {
   if (is.null(object)) {
     stop("Invalid input: 'object' should be provided")

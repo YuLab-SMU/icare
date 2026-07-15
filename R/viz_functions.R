@@ -87,6 +87,10 @@
 #' @param format    \code{"pdf"}, \code{"png"}, or \code{"svg"}.
 #' @returns A \code{ggplot} object.
 #' @export
+#' @examples
+#' \dontrun{
+#' PlotGroupedDistribution(stat_obj_test,save_plot = FALSE,ncol = 4)
+#' }
 PlotGroupedDistribution <- function(object,
                                     features     = NULL,
                                     group_col    = "group",
@@ -201,16 +205,15 @@ PlotGroupedDistribution <- function(object,
 #' \dontrun{
 #' # Lower triangle with hierarchical clustering and rectangles
 #' # (Color legend now at bottom by default)
-#' PlotCorrelationHeatmap(stat_obj, matrix_type = "lower", order = "hclust",
-#'                        addrect = 3, color_scheme = "scientific")
+#' PlotCorrelationHeatmap(stat_obj_test, matrix_type = "lower", order = "hclust",addrect = 3, color_scheme = "scientific")
 #'
 #' # Upper triangle with ellipse method and significance stars
 #' # Black text labels for better readability
-#' PlotCorrelationHeatmap(stat_obj, matrix_type = "upper", vis_method = "ellipse",
-#'                        insig = "label_sig", sig.level = c(0.001, 0.01, 0.05))
+#' PlotCorrelationHeatmap(stat_obj_test, matrix_type = "lower", vis_method = "ellipse",insig = "label_sig", sig.level = c(0.001, 0.01, 0.05))
 #'
 #' # Custom text color if needed
-#' PlotCorrelationHeatmap(stat_obj, tl.col = "navy", cl.pos = "r")
+#' PlotCorrelationHeatmap(stat_obj_test, matrix_type = "upper",tl.col = "navy", cl.pos = "r")
+#' PlotCorrelationHeatmap(stat_obj_test, matrix_type = "full",tl.col = "navy", cl.pos = "r")
 #' }
 PlotCorrelationHeatmap <- function(object,
                                    features      = NULL,
@@ -521,6 +524,14 @@ PlotCorrelationHeatmap <- function(object,
 #' @param format     File format.
 #' @returns A \code{ggplot} object.
 #' @export
+#' @examples
+#' \dontrun{
+#' #must have info.data
+#' stat_obj_test@info.data=stat_obj_test@clean.data
+#' PlotPCA(stat_obj_test,save_plot = FALSE)
+#' PlotPCA(stat_obj_test, shape_by='SWAB',save_plot = FALSE)
+#' }
+
 PlotPCA <- function(object,
                     color_by      = NULL,
                     shape_by      = NULL,
@@ -621,6 +632,13 @@ PlotPCA <- function(object,
 #' @param format       File format.
 #' @returns A \code{ggplot} object.
 #' @export
+#' @examples
+#' \dontrun{
+#' stat_obj <- stat_var_feature(stat_obj_test)
+#' last_sig <- ExtractLastTestSig(stat_obj)
+#' last_sig$feature <- last_sig$id
+#' PlotAUCPval(last_sig, stat_obj_test@clean.data, group_col = "SWAB", save_plot = FALSE,p_thresh = 0.1, auc_thresh = 0.5)
+#' }
 PlotAUCPval <- function(deg_df, mat_test,
                         group_col      = "group",
                         auc_thresh     = 0.55,
@@ -636,9 +654,19 @@ PlotAUCPval <- function(deg_df, mat_test,
                         format         = "pdf") {
   cat("Generating AUC-P value selection plot...\n")
   if (is.null(save_dir) && save_plot) save_dir <- .get_viz_output_dir("Stat")
-  
   df <- as.data.frame(deg_df)
-  if (!"feature" %in% colnames(df)) df$feature <- rownames(df)
+  if (!"feature" %in% colnames(df)) {
+    possible_cols <- c("id", "gene", "symbol", "rownames")
+    for (col in possible_cols) {
+      if (col %in% colnames(df)) {
+        df$feature <- df[[col]]
+        break
+      }
+    }
+    if (!"feature" %in% colnames(df)) {
+      df$feature <- rownames(df)   
+    }
+  }
   p_col <- if ("p.adjust" %in% colnames(df)) "p.adjust" else "p_value"
   df$neg_log10p <- -log10(df[[p_col]] + 1e-300)
   
@@ -719,6 +747,12 @@ PlotAUCPval <- function(deg_df, mat_test,
 #' @param format      Output format.
 #' @return A ggplot object.
 #' @export
+#' @examples
+#' \dontrun{
+#' stat_obj <- stat_var_feature(stat_obj_test)
+#' last_sig <- ExtractLastTestSig(stat_obj)
+#' PlotDegBoxplot(last_sig, stat_obj@clean.data, group_col = "SWAB", save_plot = FALSE)
+#' }
 PlotDegBoxplot <- function(deg_results,
                            expr_data,
                            group_col   = "group",
@@ -845,8 +879,16 @@ PlotDegBoxplot <- function(deg_results,
 #' @return Invisibly, a `ComplexHeatmap::Heatmap` object. The heatmap is drawn
 #'   (or saved) as a side effect.
 #'
+#' @importFrom ComplexHeatmap Heatmap rowAnnotation anno_mark max_text_width ht_opt
+#' @importFrom circlize colorRamp2
+#' @importFrom RColorBrewer brewer.pal
+#' @importFrom grid gpar unit
+#' @export
+#' 
 #' @examples
-#' \donttest{
+#' \dontrun{
+#' stat_obj_test@info.data=stat_obj_test@clean.data
+#' PlotFeatureHeatmap(stat_obj_test, clinical_data = stat_obj@info.data, save_plot = FALSE)
 #' # Example with a simple data frame
 #' set.seed(123)
 #' expr <- data.frame(
@@ -879,12 +921,6 @@ PlotDegBoxplot <- function(deg_results,
 #' # Using a Stat object (assuming it exists)
 #' # PlotFeatureHeatmap(stat_obj, clinical_data = stat_obj@clean.data[, c("GENDER","SWAB")])
 #' }
-#'
-#' @importFrom ComplexHeatmap Heatmap rowAnnotation anno_mark max_text_width ht_opt
-#' @importFrom circlize colorRamp2
-#' @importFrom RColorBrewer brewer.pal
-#' @importFrom grid gpar unit
-#' @export
 PlotFeatureHeatmap <- function(object,
                                features          = NULL,
                                group_col         = NULL,
@@ -949,7 +985,7 @@ PlotFeatureHeatmap <- function(object,
       if (is.null(group_col) && !is.null(object$group_col)) group_col <- object$group_col
     }
     if (is.null(raw)) stop("No 'clean.data' found in Stat object.")
-    # 只保留数值列
+
     num_idx <- sapply(raw, is.numeric)
     if (sum(num_idx) == 0) stop("No numeric columns in clean.data.")
     mat <- as.matrix(raw[, num_idx, drop = FALSE])
@@ -1039,7 +1075,7 @@ PlotFeatureHeatmap <- function(object,
       warning("Annotation must be a data frame.")
       return(NULL)
     }
-    # 匹配 ID
+
     if (which_dim == "feature") {
       ids <- colnames(mat)
       df_ids <- rownames(df)
@@ -1053,13 +1089,13 @@ PlotFeatureHeatmap <- function(object,
       return(NULL)
     }
     df <- df[common, , drop = FALSE]
-    df <- df[ids, , drop = FALSE]  # 按热图顺序重排
+    df <- df[ids, , drop = FALSE]  
     if (!is.null(columns)) {
       columns <- intersect(columns, colnames(df))
       if (length(columns) == 0) return(NULL)
       df <- df[, columns, drop = FALSE]
     }
-    # 字符转因子
+
     for (col in colnames(df)) {
       if (is.character(df[[col]])) df[[col]] <- as.factor(df[[col]])
     }
@@ -1076,8 +1112,6 @@ PlotFeatureHeatmap <- function(object,
     )
   }
   
-  # ------------------------- 6. Build annotations -------------------------
-  # 将 group_col 和 clinical_data 合并到 top_annotation
   if (!is.null(group_col) && nrow(info) > 0 && group_col %in% colnames(info)) {
     legacy_ann <- data.frame(Group = info[[group_col]], row.names = rownames(info))
     clinical_data <- if (is.null(clinical_data)) legacy_ann else cbind(clinical_data, legacy_ann)
@@ -1214,10 +1248,20 @@ PlotFeatureHeatmap <- function(object,
 #' @param width         Plot width in inches.
 #' @param height        Plot height in inches.
 #' @param format        File format ("pdf", "png", "jpg").
-#'
 #' @return A ggplot2 object showing ROC curves.
-#'
 #' @export
+#' @examples
+#' \dontrun{
+#' model_obj <- ModelTrainAnalysis(
+#' object       = train_obj_test,
+#' methods      = c("glm", "rf", "gbm"),
+#' control      = list(method = "repeatedcv", number = 5, repeats = 1),
+#' save_plots   = TRUE,
+#' save_dir     = ".",
+#' seed         = 123
+#' )
+#' PlotMultiROC(model_obj, save_plot = FALSE)
+#' }
 PlotMultiROC <- function(object,
                          test_data    = NULL,
                          palette_name = "Darjeeling1",
@@ -1229,9 +1273,6 @@ PlotMultiROC <- function(object,
                          height       = 6,
                          format       = "pdf") {
   
-  # ─────────────────────────────────────────────────────────────────────────────
-  # 输入验证
-  # ─────────────────────────────────────────────────────────────────────────────
   if (is.null(save_dir)) {
     save_dir <- .get_viz_output_dir("Model")
   }
@@ -1244,9 +1285,6 @@ PlotMultiROC <- function(object,
     stop("No trained models found in object@train.models.")
   }
   
-  # ─────────────────────────────────────────────────────────────────────────────
-  # 准备测试数据
-  # ─────────────────────────────────────────────────────────────────────────────
   td <- if (!is.null(test_data)) {
     test_data
   } else {
@@ -1257,14 +1295,9 @@ PlotMultiROC <- function(object,
     stop("Provide 'test_data' or populate split.data$test.")
   }
   
-  # ─────────────────────────────────────────────────────────────────────────────
-  # 提取真实标签（处理因子水平变化）
-  # ─────────────────────────────────────────────────────────────────────────────
   group_col <- as.character(object@group_col)
   truth <- factor(td[[group_col]])
   
-  # 获取正例标签（第二个水平）
-  # 无论原始水平是 "0"/"1" 还是 "X0"/"X1"，都用第二个
   truth_levels <- levels(truth)
   
   if (length(truth_levels) != 2) {
@@ -1277,34 +1310,23 @@ PlotMultiROC <- function(object,
   cat(sprintf("Truth factor levels: %s, %s\n", truth_levels[1], truth_levels[2]))
   cat(sprintf("Using '%s' as positive class\n\n", pos_level))
   
-  # ─────────────────────────────────────────────────────────────────────────────
-  # 计算每个模型的 ROC 曲线
-  # ─────────────────────────────────────────────────────────────────────────────
   roc_list <- lapply(names(object@train.models), function(nm) {
     cat(sprintf("Processing model: %s\n", nm))
     
     model <- object@train.models[[nm]]
     
-    # 获取预测概率
     probs <- tryCatch({
-      # 方法 1：尝试用列名查找（可能失败如果列名被转换了）
       prob_matrix <- stats::predict(model, newdata = td, type = "prob")
-      
-      # 检查列是否存在
       if (pos_level %in% colnames(prob_matrix)) {
         prob_matrix[, pos_level]
       } else {
-        # 方法 2：如果列名不匹配，用第二列（更健壮）
         cat(sprintf("  Warning: Column '%s' not found. Using 2nd column instead.\n", pos_level))
         prob_matrix[, 2]
       }
     }, error = function(e) {
-      # 方法 3：如果 type="prob" 失败，尝试 type="raw"
       cat(sprintf("  Note: Using raw predictions instead of probabilities\n"))
       as.numeric(stats::predict(model, newdata = td, type = "raw") == pos_level)
     })
-    
-    # 验证概率
     if (length(probs) != nrow(td)) {
       stop(sprintf("Prediction length mismatch for model %s", nm))
     }
@@ -1313,10 +1335,6 @@ PlotMultiROC <- function(object,
       warning(sprintf("Model %s produced NA predictions", nm))
       probs[is.na(probs)] <- 0.5
     }
-    
-    # ───────────────────────────────────────────────────────────────────────────
-    # 计算 ROC 曲线
-    # ───────────────────────────────────────────────────────────────────────────
     roc_obj <- pROC::roc(truth, probs, 
                          levels = levels(truth), 
                          quiet = TRUE)
@@ -1335,23 +1353,12 @@ PlotMultiROC <- function(object,
     )
   })
   
-  # ─────────────────────────────────────────────────────────────────────────────
-  # 合并所有 ROC 数据
-  # ─────────────────────────────────────────────────────────────────────────────
   roc_df <- dplyr::bind_rows(roc_list)
   
   if (nrow(roc_df) == 0) {
     stop("No ROC data generated. Check your models and test data.")
   }
-  
-  # ─────────────────────────────────────────────────────────────────────────────
-  # 获取配色方案
-  # ─────────────────────────────────────────────────────────────────────────────
   cols <- .get_palette(palette_name, length(object@train.models))
-  
-  # ─────────────────────────────────────────────────────────────────────────────
-  # 绘制 ROC 曲线
-  # ─────────────────────────────────────────────────────────────────────────────
   p <- ggplot2::ggplot(roc_df,
                        ggplot2::aes(x = 1 - Specificity, y = Sensitivity, colour = Model)) +
     ggplot2::geom_line(linewidth = 1) +
@@ -1367,10 +1374,6 @@ PlotMultiROC <- function(object,
     ) +
     .pub_theme(base_size) +
     ggplot2::theme(legend.position = c(0.72, 0.22))
-  
-  # ─────────────────────────────────────────────────────────────────────────────
-  # 保存图表
-  # ─────────────────────────────────────────────────────────────────────────────
   if (save_plot) {
     .safe_dir(save_dir)
     .save_plot(p, save_dir, "multi_ROC", width, height, format)
@@ -1379,7 +1382,6 @@ PlotMultiROC <- function(object,
   
   return(p)
 }
-
 
 #' Plot Confusion Matrix for a Single Model
 #'
@@ -1412,6 +1414,18 @@ PlotMultiROC <- function(object,
 #' @return A ggplot2 object showing the confusion matrix.
 #'
 #' @export
+#' @examples
+#' \dontrun{
+#' model_obj <- ModelTrainAnalysis(
+#' object       = train_obj_test,
+#' methods      = c("glm", "rf", "gbm"),
+#' control      = list(method = "repeatedcv", number = 5, repeats = 1),
+#' save_plots   = TRUE,
+#' save_dir     = ".",
+#' seed         = 123
+#' )
+#' PlotConfusionMatrix(model_obj, model_name = names(train_obj@train.models)[1], save_plot = FALSE)
+#' }
 PlotConfusionMatrix <- function(object,
                                 model_name = NULL,
                                 test_data  = NULL,
@@ -1733,8 +1747,6 @@ PlotConfusionMatrix <- function(object,
 }
 
 # Helper functions (.get_viz_output_dir, .safe_dir, .pub_theme) remain unchanged.
-
-
 #' Feature importance plot
 #'
 #' Bar chart of variable importance scores across trained models. Each model
@@ -1750,13 +1762,25 @@ PlotConfusionMatrix <- function(object,
 #' @param format      File format.
 #' @returns A \code{ggplot} object.
 #' @export
+#' @export
+#' @examples
+#' \dontrun{
+#' model_obj <- ModelTrainAnalysis(
+#' object       = train_obj_test,
+#' methods      = c("glm", "rf", "gbm"),
+#' control      = list(method = "repeatedcv", number = 5, repeats = 1),
+#' save_plots   = TRUE,
+#' save_dir     = ".",
+#' seed         = 123
+#' )
+#' PlotFeatureImportance(model_obj, top_n = 10, save_plot = FALSE)
+#' }
 PlotFeatureImportance <- function(object,
-
                                   top_n        = 20,
                                   palette_name = "Zissou1",
                                   base_size    = 12,
                                   save_plot    = FALSE,
-                                  save_dir = NULL,  # default: auto-detect from config
+                                  save_dir = NULL, 
                                   width        = 10,
                                   height       = 6,
                                   format       = "pdf") {
@@ -1827,6 +1851,18 @@ PlotFeatureImportance <- function(object,
 #' @param show_stats_on_plot Logical. Whether to display metrics on the plot.
 #'
 #' @export
+#' @examples
+#' \dontrun{
+#' model_obj <- ModelTrainAnalysis(
+#' object       = train_obj_test,
+#' methods      = c("glm", "rf", "gbm"),
+#' control      = list(method = "repeatedcv", number = 5, repeats = 1),
+#' save_plots   = TRUE,
+#' save_dir     = ".",
+#' seed         = 123
+#' )
+#' PlotCalibration(model_obj, save_plot = FALSE)
+#' }
 PlotCalibration <- function(object,
                             model_name         = NULL,
                             test_data          = NULL,
@@ -1911,8 +1947,8 @@ PlotCalibration <- function(object,
   cal_glm <- suppressWarnings(
     glm(truth ~ log(prob_clip/(1 - prob_clip)), family = binomial(), data = cal_df)
   )
-  intercept <- coef(cal_glm)[1]
-  slope     <- coef(cal_glm)[2]
+  intercept <- stats::coef(cal_glm)[1]
+  slope     <- stats::coef(cal_glm)[2]
   
   cat("\n===== Calibration Parameters (Logit) =====\n")
   cat("Intercept:", round(intercept, 3), "(Ideal: 0)\n")
@@ -2025,6 +2061,14 @@ PlotCalibration <- function(object,
 #' @param format           File format.
 #' @returns A \code{ggplot} or \code{patchwork} object.
 #' @export
+#' @examples
+#' \dontrun{
+#' subtype_obj_test=Sub_tsne_analyse(subtype_obj_test)
+#' subtype_obj_test=Sub_umap_analyse(subtype_obj_test)
+#' PlotDimReduction(subtype_obj_test,reduction='tsne',color_by='SWAB')
+#' PlotDimReduction(subtype_obj_test,reduction='umap',color_by='SWAB')
+#' }
+
 PlotDimReduction <- function(object,
                              reduction        = c("tsne", "umap"),
                              color_by         = "cluster",
@@ -2151,8 +2195,9 @@ PlotDimReduction <- function(object,
 #' @param show_gene_names Logical. If \code{TRUE}, utilizes \code{anno_mark} to display feature labels cleanly on the right.
 #' @param raster_quality Numeric. Quality multiplier for rasterization. Default is 5.
 #'
-#' @return Invisibly returns a structured \code{\code[ComplexHeatmap]{Heatmap-class}} object.
+#' @return Invisibly returns a structured \code{\link[ComplexHeatmap:Heatmap-class]{Heatmap}}object.
 #' @export
+#' 
 #' @importFrom methods slot
 #' @importFrom gtools mixedsort
 #' @importFrom dplyr mutate group_by arrange desc slice_head ungroup
@@ -2160,7 +2205,6 @@ PlotDimReduction <- function(object,
 #' @importFrom circlize colorRamp2
 #' @importFrom grid gpar unit grid.rect
 #' @importFrom ComplexHeatmap Heatmap HeatmapAnnotation rowAnnotation anno_mark draw
-#'
 #' @examples
 #' \dontrun{
 #' # 1. Prepare dummy omics matrix
@@ -2655,7 +2699,7 @@ PlotKaplanMeier <- function(object,
     path <- file.path(save_dir,
                       paste0("KM_", if (!is.null(group_col)) group_col else "overall",
                              ".", format))
-    survminer::ggsave(path, km, width = width, height = height, dpi = 300)
+    ggplot2::ggsave(path, km, width = width, height = height, dpi = 300)
     cat("KM plot saved:", path, "\n")
   }
   return(km)
@@ -3122,10 +3166,6 @@ PlotGroupMeanHeatmap <- function(
     heatmap_palette    = c("#2166AC", "white", "#B2182B"),
     save_path          = "./Group_Mean_Heatmap.pdf"
 ) {
-  library(ComplexHeatmap)
-  library(dplyr)
-  library(circlize)
-  library(scales)
   
   # [1] Data Extraction
   if (isS4(object)) {

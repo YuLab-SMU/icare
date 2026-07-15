@@ -35,33 +35,28 @@
       best_model <- model_obj@train.models[[model_name]]
     }
     prob_mat <- predict(best_model, newdata, type = "prob")
-    
-    # ---- 自动处理正类列 ----
+
     if (is.matrix(prob_mat) || is.data.frame(prob_mat)) {
       if (ncol(prob_mat) == 1) {
-        # 单列向量直接返回
         return(prob_mat[, 1])
       }
-      # 如果未指定正类，默认取第二列
       if (is.null(positive_class)) {
         positive_class <- colnames(prob_mat)[2]
         warning("positive_class not specified; using second column: ", positive_class)
         return(prob_mat[, positive_class])
       }
-      # 如果指定了正类但列名不存在，降级使用第二列
       if (!positive_class %in% colnames(prob_mat)) {
         warning("Column '", positive_class, "' not found. Using second column.")
         return(prob_mat[, 2])
       }
       return(prob_mat[, positive_class])
     } else {
-      # 已经是数值向量
       return(prob_mat)
     }
     
   } else if (inherits(model_obj, "train")) {
     prob_mat <- predict(model_obj, newdata, type = "prob")
-    # 同样的逻辑
+
     if (is.matrix(prob_mat) || is.data.frame(prob_mat)) {
       if (ncol(prob_mat) == 1) return(prob_mat[, 1])
       if (is.null(positive_class)) {
@@ -814,19 +809,47 @@ PlotThresholdROC <- function(thresh_result,
 }
 
 # ── 11. NRI / IDI analysis ─────────────────────────────────────────────────
-#' Optimized NRI/IDI Plot (Academic Style)
+#' Calculate NRI and IDI between two survival/mortality prediction models
 #'
-#' Generates a horizontal bar plot for NRI and IDI with 95% CI.
-#' Style matches academic publications (e.g., Figure 5 in Lambert Leong, Figure 3 in Chen et al. 2022).
+#' @description
+#' Computes the Net Reclassification Improvement (NRI) and Integrated
+#' Discrimination Improvement (IDI) for two sets of predicted probabilities,
+#' using the \code{nricens} package. Results are displayed as a forest‑style
+#' plot with 95% confidence intervals, optionally saved to PDF.
 #'
-#' @param thresh_result1 First threshold result.
-#' @param thresh_result2 Second threshold result.
-#' @param label1,label2 Model labels.
-#' @param cutoffs Numeric vector of risk cutoffs.
-#' @param save_plot Logical. Save plot?
-#' @param save_dir Output directory.
-#' @return Invisible list with NRI/IDI results and a plot.
+#' @param thresh_result1 A list from a threshold evaluation (must contain
+#'   \code{probabilities}, \code{true}, and \code{positive} components).
+#'   This is considered the "new" model.
+#' @param thresh_result2 A similar list for the "standard" or "old" model.
+#' @param label1 Character label for the new model (default: "Model 1").
+#' @param label2 Character label for the standard model (default: "Model 2").
+#' @param cutoffs Numeric vector of probability cutoffs for categorical NRI
+#'   (default: \code{c(0.5)}). Passed to \code{nricens::nribin}.
+#' @param save_plot Logical; if \code{TRUE}, saves the plot as a PDF.
+#' @param save_dir Directory path where the PDF will be saved. Created
+#'   recursively if it does not exist. Ignored if \code{save_plot = FALSE}.
+#'
+#' @return A list (invisibly) with three components:
+#' \item{nri}{The full output from \code{nricens::nribin} (contains both NRI and IDI).}
+#' \item{idi}{The IDI table extracted from the \code{nribin} result (for convenience).}
+#' \item{plot}{The ggplot2 object representing the forest plot.}
+#'
+#' @details
+#' The function uses \code{nricens::nribin} with \code{updown = "category"} to
+#' compute categorical NRI (NRI+) and IDI simultaneously. Estimates and standard
+#' errors are converted to percentages for plotting. If the estimation fails,
+#' a placeholder plot is generated. The plot includes a grey reference region
+#' between -5% and +5% to highlight clinically negligible changes.
+#'
+#' @seealso \code{\link[nricens]{nribin}}
 #' @export
+#' 
+#' @examples
+#' \dontrun{
+#' # Assuming 'res1' and 'res2' are results from threshold evaluation
+#' result <- CalculateNRI(res1, res2, label1 = "New Model", label2 = "Old Model")
+#' print(result$plot)
+#' }
 CalculateNRI <- function(thresh_result1,
                          thresh_result2,
                          label1 = "Model 1",
@@ -834,32 +857,33 @@ CalculateNRI <- function(thresh_result1,
                          cutoffs = c(0.5),
                          save_plot = FALSE,
                          save_dir  = NULL) {
+  # Ensure required packages are available (assumes .check_clinical_pkgs exists)
   .check_clinical_pkgs()
+  
+  # Extract probabilities and true labels
   probs1 <- thresh_result1$probabilities
   probs2 <- thresh_result2$probabilities
   true   <- thresh_result1$true
   binary <- as.numeric(true == thresh_result1$positive)
   
-  # NRI
+  # Compute NRI and IDI via nribin (single call)
   nri_obj <- tryCatch(
     nricens::nribin(event = binary, p.std = probs2, p.new = probs1,
                     cut = cutoffs, updown = "category"),
     error = function(e) NULL
   )
   
-  # IDI
-  idii <- tryCatch(
-    nricens::improveProb(x1 = probs2, x2 = probs1, y = binary),
-    error = function(e) NULL
-  )
+  # Extract estimates and standard errors for NRI+ and IDI
+  if (!is.null(nri_obj)) {
+    nri_plus <- tryCatch(nri_obj$nri["NRI+", "Estimate"],   error = function(e) NA_real_)
+    nri_se   <- tryCatch(nri_obj$nri["NRI+", "Std.Error"],  error = function(e) NA_real_)
+    idi_val  <- tryCatch(nri_obj$idi["IDI", "Estimate"],    error = function(e) NA_real_)
+    idi_se   <- tryCatch(nri_obj$idi["IDI", "Std.Error"],   error = function(e) NA_real_)
+  } else {
+    nri_plus <- nri_se <- idi_val <- idi_se <- NA_real_
+  }
   
-  # Extract estimates safely
-  nri_plus <- tryCatch(nri_obj$nri["NRI+", "Estimate"], error = function(e) NA_real_)
-  nri_se   <- tryCatch(nri_obj$nri["NRI+", "Std.Error"], error = function(e) NA_real_)
-  idi_val  <- if (!is.null(idii)) idii$idi else NA_real_
-  idi_se   <- if (!is.null(idii)) idii$se else NA_real_
-  
-  # Build data frame (in percentage)
+  # Build data frame with percentages and 95% CIs
   df <- data.frame(
     Metric   = c("NRI+", "IDI"),
     Estimate = c(nri_plus * 100, idi_val * 100),
@@ -870,36 +894,36 @@ CalculateNRI <- function(thresh_result1,
   )
   df <- df[!is.na(df$Estimate), ]
   
+  # Create the plot
   if (nrow(df) == 0) {
-    cat("NRI/IDI could not be estimated.\n")
+    message("NRI/IDI could not be estimated.")
     p <- ggplot2::ggplot() +
       ggplot2::annotate("text", x = 0, y = 0, label = "Not estimable", size = 6) +
       ggplot2::theme_void()
   } else {
-    # Create the plot with academic styling
     p <- ggplot2::ggplot(df, ggplot2::aes(x = Estimate, y = Metric)) +
-      # Reference line at zero
+      # Vertical reference line at zero
       ggplot2::geom_vline(xintercept = 0, linetype = "solid", color = "grey70", linewidth = 0.8) +
-      # Error bars
+      # Error bars (95% CI)
       ggplot2::geom_errorbarh(
         ggplot2::aes(xmin = Lower, xmax = Upper),
         height = 0.15,
         linewidth = 1.0,
         color = "#2166ac"
       ) +
-      # Points
+      # Point estimates
       ggplot2::geom_point(size = 3, color = "#2166ac", shape = 16) +
-      # Labels
+      # Labels and titles
       ggplot2::labs(
         title = paste("NRI/IDI:", label1, "vs", label2),
         subtitle = "Error bars represent 95% CI",
         x = "Value (%)",
         y = NULL
       ) +
-      # Add reference region shading (optional, for clinical significance)
+      # Shaded region for clinical equivalence (±5%)
       ggplot2::annotate("rect", xmin = -5, xmax = 5, ymin = -Inf, ymax = Inf,
                         fill = "grey90", alpha = 0.3) +
-      # Theme
+      # Academic theme
       ggplot2::theme_minimal(base_size = 14) +
       ggplot2::theme(
         plot.title    = ggplot2::element_text(hjust = 0.5, face = "bold"),
@@ -912,13 +936,18 @@ CalculateNRI <- function(thresh_result1,
       )
   }
   
+  # Display the plot
   print(p)
+  
+  # Save to PDF if requested
   if (save_plot) {
     if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
     ggplot2::ggsave(file.path(save_dir, "nri_idi.pdf"),
                     plot = p, width = 6, height = 3, dpi = 300)
   }
-  invisible(list(nri = nri_obj, idi = idii, plot = p))
+  
+  # Return components invisibly
+  invisible(list(nri = nri_obj, idi = nri_obj$idi, plot = p))
 }
 #' Apply a Threshold to Predicted Probabilities
 #'
@@ -1183,16 +1212,13 @@ CompareModelThresholds <- function(model_obj1,
                                    save_dir = NULL,
                                    ...) {
   .check_clinical_pkgs()
-  # 分别计算两个模型的阈值（默认仅计算约登指数和最大准确率）
   thresh1 <- CalculateThresholds(model_obj1, newdata, model_name1, ...)
   thresh2 <- CalculateThresholds(model_obj2, newdata, model_name2)
   
-  # 绘制对比ROC曲线（标注两个模型的阈值点）
   PlotThresholdROC(thresh1, compare_model = thresh2,
                    compare_label = label2,
                    save_plot = save_plot, save_dir = save_dir)
   
-  # 计算NRI/IDI
   CalculateNRI(thresh1, thresh2,
                label1 = label1, label2 = label2,
                save_plot = save_plot, save_dir = save_dir)

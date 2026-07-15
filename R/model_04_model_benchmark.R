@@ -34,7 +34,7 @@
 #' @references
 #' Kuhn M. (2008). Building Predictive Models in R Using the
 #' caret Package. \emph{Journal of Statistical Software}, 28(5), 1–26.
-#'
+#' @export
 #' @examples
 #' \dontrun{
 #' library(mlbench)
@@ -49,8 +49,6 @@
 #' print(result)
 #' attr(result, "error_log")
 #' }
-#'
-#' @export
 PreprocessingBenchmark <- function(
     data,
     group_col = NULL,
@@ -356,12 +354,6 @@ PlotBenchmarkForest <- function(benchmark_result,
   required_pkgs <- c("ggplot2", "dplyr", "wesanderson", "ggprism")
   missing <- required_pkgs[!sapply(required_pkgs, requireNamespace, quietly = TRUE)]
   if (length(missing) > 0) stop("Missing packages for plotting: ", paste(missing, collapse = ", "))
-  
-  suppressMessages({
-    library(ggplot2, quietly = TRUE)
-    library(dplyr, quietly = TRUE)
-  })
-  
   if (!inherits(benchmark_result, "PreprocessingBenchmark") && !is.data.frame(benchmark_result)) {
     stop("Input must be the output from PreprocessingBenchmark()")
   }

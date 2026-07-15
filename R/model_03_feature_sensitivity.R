@@ -1,6 +1,5 @@
 # =============================================================================
 # Feature Sensitivity Analysis – Backward Elimination by Importance
-# Version 5.0.0
 # =============================================================================
 # This module performs backward feature elimination using caret models.
 # For each algorithm it records CV AUC (mean ± SE) while removing the least
@@ -542,56 +541,3 @@ summary.FeatureSensitivityAnalysis <- function(object, ...) {
 
 # Helper
 `%||%` <- function(a, b) if (!is.null(a)) a else b
-
-# =============================================================================
-# Example usage (run after sourcing)
-# =============================================================================
-if (FALSE) {
-  library(caret)
-  data(iris)
-  binary_iris <- iris[iris$Species != "virginica", ]
-  binary_iris$Species <- factor(binary_iris$Species)
-  fake_model <- list(clean.df = binary_iris, group_col = "Species")
-  class(fake_model) <- "Train_Model"
-  
-  elim <- run_feature_elimination(fake_model, models = "rf", number = 5, smooth_span = 0.2)
-  
-  # Get results for multiple methods
-  all_methods <- get_selected_features(elim, methods = c("difference", "ratio", "perf_tolerance", "stability_window"),
-                                       tol = 0.05, window_size = 3, stability_tol = 0.005)
-  # Examine results
-  all_methods$difference$optimal_counts
-  all_methods$stability_window$best_features$rf
-  
-  # Plot with stability window result
-  plot_elbow(elim, best_features = all_methods$stability_window$best_features, ci_style = "ribbon")
-}
-
-# =============================================================================
-# Example (to be placed in examples/ or run manually)
-# =============================================================================
-
-#' @examples
-#' \dontrun{
-#' library(caret)
-#' data(iris)
-#' binary_iris <- iris[iris$Species != "virginica", ]
-#' binary_iris$Species <- factor(binary_iris$Species)
-#' fake_model <- list(clean.df = binary_iris, group_col = "Species")
-#' class(fake_model) <- "Train_Model"
-#'
-#' # Run elimination
-#' elim <- run_feature_elimination(fake_model, models = "rf", number = 5, smooth_span = 0.2)
-#'
-#' # Select optimal features using different methods
-#' res_diff <- select_elbow(elim, "difference")
-#' res_perf <- select_elbow(elim, "perf_tolerance", tol = 0.05)
-#' res_stab <- select_elbow(elim, "stability_window", window_size = 3, stability_tol = 0.005)
-#'
-#' # Plot with stability window results
-#' plot_elbow(elim, best_features = res_stab$best_features, ci_style = "ribbon")
-#'
-#' # Using the legacy wrapper
-#' result <- FeatureSensitivityAnalysis(fake_model, models = "rf", elbow_method = "stability_window")
-#' plot_elbow(elim, best_features = result$best_features)
-#' }

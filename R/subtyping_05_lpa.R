@@ -72,6 +72,12 @@
 #' @importFrom ggplot2 ggplot aes geom_line geom_point geom_bar geom_tile
 #'   geom_errorbar labs scale_fill_manual scale_colour_manual ggsave
 #' @importFrom reshape2 melt
+#' @examples
+#' \dontrun{
+#'   df <- data.frame(x = rnorm(100), y = rnorm(100), z = rnorm(100))
+#'   result <- lpa_with_optimal_k(df, max_clusters = 4, save_plots = FALSE)
+#'   print(result$optimal_k)
+#' }
 #' @export
 lpa_with_optimal_k <- function(data,
                                max_clusters    = 5,
@@ -484,6 +490,12 @@ lpa_with_optimal_k <- function(data,
 #' @param show_profile    Include variable profile plot.
 #' @param show_class_prob Include classification probability heatmap.
 #' @param color_palette   wesanderson palette for cluster colours.
+#' @examples
+#' \dontrun{
+#'   # Assuming 'obj' is a Subtyping object with scale.data
+#'   obj <- Sub_lpa_with_optimal_k(obj, max_clusters = 5, save_plots = FALSE)
+#'   print(obj@Optimal.cluster)
+#' }
 #' @export
 Sub_lpa_with_optimal_k <- function(object,
                                    use_scaled_data = TRUE,
