@@ -1610,7 +1610,7 @@ surv_plot_shap_beeswarm <- function(shap_result,
 #' \enumerate{
 #'   \item Extracts the task and data from the input object.
 #'   \item For each subgroup variable, fits a Cox model with risk score as predictor.
-#'   \item Computes hazard ratios and 95\% confidence intervals.
+#'   \item Computes hazard ratios and 95% confidence intervals.
 #'   \item Creates a forest plot with subgroups ordered by HR magnitude.
 #' }
 #'

@@ -179,7 +179,7 @@ PlotClinicalCorrelation <- function(model_obj,
 # ── 3. Subgroup forest plot ────────────────────────────────────────────────
 #' Subgroup Performance Forest Plot
 #'
-#' Computes AUC with 95\% CI within each subgroup defined by a categorical
+#' Computes AUC with 95% CI within each subgroup defined by a categorical
 #' clinical variable.
 #'
 #' @param model_obj,clinical_data,subgroup_var,newdata,model_name As above.

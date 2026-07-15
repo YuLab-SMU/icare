@@ -513,7 +513,7 @@ PlotCorrelationHeatmap <- function(object,
 #'   point colour. Defaults to \code{group_col}.
 #' @param shape_by   Optional second metadata column for point shape.
 #' @param pcs        Integer vector length 2 selecting PCs. Default \code{c(1,2)}.
-#' @param ellipse    Draw group ellipses (95 \% CI). Default \code{TRUE}.
+#' @param ellipse    Draw group ellipses (95 % CI). Default \code{TRUE}.
 #' @param label_points Logical. Label sample names. Default \code{FALSE}.
 #' @param palette_name Palette.
 #' @param base_size  Base font size.
@@ -860,7 +860,7 @@ PlotDegBoxplot <- function(deg_results,
 #'   `c(NA_colour, low_colour, mid_colour, high_colour)`.  
 #'   Default: `c("grey90", "#7B1FA2", "#000000", "#FFEB3B")` (purple–black–yellow).
 #' @param color_range Numeric vector of length 3 (low, mid, high) for colour mapping.
-#'   If `NULL`, the 5\% and 95\% quantiles of the data are used, with mid = 0.
+#'   If `NULL`, the 5% and 95% quantiles of the data are used, with mid = 0.
 #' @param na_col Colour for missing values (NA). Default `"grey90"`.
 #' @param ann_colors Optional named list of colours for annotations.  
 #'   For discrete variables: a named vector (levels → colours).  
@@ -2708,7 +2708,7 @@ PlotKaplanMeier <- function(object,
 
 #' Forest plot — univariate / multivariate Cox HR
 #'
-#' Renders a publication-style forest plot with HR, 95 \% CI, and p-value
+#' Renders a publication-style forest plot with HR, 95 % CI, and p-value
 #' columns alongside the graphical HR display.
 #'
 #' @param object       A \code{PrognosiX} object or a data frame with columns
@@ -2887,7 +2887,7 @@ PlotTimeROC <- function(object,
 #' Restricted Cubic Spline (RCS) dose-response plot
 #'
 #' Fits an RCS model (linear, logistic, or Cox) and plots the non-linear
-#' association with 95 \% CI ribbon.
+#' association with 95 % CI ribbon.
 #'
 #' @param object       A \code{PrognosiX} object or data frame.
 #' @param x_col        Continuous predictor column.

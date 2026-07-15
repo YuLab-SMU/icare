@@ -13,7 +13,6 @@ Description: A modular framework for clinical statistics, missing-data
 License: GPL-3
 LazyData: TRUE
 Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
 Imports:
     autoReg,
     bslib,
@@ -108,7 +107,5 @@ Suggests:
 Remotes:
     mdbrown/rmda,
     mlr-org/mlr3extralearners
-Config/roxygen2/version: 8.0.0
-Config/testthat/edition: 3
 RoxygenNote: 7.3.3
 Depends: R (>= 3.5.0)

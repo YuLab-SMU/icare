@@ -291,7 +291,7 @@ evaluate_model_performance <- function(data,
 #'
 #' @details
 #' The function computes ROC curves using [pROC::roc()] and AUC values with
-#' 95\% confidence intervals via [pROC::ci.auc()]. Models are sorted by AUC
+#' 95% confidence intervals via [pROC::ci.auc()]. Models are sorted by AUC
 #' in descending order in the final plot. The legend displays both AUC and
 #' confidence intervals for each model.
 #'
