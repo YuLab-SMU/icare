@@ -14,28 +14,50 @@ stat_convert_variables(
 )
 }
 \arguments{
-\item{object}{An object of class 'Stat' or a data frame. If a 'Stat' object is
-provided, the function will update its \code{clean.data} slot.}
+\item{object}{An object of class \code{Stat} or a data frame. If a \code{Stat}
+object is provided, the function will update its \code{clean.data} slot.}
 
 \item{group_col}{A string representing the column name that groups the data.
-Default is "group". This column is used to determine the type of variables.}
+Default is \code{"group"}. This column is used to determine the type of variables.}
 
-\item{max_unique_values}{The maximum number of unique values allowed for a variable
-to be considered as numeric. Default is 5.}
+\item{max_unique_values}{The maximum number of unique values allowed for a
+variable to be considered as numeric. Default is \code{5}.}
+
+\item{save_dir}{A character string specifying the directory where the converted
+data will be saved as a CSV file. If \code{NULL}, the default output directory
+is used. Default is \code{NULL}.}
+
+\item{save_data}{Logical. If \code{TRUE}, saves the converted data to a CSV file.
+Default is \code{TRUE}.}
+
+\item{csv_filename}{A character string specifying the name of the CSV file to
+save the converted data. Default is \code{"clean_data.csv"}.}
 }
 \value{
-If the input is a 'Stat' object, it returns the updated 'Stat' object.
-If the input is a data frame, it returns the converted data frame.
+If the input is a \code{Stat} object, returns the updated \code{Stat}
+  object with the converted data stored in the \code{clean.data} slot.
+  If the input is a data frame, returns the converted data frame.
 }
 \description{
 This function converts variables in a given object (either of class 'Stat' or a
 data frame) to numeric or factor types based on the information provided by
-\code{diagnose_variable_type}. If the input is a 'Stat' object, the conversion will
-update its \code{clean.data} slot. If the input is a data frame, it will directly
-return the converted data frame.
+\code{\link{diagnose_variable_type}}. If the input is a 'Stat' object, the
+conversion will update its \code{clean.data} slot. If the input is a data frame,
+it will directly return the converted data frame.
 }
 \examples{
 \dontrun{
-updated_stat_object <- stat_convert_variables(stat_obj_test,save_dir = ".")
+# Convert variables in a Stat object
+updated_stat <- stat_convert_variables(stat_obj_test, save_dir = "./output")
+
+# Convert variables in a data frame
+converted_df <- stat_convert_variables(
+  object = my_data,
+  group_col = "group",
+  save_data = FALSE
+)
 }
+}
+\seealso{
+\code{\link{diagnose_variable_type}}, \code{\link{convert_variables}}
 }

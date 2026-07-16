@@ -27,7 +27,7 @@ PlotConfusionMatrix(
 
 \item{test_data}{Test data (optional). If NULL, uses object@split.data$test.}
 
-\item{threshold}{Numeric threshold for probability predictions (0‑1).
+\item{threshold}{Numeric threshold for probability predictions (0-1).
 If provided, predictions are obtained via type = "prob"
 and binarised using this threshold.
 If NULL (default), type = "raw" is used.}
@@ -36,7 +36,7 @@ If NULL (default), type = "raw" is used.}
 positive when using threshold. If NULL, the second level
 of the true labels is used as positive class.}
 
-\item{prevalence}{Optional population prevalence (0‑1) of the positive class.
+\item{prevalence}{Optional population prevalence (0-1) of the positive class.
 If provided, the function calculates adjusted positive and
 negative predictive values using Bayes' theorem.}
 
@@ -60,7 +60,7 @@ A ggplot2 object showing the confusion matrix.
 \description{
 Generates a confusion matrix heatmap for a trained model.
 Supports both direct class predictions (type = "raw") and probability-based
-predictions with user‑defined threshold. Additionally calculates positive and
+predictions with user-defined threshold. Additionally calculates positive and
 negative predictive values, optionally adjusted for a given population prevalence.
 }
 \examples{

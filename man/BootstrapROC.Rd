@@ -17,5 +17,5 @@ BootstrapROC(truth, prob, n_boot = 500)
 A list with AUC, CI, and ROC coordinates.
 }
 \description{
-Returns mean AUC, 95\% CI, and bootstrapped TPR/FPR at uniform thresholds.
+Returns mean AUC, 95% CI, and bootstrapped TPR/FPR at uniform thresholds.
 }

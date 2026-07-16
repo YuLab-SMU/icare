@@ -31,10 +31,10 @@ Default is \code{"Darjeeling1"}.}
 }
 \value{
 A list with two components:
-\describe{
-\item{plot}{A \code{ggplot} object showing the forest plot.}
-\item{data}{A data frame containing the hazard ratio estimates for each subgroup.}
-}
+  \describe{
+    \item{plot}{A \code{ggplot} object showing the forest plot.}
+    \item{data}{A data frame containing the hazard ratio estimates for each subgroup.}
+  }
 }
 \description{
 Creates a forest plot showing hazard ratios for risk score in different
@@ -44,10 +44,10 @@ model's prognostic effect is consistent across patient subgroups.
 \details{
 The function performs the following steps:
 \enumerate{
-\item Extracts the task and data from the input object.
-\item For each subgroup variable, fits a Cox model with risk score as predictor.
-\item Computes hazard ratios and 95\\% confidence intervals.
-\item Creates a forest plot with subgroups ordered by HR magnitude.
+  \item Extracts the task and data from the input object.
+  \item For each subgroup variable, fits a Cox model with risk score as predictor.
+  \item Computes hazard ratios and 95\% confidence intervals.
+  \item Creates a forest plot with subgroups ordered by HR magnitude.
 }
 }
 \examples{

@@ -15,8 +15,8 @@ original training data.}
 }
 \value{
 For classification: a numeric vector of class probabilities
-(stacking, average, weighted) or a character vector of predicted
-classes (voting).
+  (stacking, average, weighted) or a character vector of predicted
+  classes (voting).
 }
 \description{
 Calls the \code{predict_fn} stored inside the ensemble to generate

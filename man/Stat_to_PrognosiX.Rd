@@ -23,10 +23,10 @@ Stat_to_PrognosiX(
 
 \item{na_action}{How to handle missing feature values:
 \describe{
-\item{\code{"omit"}}{(default) Delete any row that contains an NA in
-a feature column.}
-\item{\code{"impute_median"}}{Replace numeric NAs with the column
-median; replace categorical NAs with the column mode.}
+  \item{\code{"omit"}}{(default) Delete any row that contains an NA in
+        a feature column.}
+  \item{\code{"impute_median"}}{Replace numeric NAs with the column
+        median; replace categorical NAs with the column mode.}
 }}
 
 \item{min_events}{Minimum event count; a \code{warning()} is issued when
@@ -41,17 +41,17 @@ A \code{PrognosiX} S4 object ready for \code{run_prognosis_pipeline()}.
 Fixes all common upstream data issues so the resulting object is immediately
 ready for mlr3-based survival analysis:
 \itemize{
-\item Special characters in numeric columns (\code{">60"}, \code{"<40"})
-are stripped and coerced to \code{numeric}.
-\item \strong{All \code{character} feature columns are converted to
-\code{factor}.}  mlr3 \code{TaskSurv} objects reject \code{character}
-features; this conversion is the root fix for the
-\emph{"unsupported feature types: character"} error.
-\item Rows with non-positive / non-finite time are removed.
-\item Rows where status is not \{0, 1\} are removed.
-\item Missing feature values are omitted or imputed.
-\item Row-name mismatches between \code{clean.data} and \code{info.data}
-are resolved by intersection.
+  \item Special characters in numeric columns (\code{">60"}, \code{"<40"})
+        are stripped and coerced to \code{numeric}.
+  \item \strong{All \code{character} feature columns are converted to
+        \code{factor}.}  mlr3 \code{TaskSurv} objects reject \code{character}
+        features; this conversion is the root fix for the
+        \emph{"unsupported feature types: character"} error.
+  \item Rows with non-positive / non-finite time are removed.
+  \item Rows where status is not \{0, 1\} are removed.
+  \item Missing feature values are omitted or imputed.
+  \item Row-name mismatches between \code{clean.data} and \code{info.data}
+        are resolved by intersection.
 }
 }
 \examples{

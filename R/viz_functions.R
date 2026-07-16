@@ -1,20 +1,19 @@
 ## ============================================================
-##  viz_functions.R
 ##  Publication-quality visualization functions
 ##  Organized by module:
-##    § 1. Stat       — distribution, correlation, PCA, DEG
-##    § 2. Train_Model — ROC, confusion matrix, feature importance, calibration
-##    § 3. Subtyping  — dim-reduction, cluster heatmap, silhouette, alluvial
-##    § 4. PrognosiX  — KM, forest, time-ROC, RCS, nomogram, calibration, DCA, risk
+##     1. Stat       -- distribution, correlation, PCA, DEG
+##     2. Train_Model -- ROC, confusion matrix, feature importance, calibration
+##     3. Subtyping  -- dim-reduction, cluster heatmap, silhouette, alluvial
+##     4. PrognosiX  -- KM, forest, time-ROC, RCS, nomogram, calibration, DCA, risk
 ##
 ##  Every function:
-##    · accepts an S4 object OR raw data frames
-##    · returns a ggplot2 / grob object (further customisable)
-##    · saves to PDF / PNG / SVG when save_plot = TRUE
-##    · uses theme_prism + wesanderson / RColorBrewer palettes by default
+##    - accepts an S4 object OR raw data frames
+##    - returns a ggplot2 / grob object (further customisable)
+##    - saves to PDF / PNG / SVG when save_plot = TRUE
+##    - uses theme_prism + wesanderson / RColorBrewer palettes by default
 ## ============================================================
 
-## ── shared helpers ────────────────────────────────────────────────────────────
+## -- shared helpers ------------------------------------------------------------
 
 .pub_theme <- function(base_size = 13) {
   ggprism::theme_prism(base_size = base_size) +
@@ -64,9 +63,9 @@
   return(viz_dir)
 }
 
-## ═════════════════════════════════════════════════════════════════════════════
-##  § 1  STAT  ── distribution · correlation · PCA · DEG
-## ═════════════════════════════════════════════════════════════════════════════
+## =============================================================================
+##   1  STAT  -- distribution - correlation - PCA - DEG
+## =============================================================================
 
 #' Grouped box-violin plot with statistical comparisons
 #'
@@ -148,7 +147,7 @@ PlotGroupedDistribution <- function(object,
 }
 
 
-#' Publication‑ready correlation heatmap using the corrplot package (enhanced + stable)
+#' Publication-ready correlation heatmap using the corrplot package (enhanced + stable)
 #'
 #' Generate a highly customisable correlation heatmap leveraging the `corrplot`
 #' package. Supports multiple matrix shapes, visualisation methods, clustering
@@ -170,12 +169,12 @@ PlotGroupedDistribution <- function(object,
 #'   `order = "hclust"`). Default `NULL` (no rectangles).
 #' @param rect.col Colour of rectangle borders. Default `"navy"`.
 #' @param rect.lwd Line width of rectangle borders. Default `2`.
-#' @param p_thresh P‑value threshold for masking non‑significant pairs.
+#' @param p_thresh P-value threshold for masking non-significant pairs.
 #'   Only used when `insig != "n"`.
 #' @param insig Character, how to handle insignificant correlations:
 #'   `"blank"` (hide tile), `"p-value"` (print p-value), `"pch"` (print symbol),
 #'   `"label_sig"` (print significance stars), `"n"` (do nothing). Default `"blank"`.
-#' @param pch Symbol to use when `insig = "pch"`. Default `4` (×).
+#' @param pch Symbol to use when `insig = "pch"`. Default `4` (x).
 #' @param sig.level Significance level(s) for `insig = "label_sig"`. Can be a vector,
 #'   e.g. `c(0.001, 0.01, 0.05)`. Default `0.05`.
 #' @param palette_name RColorBrewer diverging palette name (used when `color_scheme = "brew"`).
@@ -205,11 +204,13 @@ PlotGroupedDistribution <- function(object,
 #' \dontrun{
 #' # Lower triangle with hierarchical clustering and rectangles
 #' # (Color legend now at bottom by default)
-#' PlotCorrelationHeatmap(stat_obj_test, matrix_type = "lower", order = "hclust",addrect = 3, color_scheme = "scientific")
+#' PlotCorrelationHeatmap(stat_obj_test, matrix_type = "lower", order = "hclust",
+#' addrect = 3, color_scheme = "scientific")
 #'
 #' # Upper triangle with ellipse method and significance stars
 #' # Black text labels for better readability
-#' PlotCorrelationHeatmap(stat_obj_test, matrix_type = "lower", vis_method = "ellipse",insig = "label_sig", sig.level = c(0.001, 0.01, 0.05))
+#' PlotCorrelationHeatmap(stat_obj_test, matrix_type = "lower", vis_method = "ellipse",
+#' insig = "label_sig", sig.level = c(0.001, 0.01, 0.05))
 #'
 #' # Custom text color if needed
 #' PlotCorrelationHeatmap(stat_obj_test, matrix_type = "upper",tl.col = "navy", cl.pos = "r")
@@ -345,7 +346,7 @@ PlotCorrelationHeatmap <- function(object,
     stop("Error in data preparation: ", conditionMessage(e), call. = FALSE)
   })
   
-  # ------ 2. Prepare p‑value matrix if needed ------
+  # ------ 2. Prepare p-value matrix if needed ------
   p_mat <- NULL
   if (insig != "n") {
     if (!requireNamespace("Hmisc", quietly = TRUE)) {
@@ -475,7 +476,7 @@ PlotCorrelationHeatmap <- function(object,
       args$hclust.method <- hclust_method
     }
     
-    # Add p‑value and significance arguments (only if p_mat is available)
+    # Add p-value and significance arguments (only if p_mat is available)
     if (!is.null(p_mat) && insig != "n") {
       args$p.mat <- p_mat
       args$sig.level <- p_thresh
@@ -496,24 +497,24 @@ PlotCorrelationHeatmap <- function(object,
     do.call(corrplot::corrplot, args)
     
     if (save_plot) {
-      cat("✓ Heatmap saved to:", plot_file, "\n")
+      cat("[OK] Heatmap saved to:", plot_file, "\n")
     }
     
   }, error = function(e) {
     stop("Error generating corrplot: ", conditionMessage(e), call. = FALSE)
   })
   
-  cat("✓ Correlation heatmap completed successfully.\n")
+  cat("[OK] Correlation heatmap completed successfully.\n")
   invisible(corr_mat)
 }
-#' PCA scatter plot coloured by metadata (zero‑variance safe, colour‑named, enhanced)
+#' PCA scatter plot coloured by metadata (zero-variance safe, colour-named, enhanced)
 #'
 #' @param object     A \code{Stat} object or numeric data frame.
 #' @param color_by   Column in \code{info.data} (or the data frame) used for
 #'   point colour. Defaults to \code{group_col}.
 #' @param shape_by   Optional second metadata column for point shape.
 #' @param pcs        Integer vector length 2 selecting PCs. Default \code{c(1,2)}.
-#' @param ellipse    Draw group ellipses (95 % CI). Default \code{TRUE}.
+#' @param ellipse    Draw group ellipses (95 \% CI). Default \code{TRUE}.
 #' @param label_points Logical. Label sample names. Default \code{FALSE}.
 #' @param palette_name Palette.
 #' @param base_size  Base font size.
@@ -560,7 +561,7 @@ PlotPCA <- function(object,
   keep_cols <- apply(mat, 2, var, na.rm = TRUE) > 0
   if (any(!keep_cols)) {
     removed <- colnames(mat)[!keep_cols]
-    message("Removed ", length(removed), " zero‑variance column(s): ",
+    message("Removed ", length(removed), " zero-variance column(s): ",
             paste(removed, collapse = ", "))
     mat <- mat[, keep_cols, drop = FALSE]
   }
@@ -611,16 +612,16 @@ PlotPCA <- function(object,
   if (save_plot) .save_plot(p, save_dir, "PCA", width, height, format)
   return(p)
 }
-#' Feature selection plot: AUC vs. –log10(p‑value) (enhanced)
+#' Feature selection plot: AUC vs. -log10(p-value) (enhanced)
 #'
-#' Calculates per‑feature ROC AUC and plots it against –log10(p‑value).
+#' Calculates per-feature ROC AUC and plots it against -log10(p-value).
 #' Points that satisfy both \code{auc_thresh} and \code{p_thresh} are highlighted.
 #'
 #' @param deg_df       Data frame with columns \code{feature}, \code{logFC}, \code{p.adjust} / \code{p_value}.
 #' @param mat_test     Expression matrix containing the grouping column.
 #' @param group_col    Name of the grouping column in \code{mat_test}.
 #' @param auc_thresh   AUC threshold for selection. Default 0.55.
-#' @param p_thresh     P‑value threshold. Default 0.05.
+#' @param p_thresh     P-value threshold. Default 0.05.
 #' @param selected_fill Fill colour for selected features.
 #' @param removed_fill  Fill colour for removed features.
 #' @param arrow        Logical. Draw arrows from labels to points.
@@ -637,7 +638,8 @@ PlotPCA <- function(object,
 #' stat_obj <- stat_var_feature(stat_obj_test)
 #' last_sig <- ExtractLastTestSig(stat_obj)
 #' last_sig$feature <- last_sig$id
-#' PlotAUCPval(last_sig, stat_obj_test@clean.data, group_col = "SWAB", save_plot = FALSE,p_thresh = 0.1, auc_thresh = 0.5)
+#' PlotAUCPval(last_sig, stat_obj_test@clean.data, group_col = "SWAB", 
+#' save_plot = FALSE,p_thresh = 0.1, auc_thresh = 0.5)
 #' }
 PlotAUCPval <- function(deg_df, mat_test,
                         group_col      = "group",
@@ -725,7 +727,7 @@ PlotAUCPval <- function(deg_df, mat_test,
                       colour = selected_fill, fontface = "bold", size = 4, hjust = 1) +
     .pub_theme(base_size) +
     ggplot2::labs(title = "Feature Selection by AUC & Significance",
-                  x = "ROC AUC", y = expression(-log[10]~"(P‑value)")) +
+                  x = "ROC AUC", y = expression(-log[10]~"(P-value)")) +
     ggplot2::theme(legend.position = "right")
   
   if (save_plot) .save_plot(p, save_dir, "PlotAUCPval", width, height, format)
@@ -824,7 +826,7 @@ PlotDegBoxplot <- function(deg_results,
 #' sample annotations (top/bottom) and feature annotations (left/right). Supports
 #' highlighting specific marker features using annotation marks on the left side.
 #'
-#' @param object A data frame (samples × features), numeric matrix, or a `Stat` object
+#' @param object A data frame (samples x features), numeric matrix, or a `Stat` object
 #'   (which must contain a `clean.data` component with numeric columns).  
 #'   Rows = samples, columns = features.
 #' @param features Character vector of feature names to display.  
@@ -844,7 +846,7 @@ PlotDegBoxplot <- function(deg_results,
 #' @param marker_features Character vector of feature names to highlight on the left side
 #'   using `anno_mark`. If `NULL`, no marker annotation is added.
 #' @param marker_cex Font size for marker labels. If `NULL`, automatically scaled
-#'   based on the number of markers (range 0.5–1.2).
+#'   based on the number of markers (range 0.5-1.2).
 #' @param scale_features Logical. Should each feature (column) be Z-score scaled
 #'   across samples? Default `TRUE`.
 #' @param exclude_constant Logical. If `TRUE`, features with zero variance
@@ -858,12 +860,12 @@ PlotDegBoxplot <- function(deg_results,
 #'   Default `"RdYlBu"`.
 #' @param color_palette Character vector of 4 colours:  
 #'   `c(NA_colour, low_colour, mid_colour, high_colour)`.  
-#'   Default: `c("grey90", "#7B1FA2", "#000000", "#FFEB3B")` (purple–black–yellow).
+#'   Default: `c("grey90", "#7B1FA2", "#000000", "#FFEB3B")` (purple-black-yellow).
 #' @param color_range Numeric vector of length 3 (low, mid, high) for colour mapping.
-#'   If `NULL`, the 5% and 95% quantiles of the data are used, with mid = 0.
+#'   If `NULL`, the 5\% and 95\% quantiles of the data are used, with mid = 0.
 #' @param na_col Colour for missing values (NA). Default `"grey90"`.
 #' @param ann_colors Optional named list of colours for annotations.  
-#'   For discrete variables: a named vector (levels → colours).  
+#'   For discrete variables: a named vector (levels -> colours).  
 #'   For continuous variables: a `colorRamp2` function.  
 #'   Example: `list(Sex = c(M = "blue", F = "red"), Age = colorRamp2(c(20,50,80), c("blue","white","red")))`.
 #' @param ann_continuous_palette Character; RColorBrewer palette for continuous annotation
@@ -1229,9 +1231,9 @@ PlotFeatureHeatmap <- function(object,
 }
 
 
-## ═════════════════════════════════════════════════════════════════════════════
-##  § 2  TRAIN_MODEL  ── ROC · confusion matrix · feature importance · calibration
-## ═════════════════════════════════════════════════════════════════════════════
+## =============================================================================
+##   2  TRAIN_MODEL  -- ROC - confusion matrix - feature importance - calibration
+## =============================================================================
 
 #' Plot ROC Curves for Multiple Models
 #'
@@ -1343,7 +1345,7 @@ PlotMultiROC <- function(object,
     coords <- pROC::coords(roc_obj, "all", 
                            ret = c("specificity", "sensitivity"))
     
-    cat(sprintf("  ✓ AUC = %.3f\n", auc_val))
+    cat(sprintf("  [OK] AUC = %.3f\n", auc_val))
     
     data.frame(
       Model       = paste0(nm, " (AUC=", auc_val, ")"),
@@ -1367,8 +1369,8 @@ PlotMultiROC <- function(object,
     ggplot2::scale_colour_manual(values = cols) +
     ggplot2::coord_equal() +
     ggplot2::labs(
-      title = "ROC Curves — Model Comparison",
-      x = "1 – Specificity (FPR)",
+      title = "ROC Curves -- Model Comparison",
+      x = "1 - Specificity (FPR)",
       y = "Sensitivity (TPR)",
       colour = NULL
     ) +
@@ -1377,7 +1379,7 @@ PlotMultiROC <- function(object,
   if (save_plot) {
     .safe_dir(save_dir)
     .save_plot(p, save_dir, "multi_ROC", width, height, format)
-    cat(sprintf("\n✓ Plot saved to: %s\n", save_dir))
+    cat(sprintf("\n[OK] Plot saved to: %s\n", save_dir))
   }
   
   return(p)
@@ -1387,20 +1389,20 @@ PlotMultiROC <- function(object,
 #'
 #' Generates a confusion matrix heatmap for a trained model.
 #' Supports both direct class predictions (type = "raw") and probability-based
-#' predictions with user‑defined threshold. Additionally calculates positive and
+#' predictions with user-defined threshold. Additionally calculates positive and
 #' negative predictive values, optionally adjusted for a given population prevalence.
 #'
 #' @param object      A Train_Model object with trained models.
 #' @param model_name  Name of the model to plot. If NULL, uses first model.
 #' @param test_data   Test data (optional). If NULL, uses object@split.data$test.
-#' @param threshold   Numeric threshold for probability predictions (0‑1).
+#' @param threshold   Numeric threshold for probability predictions (0-1).
 #'                    If provided, predictions are obtained via type = "prob"
 #'                    and binarised using this threshold.
 #'                    If NULL (default), type = "raw" is used.
 #' @param prob_class  Character string indicating which class is considered
 #'                    positive when using threshold. If NULL, the second level
 #'                    of the true labels is used as positive class.
-#' @param prevalence  Optional population prevalence (0‑1) of the positive class.
+#' @param prevalence  Optional population prevalence (0-1) of the positive class.
 #'                    If provided, the function calculates adjusted positive and
 #'                    negative predictive values using Bayes' theorem.
 #' @param palette     Vector of 2 colors (low, high) for the gradient.
@@ -1440,9 +1442,9 @@ PlotConfusionMatrix <- function(object,
                                 height     = 4.5,
                                 format     = "pdf") {
   
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   # Input Validation
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   if (is.null(save_dir)) {
     save_dir <- .get_viz_output_dir("Model")
   }
@@ -1459,9 +1461,9 @@ PlotConfusionMatrix <- function(object,
     warning("Prevalence should be between 0 and 1 (exclusive). Adjusted PPV/NPV may be unreliable.")
   }
   
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   # Select Model
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   nm <- if (is.null(model_name)) {
     cat(sprintf("No model specified. Using first model: %s\n", 
                 names(object@train.models)[1]))
@@ -1477,9 +1479,9 @@ PlotConfusionMatrix <- function(object,
   
   model <- object@train.models[[nm]]
   
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   # Prepare Test Data
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   td <- if (!is.null(test_data)) {
     test_data
   } else {
@@ -1490,9 +1492,9 @@ PlotConfusionMatrix <- function(object,
     stop("Provide 'test_data' or populate split.data$test.")
   }
   
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   # Extract True Labels
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   group_col <- as.character(object@group_col)
   
   # Ensure true labels are factor
@@ -1525,9 +1527,9 @@ PlotConfusionMatrix <- function(object,
     neg_class <- setdiff(truth_levels, prob_class)[1]
   }
   
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   # Get Predictions (Threshold vs. Raw)
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   if (!is.null(threshold)) {
     # --- Use probability predictions and threshold ---
     cat(sprintf("Using probability predictions with threshold = %.3f\n", threshold))
@@ -1557,7 +1559,7 @@ PlotConfusionMatrix <- function(object,
         stop("Probability output has more than 2 columns. Please specify 'prob_class'.")
       }
     } else if (is.numeric(prob_pred)) {
-      # Single numeric vector (glm, etc.) – assumed to be probability of positive class
+      # Single numeric vector (glm, etc.) - assumed to be probability of positive class
       prob_pos <- prob_pred
     } else {
       stop("Unable to extract positive class probabilities from model predictions.")
@@ -1589,11 +1591,11 @@ PlotConfusionMatrix <- function(object,
                 paste(pred_levels, collapse = ", ")))
   }
   
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   # Handle Factor Level Mismatch (only needed for raw predictions; threshold
   # path already yields factor with correct levels, but we keep the logic
   # for robustness)
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   if (!identical(sort(unique(pred_char)), sort(truth_levels))) {
     cat("INFO: Prediction levels differ from truth levels. Attempting mapping...\n")
     
@@ -1622,9 +1624,9 @@ PlotConfusionMatrix <- function(object,
   
   cat(sprintf("Final predicted levels: [%s]\n\n", paste(levels(pred), collapse = ", ")))
   
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   # Create Confusion Matrix
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   cm <- table(Actual    = truth,
               Predicted = pred)
   
@@ -1636,9 +1638,9 @@ PlotConfusionMatrix <- function(object,
     dplyr::mutate(Pct = round(Freq / sum(Freq) * 100, 1)) %>%
     dplyr::ungroup()
   
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   # Calculate Classification Metrics
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   # Extract counts using the already defined positive/negative classes
   tn <- cm[neg_class, neg_class]
   fp <- cm[neg_class, pos_class]
@@ -1661,9 +1663,9 @@ PlotConfusionMatrix <- function(object,
   # Test set prevalence (observed)
   obs_prevalence <- (tp + fn) / total
   
-  cat("────────────────────────────────────────\n")
+  cat("----------------------------------------\n")
   cat("Performance Metrics (test set)\n")
-  cat("────────────────────────────────────────\n")
+  cat("----------------------------------------\n")
   cat(sprintf("TP = %d | TN = %d | FP = %d | FN = %d\n", tp, tn, fp, fn))
   cat(sprintf("Total N = %d\n", total))
   cat(sprintf("Accuracy     = %.3f (%.1f%%)\n", accuracy, accuracy * 100))
@@ -1673,9 +1675,9 @@ PlotConfusionMatrix <- function(object,
   cat(sprintf("NPV             = %.3f (%.1f%%)\n", npv, npv * 100))
   cat(sprintf("Prevalence (test) = %.3f (%.1f%%)\n", obs_prevalence, obs_prevalence * 100))
   
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   # Adjusted predictive values using given population prevalence
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   if (!is.null(prevalence) && prevalence > 0 && prevalence < 1) {
     # Bayes' theorem adjustments
     # P(D+|T+) = (sens * prev) / (sens * prev + (1-spec) * (1-prev))
@@ -1688,17 +1690,17 @@ PlotConfusionMatrix <- function(object,
     if (is.nan(adj_ppv)) adj_ppv <- 0
     if (is.nan(adj_npv)) adj_npv <- 0
     
-    cat("\n────────────────────────────────────────\n")
+    cat("\n----------------------------------------\n")
     cat(sprintf("Adjusted for population prevalence = %.3f (%.1f%%)\n", prevalence, prevalence * 100))
-    cat("────────────────────────────────────────\n")
+    cat("----------------------------------------\n")
     cat(sprintf("Adjusted PPV (true positive prediction) = %.3f (%.1f%%)\n", adj_ppv, adj_ppv * 100))
     cat(sprintf("Adjusted NPV (true negative prediction) = %.3f (%.1f%%)\n", adj_npv, adj_npv * 100))
   }
   cat("\n")
   
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   # Plot Confusion Matrix
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   p <- ggplot2::ggplot(cm_df,
                        ggplot2::aes(x = Actual, y = Predicted, fill = Freq)) +
     ggplot2::geom_tile(colour = "white", linewidth = 1) +
@@ -1716,7 +1718,7 @@ PlotConfusionMatrix <- function(object,
     ggplot2::scale_x_discrete(limits = truth_levels) +
     ggplot2::scale_y_discrete(limits = rev(truth_levels)) +
     ggplot2::labs(
-      title = paste("Confusion Matrix —", nm),
+      title = paste("Confusion Matrix --", nm),
       subtitle = sprintf("Accuracy: %.1f%% | Sensitivity: %.1f%% | Specificity: %.1f%% | PPV: %.1f%% | NPV: %.1f%%",
                          accuracy * 100, sensitivity * 100, specificity * 100,
                          precision * 100, npv * 100),
@@ -1729,9 +1731,9 @@ PlotConfusionMatrix <- function(object,
       plot.subtitle = ggplot2::element_text(size = base_size - 1, colour = "grey50")
     )
   
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   # Save Plot
-  # ───────────────────────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
   if (save_plot) {
     .safe_dir(save_dir)
     filename <- paste0("confusion_", nm, 
@@ -1740,7 +1742,7 @@ PlotConfusionMatrix <- function(object,
                        ".", format)
     filepath <- file.path(save_dir, filename)
     ggplot2::ggsave(filepath, p, width = width, height = height, device = format)
-    cat(sprintf("✓ Plot saved to: %s\n", filepath))
+    cat(sprintf("[OK] Plot saved to: %s\n", filepath))
   }
   
   return(p)
@@ -1845,6 +1847,7 @@ PlotFeatureImportance <- function(object,
 #' @param base_size Base font size for ggprism theme (default: 14).
 #' @param combine_plots Logical. If TRUE, returns a patchwork object.
 #' @param save_plot Logical. Whether to save the plot.
+#' @param se Logical.Whether to display standard error on the plot.
 #' @param save_dir Directory to save the plot.
 #' @param width,height Plot dimensions in inches.
 #' @param format File format ("pdf" or "png").
@@ -2036,9 +2039,9 @@ PlotCalibration <- function(object,
 
 
 
-## ═════════════════════════════════════════════════════════════════════════════
-##  § 3  SUBTYPING  ── dim-reduction · cluster heatmap · silhouette · alluvial
-## ═════════════════════════════════════════════════════════════════════════════
+## =============================================================================
+##   3  SUBTYPING  -- dim-reduction - cluster heatmap - silhouette - alluvial
+## =============================================================================
 
 #' t-SNE / UMAP scatter coloured by cluster and features
 #'
@@ -2149,7 +2152,7 @@ PlotDimReduction <- function(object,
         else return(NULL)
       }
       .one_panel(ft, is_factor = FALSE,
-                  title_extra = paste0(" – ", ft))
+                  title_extra = paste0(" - ", ft))
     })
     feat_panels <- feat_panels[!sapply(feat_panels, is.null)]
     all_panels  <- c(list(main_p), feat_panels)
@@ -2613,9 +2616,9 @@ PlotMultiAlluvial <- function(
 }
 
 
-## ═════════════════════════════════════════════════════════════════════════════
-##  § 4  PROGNOSIS  ── KM · forest · time-ROC · RCS · nomogram · calibration · DCA · risk
-## ═════════════════════════════════════════════════════════════════════════════
+## =============================================================================
+##   4  PROGNOSIS  -- KM - forest - time-ROC - RCS - nomogram - calibration - DCA - risk
+## =============================================================================
 
 #' Kaplan-Meier survival curve
 #'
@@ -2706,9 +2709,9 @@ PlotKaplanMeier <- function(object,
 }
 
 
-#' Forest plot — univariate / multivariate Cox HR
+#' Forest plot -- univariate / multivariate Cox HR
 #'
-#' Renders a publication-style forest plot with HR, 95 % CI, and p-value
+#' Renders a publication-style forest plot with HR, 95 \% CI, and p-value
 #' columns alongside the graphical HR display.
 #'
 #' @param object       A \code{PrognosiX} object or a data frame with columns
@@ -2761,7 +2764,7 @@ PlotForestPlot <- function(object,
                         as.character(round(P_value, 3))),
       HR_label = if ("HR_95CI" %in% colnames(.)) HR_95CI
                  else paste0(round(HR, 2), " (",
-                             round(CI_lower, 2), "–",
+                             round(CI_lower, 2), "-",
                              round(CI_upper, 2), ")"),
       Variable = factor(Variable, levels = rev(Variable))
     )
@@ -2778,7 +2781,7 @@ PlotForestPlot <- function(object,
     ggplot2::geom_point(size = 3) +
     ggplot2::scale_colour_manual(
       values = c(`FALSE` = "grey60", `TRUE` = cols[1]),
-      labels = c(`FALSE` = "p ≥ 0.05", `TRUE` = "p < 0.05"),
+      labels = c(`FALSE` = "p >= 0.05", `TRUE` = "p < 0.05"),
       name   = NULL) +
     ggplot2::geom_text(ggplot2::aes(x = hr_limit[2] * 1.1, label = HR_label),
                        hjust = 0, size = 3, colour = "black") +
@@ -2887,7 +2890,7 @@ PlotTimeROC <- function(object,
 #' Restricted Cubic Spline (RCS) dose-response plot
 #'
 #' Fits an RCS model (linear, logistic, or Cox) and plots the non-linear
-#' association with 95 % CI ribbon.
+#' association with 95 \% CI ribbon.
 #'
 #' @param object       A \code{PrognosiX} object or data frame.
 #' @param x_col        Continuous predictor column.
@@ -2950,7 +2953,7 @@ PlotRCS <- function(object,
   pred_df <- as.data.frame(pred)
 
   col <- .get_palette(palette_name, 1)
-  y_label <- switch(method, cox = "Hazard Ratio", logistic = "Odds Ratio", "β")
+  y_label <- switch(method, cox = "Hazard Ratio", logistic = "Odds Ratio", "beta")
 
   hist_df <- data.frame(x = surv_df[[x_col]])
 
@@ -2962,7 +2965,7 @@ PlotRCS <- function(object,
     ggplot2::geom_line(colour = col, linewidth = 1.2) +
     ggplot2::geom_rug(data = hist_df, ggplot2::aes(x = x, y = NULL),
                       sides = "b", alpha = 0.3, colour = "grey30") +
-    ggplot2::labs(title    = paste("RCS —", x_col, "vs", y_label),
+    ggplot2::labs(title    = paste("RCS --", x_col, "vs", y_label),
                   subtitle = paste0(knots, " knots, ref = ", round(ref, 2)),
                   x = x_col, y = y_label) +
     .pub_theme(base_size)
@@ -3022,7 +3025,7 @@ PlotRiskScore <- function(object,
   cols <- .get_palette(palette_name, 2)
   names(cols) <- c("Low", "High")
 
-  # panel A – dot plot
+  # panel A - dot plot
   p_score <- ggplot2::ggplot(surv_df,
     ggplot2::aes(Index, .data[[score_col]], colour = Risk)) +
     ggplot2::geom_point(size = 0.7, alpha = 0.8) +
@@ -3035,7 +3038,7 @@ PlotRiskScore <- function(object,
     .pub_theme(base_size) +
     ggplot2::theme(legend.position = "right")
 
-  # panel B – survival status tiles
+  # panel B - survival status tiles
   p_status <- ggplot2::ggplot(surv_df,
     ggplot2::aes(Index, 1,
                  colour = as.factor(as.numeric(surv_df[["status"]])))) +
@@ -3151,9 +3154,65 @@ PlotDCA <- function(object,
   return(p)
 }
 
-#' @title Plot Group Mean Heatmap (Production Version)
-#' @description Optimized for flexible group-wise visualization with auto-annotation.
+#' Plot Group Mean Heatmap
+#'
+#' Creates a heatmap of group-wise mean expression values for selected features.
+#' The function filters features based on differential expression results,
+#' computes mean expression per group, optionally Z-scores by row, and visualizes
+#' using ComplexHeatmap with auto-annotation.
+#'
+#' @param object An S4 object (e.g., \code{Subtyping} or \code{Stat}) or a list
+#'   containing \code{clean.data} (expression matrix) and \code{info.data}
+#'   (metadata). The \code{clean.data} slot/data should have samples as rows and
+#'   features as columns.
+#' @param deg_df A data frame containing differential expression analysis results.
+#'   Must include columns: \code{id} (feature names), \code{p.adjust} (adjusted
+#'   p-values), \code{logFC} (log fold change), and \code{target_group}
+#'   (group labels).
+#' @param group_by Character string specifying the column name in \code{info.data}
+#'   used for grouping samples. Default is \code{"cluster_lpa"}.
+#' @param top_n Integer. Number of top features to select per group based on
+#'   \code{logFC}. Default is \code{5}.
+#' @param p_cutoff Numeric. Adjusted p-value threshold for feature selection.
+#'   Default is \code{0.05}.
+#' @param logfc_cutoff Numeric. Log fold-change threshold for feature selection.
+#'   Only features with absolute logFC > \code{logfc_cutoff} are retained.
+#'   Default is \code{0}.
+#' @param custom_levels Character vector. Optional custom ordering of group
+#'   levels. If \code{NULL}, groups are ordered alphabetically using
+#'   \code{gtools::mixedsort}. Default is \code{NULL}.
+#' @param z_score_type Character string specifying whether to Z-score rows.
+#'   Currently only \code{"row"} is supported. Default is \code{"row"}.
+#' @param heatmap_palette Character vector of length 3 specifying colors for
+#'   the low, middle, and high values in the heatmap. Default is
+#'   \code{c("#2166AC", "white", "#B2182B")}.
+#' @param save_path Character string specifying the file path to save the PDF.
+#'   If \code{NULL}, the plot is not saved. Default is
+#'   \code{"./Group_Mean_Heatmap.pdf"}.
+#'
+#' @return A \code{ComplexHeatmap::Heatmap} object (invisibly). The heatmap
+#'   is also drawn on the current graphics device and saved to PDF if
+#'   \code{save_path} is provided.
+#'
+#' @importFrom ComplexHeatmap Heatmap HeatmapAnnotation draw
+#' @importFrom circlize colorRamp2
+#' @importFrom gtools mixedsort
+#' @importFrom scales hue_pal
+#' @importFrom grid gpar
+#' @importFrom methods slot
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Assuming 'sub_obj' is a Subtyping object and 'deg_results' is a data frame
+#' PlotGroupMeanHeatmap(
+#'   object = sub_obj,
+#'   deg_df = deg_results,
+#'   group_by = "cluster_lpa",
+#'   top_n = 10,
+#'   p_cutoff = 0.01
+#' )
+#' }
 PlotGroupMeanHeatmap <- function(
     object,
     deg_df,

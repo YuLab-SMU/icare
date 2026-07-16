@@ -13,10 +13,10 @@ extracts the task using \code{surv_extract_task()}.}
 \item{learners_list}{A list of \code{Learner} objects to benchmark. If \code{NULL},
 defaults to four commonly used survival learners:
 \itemize{
-\item \code{surv.coxph} (Cox Proportional Hazards)
-\item \code{surv.cv_glmnet} (LASSO)
-\item \code{surv.ranger} (Random Forest)
-\item \code{surv.xgboost} (XGBoost)
+  \item \code{surv.coxph} (Cox Proportional Hazards)
+  \item \code{surv.cv_glmnet} (LASSO)
+  \item \code{surv.ranger} (Random Forest)
+  \item \code{surv.xgboost} (XGBoost)
 }}
 
 \item{resampling}{A \code{\link[mlr3]{Resampling}} object. If \code{NULL},
@@ -24,14 +24,14 @@ defaults to 5-fold cross-validation.}
 }
 \value{
 A list with three components:
-\describe{
-\item{bmr}{A \code{\link[mlr3benchmark]{BenchmarkResult}} object
-containing all benchmark results.}
-\item{table}{A data frame of aggregated performance metrics (C-index)
-for each learner.}
-\item{plot}{A \code{ggplot} object showing the performance distribution
-across CV folds for each learner.}
-}
+  \describe{
+    \item{bmr}{A \code{\link[mlr3]{BenchmarkResult}} object
+      containing all benchmark results.}
+    \item{table}{A data frame of aggregated performance metrics (C-index)
+      for each learner.}
+    \item{plot}{A \code{ggplot} object showing the performance distribution
+      across CV folds for each learner.}
+  }
 }
 \description{
 Compares the performance of multiple survival learners using cross-validation.
@@ -41,22 +41,22 @@ and generates a boxplot visualization of the C-index scores across folds.
 \details{
 The function performs the following steps:
 \enumerate{
-\item Extracts the survival task from \code{object}.
-\item If no learners are provided, instantiates default learners.
-\item Ensures all learners use the same \code{predict_type} (preferring
-\code{"distr"} if available) for fair comparison.
-\item Creates a benchmark design and runs the benchmark.
-\item Aggregates performance using the concordance index (\code{surv.cindex}).
-\item Generates a boxplot comparing the performance distribution.
+  \item Extracts the survival task from \code{object}.
+  \item If no learners are provided, instantiates default learners.
+  \item Ensures all learners use the same \code{predict_type} (preferring
+    \code{"distr"} if available) for fair comparison.
+  \item Creates a benchmark design and runs the benchmark.
+  \item Aggregates performance using the concordance index (\code{surv.cindex}).
+  \item Generates a boxplot comparing the performance distribution.
 }
 }
 \note{
 The default learners require additional packages:
 \itemize{
-\item \code{surv.coxph}: built-in to \code{mlr3proba}
-\item \code{surv.cv_glmnet}: requires \code{mlr3learners} and \code{glmnet}
-\item \code{surv.ranger}: requires \code{mlr3learners} and \code{ranger}
-\item \code{surv.xgboost}: requires \code{mlr3extralearners} and \code{xgboost}
+  \item \code{surv.coxph}: built-in to \code{mlr3proba}
+  \item \code{surv.cv_glmnet}: requires \code{mlr3learners} and \code{glmnet}
+  \item \code{surv.ranger}: requires \code{mlr3learners} and \code{ranger}
+  \item \code{surv.xgboost}: requires \code{mlr3extralearners} and \code{xgboost}
 }
 }
 \examples{

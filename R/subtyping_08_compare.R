@@ -42,17 +42,45 @@ compare_clusterings <- function(object,
   if (output == "list") return(list(ari_matrix = ari_mat, group_table = group_df))
 }
 
-#' Plot comparison heatmap of clustering results
+#' Plot Comparison Heatmap of Clustering Results
 #'
-#' @param object Subtyping object.
-#' @param methods Character vector of clustering column names.
-#' @param ... Additional arguments passed to pheatmap.
+#' Generates a heatmap of Adjusted Rand Index (ARI) values comparing multiple
+#' clustering methods. The heatmap displays pairwise similarity between
+#' clustering solutions, with numerical values overlaid on each cell.
+#'
+#' @param object A \code{Subtyping} S4 object containing clustering results
+#'   in the \code{info.data} slot.
+#' @param methods Character vector of column names in \code{object@info.data}
+#'   that contain clustering assignments. Default is
+#'   \code{c("cluster_kmeans", "cluster_lpa", "cluster_nmf")}.
+#' @param save_dir Character string specifying the directory to save the plot.
+#'   If \code{NULL}, the plot is not saved. Default is \code{NULL}.
+#' @param width Numeric. Width of the saved PDF in inches. Default is \code{5}.
+#' @param height Numeric. Height of the saved PDF in inches. Default is \code{4.5}.
+#' @param base_size Numeric. Base font size for the heatmap. Default is \code{13}.
+#' @param ... Additional arguments passed to \code{\link[pheatmap]{pheatmap}}.
+#'
+#' @return Invisibly returns the \code{pheatmap} object. The heatmap is
+#'   drawn on the current graphics device and optionally saved to PDF.
+#'
+#' @importFrom grDevices colorRampPalette pdf dev.off
+#' @importFrom pheatmap pheatmap
+#' @export
+#'
 #' @examples
 #' \dontrun{
-#'   # Assuming 'obj' is a Subtyping object with multiple clustering results
-#'   plot_clustering_comparison(obj, save_dir = "./results")
+#' # Assuming 'obj' is a Subtyping object with multiple clustering results
+#' plot_clustering_comparison(obj, save_dir = "./results")
+#'
+#' # Customize with additional pheatmap arguments
+#' plot_clustering_comparison(obj,
+#'   methods = c("cluster_kmeans", "cluster_lpa"),
+#'   save_dir = "./output",
+#'   width = 6,
+#'   height = 5,
+#'   fontsize = 12
+#' )
 #' }
-#' @export
 plot_clustering_comparison <- function(object,
                                        methods   = c("cluster_kmeans", "cluster_lpa", "cluster_nmf"),
                                        save_dir  = NULL,

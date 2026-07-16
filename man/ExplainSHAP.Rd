@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_07_explain.R
 \name{ExplainSHAP}
 \alias{ExplainSHAP}
-\title{Single‑Observation SHAP Waterfall (Custom Style, Flexible Filtering)}
+\title{Single-Observation SHAP Waterfall (Custom Style, Flexible Filtering)}
 \usage{
 ExplainSHAP(
   explainer,
@@ -18,7 +18,7 @@ ExplainSHAP(
 \arguments{
 \item{explainer}{A DALEX explainer.}
 
-\item{new_observation}{Single‑row data frame or integer row index.}
+\item{new_observation}{Single-row data frame or integer row index.}
 
 \item{B}{Number of random permutations (default 25).}
 
@@ -28,12 +28,12 @@ ExplainSHAP(
 
 \item{save_dir}{Output directory.}
 
-\item{plot_width, }{plot_height  Dimensions (inches).}
+\item{plot_width, plot_height}{Dimensions (inches).}
 }
 \value{
 A ggplot object. Invisibly returns the DALEX predict_parts (shap) object.
 }
 \description{
-Computes Shapley values and draws a publication‑ready waterfall plot.
+Computes Shapley values and draws a publication-ready waterfall plot.
 By default, variables with exactly zero SHAP contribution are hidden.
 }

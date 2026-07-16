@@ -12,29 +12,29 @@ launch_sub_deploy_app(
 )
 }
 \arguments{
-\item{sub_manager}{A manager object of class \code{Sub_Manager} created
+\item{sub_manager}{A manager object of class \code{Sub_Manager} created 
 by \code{\link{New_Sub_Manager}}.}
 
-\item{title}{A character string. The title to be displayed on the dashboard
+\item{title}{A character string. The title to be displayed on the dashboard 
 header. Default is "Subtyping Terminal".}
 
-\item{var_dict}{A \code{data.frame} (optional). Contains three columns:
+\item{var_dict}{A \code{data.frame} (optional). Contains three columns: 
 'Feature', 'Description', and 'Units' for documenting the required input variables.}
 
-\item{project_info}{A \code{list} (optional). Contains elements like
+\item{project_info}{A \code{list} (optional). Contains elements like 
 \code{abstract} and \code{citation} to describe the project background in the UI.}
 }
 \value{
 This function starts a Shiny app instance and does not return a value.
 }
 \description{
-Starts an interactive, high-contrast Shiny dashboard for clinical laboratory
-data stratification. The application supports both manual single-sample
-entry and batch CSV uploads, providing real-time subtype prediction and
+Starts an interactive, high-contrast Shiny dashboard for clinical laboratory 
+data stratification. The application supports both manual single-sample 
+entry and batch CSV uploads, providing real-time subtype prediction and 
 data export capabilities.
 }
 \details{
-The app uses a dark theme optimized for clinical environments. Batch
+The app uses a dark theme optimized for clinical environments. Batch 
 uploads require a CSV file where the first column contains unique Sample IDs.
 }
 \examples{

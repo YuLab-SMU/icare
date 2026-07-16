@@ -2,7 +2,7 @@
 % Please edit documentation in R/viz_functions.R
 \name{PlotCorrelationHeatmap}
 \alias{PlotCorrelationHeatmap}
-\title{Publication‑ready correlation heatmap using the corrplot package (enhanced + stable)}
+\title{Publication-ready correlation heatmap using the corrplot package (enhanced + stable)}
 \usage{
 PlotCorrelationHeatmap(
   object,
@@ -40,76 +40,76 @@ PlotCorrelationHeatmap(
 
 \item{features}{Features to include (NULL = all numeric, max 40).}
 
-\item{method}{Correlation method: \code{"spearman"} (default) or \code{"pearson"}.}
+\item{method}{Correlation method: `"spearman"` (default) or `"pearson"`.}
 
 \item{vis_method}{Visualisation method for the tiles:
-\code{"circle"}, \code{"square"}, \code{"ellipse"}, \code{"number"}, \code{"shade"}, \code{"color"}, \code{"pie"}.
-Default \code{"color"}.}
+`"circle"`, `"square"`, `"ellipse"`, `"number"`, `"shade"`, `"color"`, `"pie"`.
+Default `"color"`.}
 
-\item{matrix_type}{One of \code{"full"}, \code{"lower"}, \code{"upper"}. Default \code{"lower"}.}
+\item{matrix_type}{One of `"full"`, `"lower"`, `"upper"`. Default `"lower"`.}
 
 \item{order}{Order of variables:
-\code{"original"}, \code{"AOE"}, \code{"FPC"}, \code{"hclust"}, \code{"alphabet"}. Default \code{"hclust"}.}
+`"original"`, `"AOE"`, `"FPC"`, `"hclust"`, `"alphabet"`. Default `"hclust"`.}
 
-\item{hclust_method}{Agglomeration method for \code{order = "hclust"}:
-\code{"ward"}, \code{"ward.D"}, \code{"ward.D2"}, \code{"single"}, \code{"complete"}, \code{"average"},
-\code{"mcquitty"}, \code{"median"}, \code{"centroid"}. Default \code{"complete"}.}
+\item{hclust_method}{Agglomeration method for `order = "hclust"`:
+`"ward"`, `"ward.D"`, `"ward.D2"`, `"single"`, `"complete"`, `"average"`,
+`"mcquitty"`, `"median"`, `"centroid"`. Default `"complete"`.}
 
 \item{addrect}{Integer, number of rectangles to draw around clusters (requires
-\code{order = "hclust"}). Default \code{NULL} (no rectangles).}
+`order = "hclust"`). Default `NULL` (no rectangles).}
 
-\item{rect.col}{Colour of rectangle borders. Default \code{"navy"}.}
+\item{rect.col}{Colour of rectangle borders. Default `"navy"`.}
 
-\item{rect.lwd}{Line width of rectangle borders. Default \code{2}.}
+\item{rect.lwd}{Line width of rectangle borders. Default `2`.}
 
-\item{p_thresh}{P‑value threshold for masking non‑significant pairs.
-Only used when \code{insig != "n"}.}
+\item{p_thresh}{P-value threshold for masking non-significant pairs.
+Only used when `insig != "n"`.}
 
 \item{insig}{Character, how to handle insignificant correlations:
-\code{"blank"} (hide tile), \code{"p-value"} (print p-value), \code{"pch"} (print symbol),
-\code{"label_sig"} (print significance stars), \code{"n"} (do nothing). Default \code{"blank"}.}
+`"blank"` (hide tile), `"p-value"` (print p-value), `"pch"` (print symbol),
+`"label_sig"` (print significance stars), `"n"` (do nothing). Default `"blank"`.}
 
-\item{pch}{Symbol to use when \code{insig = "pch"}. Default \code{4} (×).}
+\item{pch}{Symbol to use when `insig = "pch"`. Default `4` (x).}
 
-\item{sig.level}{Significance level(s) for \code{insig = "label_sig"}. Can be a vector,
-e.g. \code{c(0.001, 0.01, 0.05)}. Default \code{0.05}.}
+\item{sig.level}{Significance level(s) for `insig = "label_sig"`. Can be a vector,
+e.g. `c(0.001, 0.01, 0.05)`. Default `0.05`.}
 
-\item{palette_name}{RColorBrewer diverging palette name (used when \code{color_scheme = "brew"}).
-Default \code{"RdYlBu"}.}
+\item{palette_name}{RColorBrewer diverging palette name (used when `color_scheme = "brew"`).
+Default `"RdYlBu"`.}
 
-\item{color_scheme}{Colour scheme: \code{"viridis"}, \code{"brew"}, \code{"gradient"}, \code{"scientific"}.
-Default \code{"scientific"}.}
+\item{color_scheme}{Colour scheme: `"viridis"`, `"brew"`, `"gradient"`, `"scientific"`.
+Default `"scientific"`.}
 
-\item{tl.cex}{Size of variable labels. Default \code{0.8}.}
+\item{tl.cex}{Size of variable labels. Default `0.8`.}
 
-\item{tl.srt}{Rotation angle of variable labels (degrees). Default \code{45}.}
+\item{tl.srt}{Rotation angle of variable labels (degrees). Default `45`.}
 
-\item{tl.col}{Text color for variable labels. Default \code{"black"}.}
+\item{tl.col}{Text color for variable labels. Default `"black"`.}
 
-\item{cl.cex}{Size of colour legend labels. Default \code{0.8}.}
+\item{cl.cex}{Size of colour legend labels. Default `0.8`.}
 
-\item{cl.pos}{Position of colour legend: \code{"r"} (right), \code{"b"} (bottom), \code{"n"} (none).
-Default \code{"b"} (bottom).}
+\item{cl.pos}{Position of colour legend: `"r"` (right), `"b"` (bottom), `"n"` (none).
+Default `"b"` (bottom).}
 
-\item{diag}{Logical, whether to show diagonal tiles. Default \code{FALSE}.}
+\item{diag}{Logical, whether to show diagonal tiles. Default `FALSE`.}
 
-\item{save_plot}{Logical. Save the plot? Default \code{FALSE}.}
+\item{save_plot}{Logical. Save the plot? Default `FALSE`.}
 
-\item{save_dir}{Output directory. When \code{NULL} and \code{save_plot = TRUE},
+\item{save_dir}{Output directory. When `NULL` and `save_plot = TRUE`,
 the default Stat figure directory is used.}
 
-\item{width, height}{Plot dimensions (inches). Default \code{8} x \code{7}.}
+\item{width, height}{Plot dimensions (inches). Default `8` x `7`.}
 
-\item{format}{File format (\code{"pdf"}, \code{"png"}, \code{"svg"}). Default \code{"pdf"}.}
+\item{format}{File format (`"pdf"`, `"png"`, `"svg"`). Default `"pdf"`.}
 
-\item{min_obs}{Minimum number of observations for pairwise correlations. Default \code{3}.}
+\item{min_obs}{Minimum number of observations for pairwise correlations. Default `3`.}
 }
 \value{
 Invisibly returns the correlation matrix used for plotting.
-The plot is drawn on the current graphics device.
+  The plot is drawn on the current graphics device.
 }
 \description{
-Generate a highly customisable correlation heatmap leveraging the \code{corrplot}
+Generate a highly customisable correlation heatmap leveraging the `corrplot`
 package. Supports multiple matrix shapes, visualisation methods, clustering
 orders, significance masking, and rectangle drawing.
 }
@@ -117,11 +117,13 @@ orders, significance masking, and rectangle drawing.
 \dontrun{
 # Lower triangle with hierarchical clustering and rectangles
 # (Color legend now at bottom by default)
-PlotCorrelationHeatmap(stat_obj_test, matrix_type = "lower", order = "hclust",addrect = 3, color_scheme = "scientific")
+PlotCorrelationHeatmap(stat_obj_test, matrix_type = "lower", order = "hclust",
+addrect = 3, color_scheme = "scientific")
 
 # Upper triangle with ellipse method and significance stars
 # Black text labels for better readability
-PlotCorrelationHeatmap(stat_obj_test, matrix_type = "lower", vis_method = "ellipse",insig = "label_sig", sig.level = c(0.001, 0.01, 0.05))
+PlotCorrelationHeatmap(stat_obj_test, matrix_type = "lower", vis_method = "ellipse",
+insig = "label_sig", sig.level = c(0.001, 0.01, 0.05))
 
 # Custom text color if needed
 PlotCorrelationHeatmap(stat_obj_test, matrix_type = "upper",tl.col = "navy", cl.pos = "r")

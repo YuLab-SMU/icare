@@ -42,7 +42,7 @@ A list with four components:
 \item{learner}{The trained learner object with optimal parameters.}
 \item{best_params}{List of best hyperparameter values.}
 \item{tuning_result}{Data frame of all evaluated parameter sets and performance.}
-\item{cv_performance}{Numeric cross‑validated performance score.}
+\item{cv_performance}{Numeric cross-validated performance score.}
 }
 }
 \description{
@@ -50,7 +50,7 @@ Train and tune a survival learner with hyperparameter optimization
 }
 \details{
 The function extracts a task from \code{object}, instantiates the specified
-learner, and – if a non‑empty search space is provided – tunes its
+learner, and - if a non-empty search space is provided - tunes its
 hyperparameters using the chosen resampling and measure. The best parameters
 are then applied to the learner, which is retrained on the full task.
 After training, predictions are validated to ensure the model produces
@@ -65,8 +65,4 @@ task <- tsk("lung")
 result <- surv_train_and_tune(task, "surv.coxph", tuning_budget = 10)
 print(result$best_params)
 }
-
-}
-\seealso{
-\code{\link{surv_extract_task}}, \code{\link{surv_get_learner}}
 }

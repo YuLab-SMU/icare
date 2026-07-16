@@ -3,7 +3,7 @@
 \name{stat_gaze_analysis}
 \alias{stat_gaze_analysis}
 \title{Statistical Gaze Analysis
-Safe gaze analysis for Table 1 (auto‑removes problematic columns)}
+Safe gaze analysis for Table 1 (auto-removes problematic columns)}
 \usage{
 stat_gaze_analysis(
   object,
@@ -25,9 +25,9 @@ stat_gaze_analysis(
 
 \item{digits}{Number of digits for statistics.}
 
-\item{show.p}{Logical. Show p‑values?}
+\item{show.p}{Logical. Show p-values?}
 
-\item{gaze_method}{Integer 1–5.}
+\item{gaze_method}{Integer 1-5.}
 
 \item{save_word}{Logical. Save Word file?}
 
@@ -38,8 +38,8 @@ uses \code{./tables/}.}
 Updated \code{Stat} object or flextable.
 }
 \description{
-Wrapper around \code{stat_gaze_analysis} that first drops zero‑variance
-and all‑missing columns from \code{clean.data} to avoid errors in
+Wrapper around \code{stat_gaze_analysis} that first drops zero-variance
+and all-missing columns from \code{clean.data} to avoid errors in
 \code{autoReg::gaze}.
 }
 \examples{
@@ -91,12 +91,12 @@ stat_obj <- stat_gaze_analysis(stat_obj,
                                save_dir = "my_results/tables")
 # The file is saved as my_results/tables/gaze_analysis.docx
 
-# --- Example 6: Suppress p‑values (descriptive statistics only) ---
+# --- Example 6: Suppress p-values (descriptive statistics only) ---
 stat_obj <- stat_gaze_analysis(stat_obj,
                                show.p = FALSE,
                                save_word = FALSE)
 
-# --- Example 7: Multi‑group comparison (>2 groups) ---
+# --- Example 7: Multi-group comparison (>2 groups) ---
 result_multi <- stat_gaze_analysis(mtcars,
                                    group_col = "cyl",
                                    digits = 2,

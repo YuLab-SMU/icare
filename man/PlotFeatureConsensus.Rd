@@ -29,7 +29,7 @@ PlotFeatureConsensus(
 
 \item{save_dir}{Output dir.}
 
-\item{width, height}{Dimensions. Defaults 8 × 12.}
+\item{width, height}{Dimensions. Defaults 8 x 12.}
 
 \item{format}{Format. Default "pdf".}
 }

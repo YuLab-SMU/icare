@@ -35,7 +35,7 @@ Default: \code{c("surv.coxph", "surv.cv_glmnet", "surv.ranger")}.}
 \item{p_threshold}{Univariate Cox p-value cut-off (default \code{0.05}).}
 
 \item{tuning_budget}{Number of hyperparameter evaluations per model
-(default \code{30}).  Use \code{50}–\code{100} for publication results.}
+(default \code{30}).  Use \code{50}-\code{100} for publication results.}
 
 \item{cutoff_method}{Risk stratification cut-point:
 \code{"median"}, \code{"tertile"}, \code{"quartile"}, or \code{"p_optimize"}.}
@@ -56,20 +56,20 @@ Default: \code{c("surv.coxph", "surv.cv_glmnet", "surv.ranger")}.}
 }
 \value{
 Invisible named list:
-\code{prog_obj}, \code{best_learner}, \code{filter_result},
-\code{benchmark_table}, \code{km_plot}, \code{auc_data}, \code{output_dir}.
+  \code{prog_obj}, \code{best_learner}, \code{filter_result},
+  \code{benchmark_table}, \code{km_plot}, \code{auc_data}, \code{output_dir}.
 }
 \description{
 Chains all prognosis analysis steps into a single call:
 \enumerate{
-\item \strong{Feature filtering}  — univariate Cox (\code{surv_filter_features_clinical})
-\item \strong{Algorithm benchmark} — multi-model CV (\code{surv_run_algorithm_benchmark})
-\item \strong{Tuning + training}   — best algorithm tuned and fitted (\code{surv_train_and_tune})
-\item \strong{KM risk curves}      — stratified survival plots (\code{surv_plot_risk_km})
-\item \strong{Time-dependent AUC}  — dynamic accuracy (\code{surv_plot_time_dependent_auc})
-\item \strong{Nomogram}            — clinical scoring chart (requires \pkg{rms})
-\item \strong{SHAP}                — feature explanation (requires \pkg{survex})
-\item \strong{Save}               — all artefacts written to \code{output_dir}
+  \item \strong{Feature filtering}  -- univariate Cox (\code{surv_filter_features_clinical})
+  \item \strong{Algorithm benchmark} -- multi-model CV (\code{surv_run_algorithm_benchmark})
+  \item \strong{Tuning + training}   -- best algorithm tuned and fitted (\code{surv_train_and_tune})
+  \item \strong{KM risk curves}      -- stratified survival plots (\code{surv_plot_risk_km})
+  \item \strong{Time-dependent AUC}  -- dynamic accuracy (\code{surv_plot_time_dependent_auc})
+  \item \strong{Nomogram}            -- clinical scoring chart (requires \pkg{rms})
+  \item \strong{SHAP}                -- feature explanation (requires \pkg{survex})
+  \item \strong{Save}               -- all artefacts written to \code{output_dir}
 }
 }
 \examples{

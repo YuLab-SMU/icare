@@ -22,8 +22,8 @@ Sub_normalize_process(
 }
 \value{
 If input is a Subtyping object, returns the modified object with
-normalized data stored in the 'scale.data' slot. If input is a data frame,
-returns the normalized data frame.
+  normalized data stored in the 'scale.data' slot. If input is a data frame,
+  returns the normalized data frame.
 }
 \description{
 Normalize Process for Subtyping

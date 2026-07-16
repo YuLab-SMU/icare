@@ -30,10 +30,10 @@ Default is \code{"AsteroidCity1"}.}
 }
 \value{
 A list with two components:
-\describe{
-\item{results}{A data frame with columns: \code{Parameter}, \code{C_Index}, and \code{SE}.}
-\item{plot}{A \code{ggplot} object showing the sensitivity trajectory.}
-}
+  \describe{
+    \item{results}{A data frame with columns: \code{Parameter}, \code{C_Index}, and \code{SE}.}
+    \item{plot}{A \code{ggplot} object showing the sensitivity trajectory.}
+  }
 }
 \description{
 Evaluates how model performance (C-index) changes under varying conditions

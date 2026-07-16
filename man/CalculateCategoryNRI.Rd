@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_09_nri_idi.R
 \name{CalculateCategoryNRI}
 \alias{CalculateCategoryNRI}
-\title{Category-Based Net Reclassification Index (with Per‑Model Thresholds)}
+\title{Category-Based Net Reclassification Index (with Per-Model Thresholds)}
 \usage{
 CalculateCategoryNRI(
   truth,
@@ -31,6 +31,6 @@ when \code{ref_thresholds} and \code{new_thresholds} are NULL.}
 A list with NRI components and reclassification tables.
 }
 \description{
-Calculates NRI events, NRI non‑events, and total NRI using possibly
+Calculates NRI events, NRI non-events, and total NRI using possibly
 different risk category thresholds for the reference and new model.
 }

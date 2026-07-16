@@ -30,7 +30,7 @@ extracted from the \code{group_col} column of \code{data}.}
 
 \item{group_col}{Name of the response column (default \code{"group"}).}
 
-\item{label}{Explainer label.  Auto‑generated when \code{NULL}.}
+\item{label}{Explainer label.  Auto-generated when \code{NULL}.}
 
 \item{verbose}{Print DALEX verbose output? Default \code{FALSE}.}
 }
@@ -42,17 +42,17 @@ Wraps a caret model, a \code{Train_Model} S4 object, or an ensemble
 produced by \code{TrainEnsemble} into a DALEX explainer.  The argument
 \code{model} controls which model is explained:
 \itemize{
-\item \code{NULL} (default): the best model stored in the
-\code{Train_Model} object is used automatically.
-\item \code{"ensemble"}: the ensemble stored in
-\code{object@best.model.result$ensemble} is used.  The ensemble
-must contain a \code{predict_fn}.  Voting results are
-automatically converted to positive‑class probabilities.
-\item A character string (e.g. \code{"rf"}, \code{"gbm"}): the
-corresponding model from \code{object@train.models} is used.
-\item A \code{caret::train} object: this model is used directly
-(requires \code{data} to be supplied when \code{object} is not
-a \code{Train_Model}).
+  \item \code{NULL} (default): the best model stored in the
+        \code{Train_Model} object is used automatically.
+  \item \code{"ensemble"}: the ensemble stored in
+        \code{object@best.model.result$ensemble} is used.  The ensemble
+        must contain a \code{predict_fn}.  Voting results are
+        automatically converted to positive-class probabilities.
+  \item A character string (e.g. \code{"rf"}, \code{"gbm"}): the
+        corresponding model from \code{object@train.models} is used.
+  \item A \code{caret::train} object: this model is used directly
+        (requires \code{data} to be supplied when \code{object} is not
+        a \code{Train_Model}).
 }
 }
 \examples{
@@ -63,7 +63,7 @@ explainer <- CreateExplainer(model_obj)
 # ---- 2. Explain a specific model by name ----
 explainer_gbm <- CreateExplainer(model_obj, model = "gbm")
 
-# ---- 3. Explain a fine‑tuned model (caret train object) ----
+# ---- 3. Explain a fine-tuned model (caret train object) ----
 tuned_rf <- model_obj@best.model.result$fine_tuned_model
 explainer_tuned <- CreateExplainer(model_obj, model = tuned_rf)
 

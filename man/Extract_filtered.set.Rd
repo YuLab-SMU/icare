@@ -12,10 +12,8 @@ which holds the filtered training and testing data.}
 }
 \value{
 A list with two elements:
-\itemize{
-\item \code{training}: The filtered training dataset (if available), otherwise NULL.
-\item \code{testing}: The filtered testing dataset (if available), otherwise NULL.
-}
+  - `training`: The filtered training dataset (if available), otherwise NULL.
+  - `testing`: The filtered testing dataset (if available), otherwise NULL.
 }
 \description{
 This function extracts the filtered training and testing datasets stored in the

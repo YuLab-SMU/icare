@@ -13,13 +13,7 @@ surv_get_tuning_config(learner_id, tuning_budget = 50)
 during tuning. Default is \code{50}.}
 }
 \value{
-A list with two components:
-\describe{
-\item{tuner}{A \code{\link[mlr3tuning]{Tuner}} object, or \code{NULL}
-if no tuning is needed.}
-\item{terminator}{A \code{\link[mlr3tuning]{Terminator}} object, or
-\code{NULL} if no tuning is needed.}
-}
+A list
 }
 \description{
 Provides a recommended tuning strategy (tuner and terminator) based on the
@@ -30,12 +24,12 @@ forests, XGBoost) default to random search, while simpler models use grid search
 The function distinguishes between complex learners (requiring more
 sophisticated tuning strategies) and simple learners:
 \itemize{
-\item \strong{Complex learners}: \code{surv.ranger}, \code{surv.xgboost.*},
-\code{surv.gbm}, \code{surv.cforest} → random search with budget.
-\item \strong{Simple learners}: For learners with parameters, grid search
-with adaptive resolution based on the number of parameters.
-\item \strong{No-tuning learners}: \code{surv.kaplan}, \code{surv.nelson}
-→ returns \code{NULL} for both components.
+  \item \strong{Complex learners}: \code{surv.ranger}, \code{surv.xgboost.*},
+    \code{surv.gbm}, \code{surv.cforest} -> random search with budget.
+  \item \strong{Simple learners}: For learners with parameters, grid search
+    with adaptive resolution based on the number of parameters.
+  \item \strong{No-tuning learners}: \code{surv.kaplan}, \code{surv.nelson}
+    -> returns \code{NULL} for both components.
 }
 }
 \examples{

@@ -27,7 +27,7 @@ PlotFeatureUpSet(
 
 \item{save_dir}{Output dir.}
 
-\item{width, height}{Dimensions. Defaults 10 × 7.}
+\item{width, height}{Dimensions. Defaults 10 x 7.}
 
 \item{format}{Format. Default "pdf".}
 }

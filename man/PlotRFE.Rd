@@ -33,7 +33,7 @@ from \code{FeatureSelectRFE}.}
 
 \item{save_dir}{Output directory. Auto-detected if NULL.}
 
-\item{width, height}{Plot dimensions (inches). Defaults 8 × 6.}
+\item{width, height}{Plot dimensions (inches). Defaults 8 x 6.}
 
 \item{format}{File format: "pdf", "png", "svg". Default "pdf".}
 }

@@ -20,7 +20,7 @@ PlotSilhouette(
 \arguments{
 \item{object}{A \code{Subtyping} S4 object.}
 
-\item{group_by}{Character. The column name in \code{info.data} containing cluster labels.
+\item{group_by}{Character. The column name in \code{info.data} containing cluster labels. 
 Default is \code{"cluster_lpa"}.}
 
 \item{dist_method}{Character. Distance metric for \code{stats::dist()}. Default is \code{"euclidean"}.}

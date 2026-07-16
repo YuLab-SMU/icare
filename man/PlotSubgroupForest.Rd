@@ -24,6 +24,6 @@ PlotSubgroupForest(
 A ggplot object.
 }
 \description{
-Computes AUC with 95\\% CI within each subgroup defined by a categorical
+Computes AUC with 95\% CI within each subgroup defined by a categorical
 clinical variable.
 }

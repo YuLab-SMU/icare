@@ -42,15 +42,15 @@ A list (invisibly) with three components:
 \description{
 Computes the Net Reclassification Improvement (NRI) and Integrated
 Discrimination Improvement (IDI) for two sets of predicted probabilities,
-using the \code{nricens} package. Results are displayed as a forest‑style
-plot with 95\% confidence intervals, optionally saved to PDF.
+using the \code{nricens} package. Results are displayed as a forest-style
+plot with 95% confidence intervals, optionally saved to PDF.
 }
 \details{
 The function uses \code{nricens::nribin} with \code{updown = "category"} to
 compute categorical NRI (NRI+) and IDI simultaneously. Estimates and standard
 errors are converted to percentages for plotting. If the estimation fails,
 a placeholder plot is generated. The plot includes a grey reference region
-between -5\% and +5\% to highlight clinically negligible changes.
+between -5% and +5% to highlight clinically negligible changes.
 }
 \examples{
 \dontrun{

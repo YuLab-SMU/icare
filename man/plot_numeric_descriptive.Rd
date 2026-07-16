@@ -20,28 +20,28 @@ plot_numeric_descriptive(
 )
 }
 \arguments{
-\item{object}{An object of class \code{Stat} or a data frame containing numeric data.
-If the object is of class \code{Stat}, the clean data is extracted from the \code{Stat} object.}
+\item{object}{An object of class `Stat` or a data frame containing numeric data.
+If the object is of class `Stat`, the clean data is extracted from the `Stat` object.}
 
 \item{vars_per_plot}{Integer. The number of variables (columns) to include in each
 individual plot. Default is 1.}
 
-\item{save_dir}{String. The directory where the plots will be saved. Default is \code{NULL}.
-When \code{save_plots = TRUE} and this is \code{NULL}, a default figure directory is used.}
+\item{save_dir}{String. The directory where the plots will be saved. Default is `NULL`.
+When `save_plots = TRUE` and this is `NULL`, a default figure directory is used.}
 
-\item{palette_name}{String. The name of the color palette to use. Default is \code{"Zissou1"}.}
+\item{palette_name}{String. The name of the color palette to use. Default is `"Zissou1"`.}
 
 \item{group_col}{String. The name of the column in the data to group the samples by.
-Default is \code{"group"}. If not provided, no grouping is performed.}
+Default is `"group"`. If not provided, no grouping is performed.}
 
 \item{max_unique_values}{Integer. The maximum number of unique values allowed for
 categorical variables. Default is 5. Used for filtering variables when diagnosing
 their types.}
 
-\item{plot_type}{String. The type of plot to generate. Options are \code{"violin"} or
-\code{"ridge"}. Default is \code{"violin"}.}
+\item{plot_type}{String. The type of plot to generate. Options are `"violin"` or
+`"ridge"`. Default is `"violin"`.}
 
-\item{save_plots}{Logical. If \code{TRUE}, the plots will be saved as PDF files. Default is \code{TRUE}.}
+\item{save_plots}{Logical. If `TRUE`, the plots will be saved as PDF files. Default is `TRUE`.}
 
 \item{plot_width}{Numeric. The width of each saved plot (in inches). Default is 5.}
 
@@ -50,16 +50,16 @@ their types.}
 \item{base_size}{Numeric. The base font size for the plot. Default is 14.}
 
 \item{sub_var}{Character vector. A subset of variable names (columns) to include in
-the plot. If \code{NULL}, all numeric variables are included.}
+the plot. If `NULL`, all numeric variables are included.}
 }
 \value{
-The input object (either a \code{Stat} object or a data frame) with the
-updated plots added to the appropriate slot. If the input is a \code{Stat} object,
-the \code{compute.descriptive} slot is updated with the generated plots.
+The input object (either a `Stat` object or a data frame) with the
+  updated plots added to the appropriate slot. If the input is a `Stat` object,
+  the `compute.descriptive` slot is updated with the generated plots.
 }
 \description{
 This function generates either violin plots or ridge density plots for numeric variables
-in the given dataset (either a \code{Stat} object or a data frame). The function allows
+in the given dataset (either a `Stat` object or a data frame). The function allows
 customizing the number of variables per plot, palette style, and grouping columns, and
 saves the plots if required. It provides a flexible approach to visualizing the distribution
 of numeric data and comparing different groups.

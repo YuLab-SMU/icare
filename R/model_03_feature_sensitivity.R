@@ -1,8 +1,8 @@
 # =============================================================================
-# Feature Sensitivity Analysis – Backward Elimination by Importance
+# Feature Sensitivity Analysis - Backward Elimination by Importance
 # =============================================================================
 # This module performs backward feature elimination using caret models.
-# For each algorithm it records CV AUC (mean ± SE) while removing the least
+# For each algorithm it records CV AUC (mean +/- SE) while removing the least
 # important feature at each step. Elbow points are identified by one of four
 # methods:
 #   - "difference"         : maximum absolute drop in AUC
@@ -222,8 +222,84 @@
 # ------------------------------------------------------------------------------
 # Main exported functions
 # ------------------------------------------------------------------------------
-
-#' Run Backward Feature Elimination
+#' Run Backward Feature Elimination for Multiple Models
+#'
+#' Performs backward feature elimination on a set of caret models using
+#' cross-validation. At each step, the least important feature is removed
+#' based on variable importance from the current model. The function returns
+#' a structured object containing performance curves and selected feature sets
+#' for each algorithm.
+#'
+#' @param object A \code{Train_Model} or \code{Stat} S4 object containing the
+#'   training data with features and a binary outcome column.
+#' @param models Character vector of caret model names to evaluate.
+#'   Default is \code{c("rf", "gbm", "glmboost")}. Any classification model
+#'   that supports variable importance can be used.
+#' @param metric Evaluation metric for model performance. Default is \code{"ROC"}.
+#'   Other options include \code{"Accuracy"}, \code{"Kappa"}, etc., as supported
+#'   by \code{caret::train}.
+#' @param number Number of cross-validation folds. Default is \code{5}.
+#' @param seed Random seed for reproducibility. Default is \code{825}.
+#' @param min_features Minimum number of features to retain during elimination.
+#'   The process stops when this many features remain. Default is \code{2}.
+#' @param smooth_span Smoothing span for loess curve applied to the performance
+#'   trajectory (0 = no smoothing). Default is \code{0}.
+#' @param verbose Logical. If \code{TRUE}, prints progress messages.
+#'   Default is \code{TRUE}.
+#' @param parallel Logical. If \code{TRUE}, parallel processing is enabled
+#'   using \code{doParallel}. Default is \code{FALSE}.
+#' @param n_cores Integer. Number of cores for parallel processing. If
+#'   \code{NULL} and \code{parallel = TRUE}, uses \code{detectCores() - 1}.
+#'   Default is \code{NULL}.
+#'
+#' @return An object of S3 class \code{"FeatureElimination"} containing:
+#'   \itemize{
+#'     \item \code{results}: A data frame with columns \code{n_features},
+#'       \code{AUC_mean}, \code{AUC_se}, \code{AUC_smooth}, and \code{Algorithm}.
+#'     \item \code{step_features}: A list of feature sets retained at each step,
+#'       organized by algorithm.
+#'     \item \code{models}: Character vector of successful algorithms.
+#'     \item \code{metric}, \code{number}, \code{min_features}, \code{smooth_span}:
+#'       Parameters used.
+#'     \item \code{call}: The matched call.
+#'   }
+#'
+#' @details
+#' The function works as follows:
+#' \enumerate{
+#'   \item For each algorithm, the model is trained on all features.
+#'   \item Variable importance is extracted and the least important feature
+#'     is removed.
+#'   \item The model is retrained on the reduced feature set, and performance
+#'     is recorded.
+#'   \item Steps 2–3 are repeated until \code{min_features} is reached.
+#' }
+#' Models that fail to train or provide importance at any step are skipped.
+#' The performance trajectory can be smoothed using \code{smooth_span}.
+#'
+#' @examples
+#' \dontrun{
+#' # Assuming 'model_obj' is a Train_Model object
+#' elim <- run_feature_elimination(
+#'   object = model_obj,
+#'   models = c("rf", "gbm"),
+#'   metric = "ROC",
+#'   number = 5,
+#'   min_features = 3,
+#'   verbose = TRUE
+#' )
+#'
+#' # Access results
+#' head(elim$results)
+#' # Select optimal features
+#' best <- select_elbow(elim, elbow_method = "difference")
+#' print(best$best_features)
+#' }
+#'
+#' @importFrom caret train trainControl varImp
+#' @importFrom doParallel registerDoParallel
+#' @importFrom parallel detectCores makeCluster stopCluster
+#' @importFrom foreach registerDoSEQ
 #' @export
 run_feature_elimination <- function(object,
                                     models = c("rf", "gbm", "glmboost"),
@@ -291,7 +367,86 @@ run_feature_elimination <- function(object,
 }
 
 #' Select Optimal Feature Count from Elimination Results
+#'
+#' Determines the optimal number of features to retain for each algorithm
+#' based on the performance curve from backward elimination. Four elbow
+#' detection methods are available, each identifying the point where
+#' performance begins to plateau or drop.
+#'
+#' @param elim_obj A \code{FeatureElimination} object returned by
+#'   \code{\link{run_feature_elimination}}.
+#' @param elbow_method Character string specifying the elbow detection method.
+#'   Options:
+#'   \itemize{
+#'     \item \code{"difference"}: Maximum absolute drop in AUC between
+#'       consecutive steps.
+#'     \item \code{"ratio"}: Maximum relative drop in AUC.
+#'     \item \code{"perf_tolerance"}: Minimum features with AUC within
+#'       \code{tol} of the maximum AUC.
+#'     \item \code{"stability_window"}: First stable window of length
+#'       \code{window_size} with AUC range <= \code{stability_tol}.
+#'   }
+#'   Default is \code{"difference"}.
+#' @param tol Numeric. Tolerance for \code{"perf_tolerance"} method. The
+#'   threshold is defined as \code{max_AUC * (1 - tol)}. Default is \code{0.05}.
+#' @param window_size Integer. Window size for \code{"stability_window"}
+#'   method. Default is \code{5}.
+#' @param stability_tol Numeric. Maximum allowed AUC range within a stable
+#'   window for \code{"stability_window"} method. Default is \code{0.01}.
+#' @param min_features Integer. Minimum number of features to retain.
+#'   If \code{NULL}, uses the value from \code{elim_obj$min_features}.
+#'   Default is \code{NULL}.
+#' @param verbose Logical. If \code{TRUE}, prints progress messages and
+#'   adjustments. Default is \code{TRUE}.
+#'
+#' @return A list containing:
+#'   \itemize{
+#'     \item \code{best_features}: A named list where each element is a
+#'       character vector of feature names selected for the corresponding
+#'       algorithm.
+#'     \item \code{optimal_counts}: A named integer vector of the optimal
+#'       number of features for each algorithm.
+#'   }
+#'
+#' @details
+#' The four elbow detection methods work as follows:
+#' \describe{
+#'   \item{\code{"difference"}}{Calculates the absolute change in AUC between
+#'     consecutive steps and selects the feature count before the largest drop.}
+#'   \item{\code{"ratio"}}{Similar to \code{"difference"}, but uses the
+#'     relative change (drop divided by the current AUC).}
+#'   \item{\code{"perf_tolerance"}}{Finds the smallest feature set whose AUC
+#'     is within \code{tol * 100\%} of the maximum AUC achieved.}
+#'   \item{\code{"stability_window"}}{Identifies the first window of
+#'     \code{window_size} consecutive steps where the AUC range is
+#'     \code{<= stability_tol}, indicating that performance has stabilised.}
+#' }
+#'
 #' @export
+#' @examples
+#' \dontrun{
+#' # Assuming 'elim_obj' is a FeatureElimination object
+#'
+#' # Use the default difference method
+#' result <- select_elbow(elim_obj)
+#' print(result$optimal_counts)
+#'
+#' # Use performance tolerance method
+#' result_tol <- select_elbow(elim_obj,
+#'   elbow_method = "perf_tolerance",
+#'   tol = 0.02
+#' )
+#'
+#' # Use stability window method with custom parameters
+#' result_stab <- select_elbow(elim_obj,
+#'   elbow_method = "stability_window",
+#'   window_size = 4,
+#'   stability_tol = 0.005
+#' )
+#'
+#' # Access selected features for each algorithm
+#' str(result$best_features)
+#' }
 select_elbow <- function(elim_obj,
                          elbow_method = c("difference", "ratio", "perf_tolerance", "stability_window"),
                          tol = 0.05,
@@ -356,8 +511,66 @@ get_selected_features <- function(elim_obj, methods = c("difference", "ratio", "
   return(results)
 }
 
-#' Legacy wrapper: elimination + selection in one call
+#' Legacy Wrapper: Feature Elimination + Elbow Selection in One Call
+#'
+#' This is a convenience wrapper that combines \code{\link{run_feature_elimination}}
+#' and \code{\link{select_elbow}} into a single function call. It performs
+#' backward feature elimination on the specified models, then selects the optimal
+#' feature count using the chosen elbow method, returning a structured result
+#' object ready for downstream analysis and plotting.
+#'
+#' @param object A \code{Train_Model} or \code{Stat} object containing the data.
+#' @param models Character vector of caret model names to evaluate.
+#'   Default: \code{c("rf", "gbm", "glmboost")}.
+#' @param metric Evaluation metric for model performance. Default: \code{"ROC"}.
+#' @param number Number of cross-validation folds. Default: \code{5}.
+#' @param seed Random seed for reproducibility. Default: \code{825}.
+#' @param elbow_method Elbow detection method. One of \code{"difference"},
+#'   \code{"ratio"}, \code{"perf_tolerance"}, or \code{"stability_window"}.
+#'   Default: \code{"difference"}.
+#' @param tol Tolerance for \code{"perf_tolerance"} method. Default: \code{0.05}.
+#' @param window_size Window size for \code{"stability_window"} method. Default: \code{5}.
+#' @param stability_tol Stability tolerance for \code{"stability_window"} method.
+#'   Default: \code{0.01}.
+#' @param min_features Minimum number of features to retain. Default: \code{2}.
+#' @param smooth_span Smoothing span for loess curve (0 = no smoothing).
+#'   Default: \code{0}.
+#' @param verbose Logical. Print progress messages. Default: \code{TRUE}.
+#' @param parallel Logical. Use parallel processing? Default: \code{FALSE}.
+#' @param n_cores Number of cores for parallel processing. If \code{NULL},
+#'   uses \code{parallel::detectCores() - 1}. Default: \code{NULL}.
+#'
+#' @return An object of class \code{FeatureSensitivityAnalysis} (inherits from list)
+#'   with two components:
+#'   \itemize{
+#'     \item \code{results}: The full elimination results data frame.
+#'     \item \code{best_features}: A named list of selected features per model.
+#'   }
+#'
 #' @export
+#' 
+#' @examples
+#' \dontrun{
+#' # Basic usage with default settings
+#' sens <- FeatureSensitivityAnalysis(
+#'   object = model_obj,
+#'   models = c("rf", "gbm")
+#' )
+#'
+#' # Custom elbow method with parallel processing
+#' sens <- FeatureSensitivityAnalysis(
+#'   object = model_obj,
+#'   models = c("rf", "gbm", "glmnet"),
+#'   elbow_method = "perf_tolerance",
+#'   tol = 0.02,
+#'   parallel = TRUE,
+#'   n_cores = 4
+#' )
+#'
+#' # Access results
+#' print(sens$results)
+#' print(sens$best_features)
+#' }
 FeatureSensitivityAnalysis <- function(object,
                                        models = c("rf", "gbm", "glmboost"),
                                        metric = "ROC",
@@ -385,7 +598,7 @@ FeatureSensitivityAnalysis <- function(object,
 }
 
 # ------------------------------------------------------------------------------
-# Plotting with low‑saturation palette
+# Plotting with low-saturation palette
 # ------------------------------------------------------------------------------
 .get_low_sat_palette <- function(n) {
   if (n <= 8) {
@@ -397,8 +610,61 @@ FeatureSensitivityAnalysis <- function(object,
   }
 }
 
-#' Plot elimination curve with optional optimal points
+#' Plot Elbow Curve from Feature Elimination Results
+#'
+#' Visualizes the performance curve (AUC) as a function of the number of
+#' features retained during backward elimination. The plot can display
+#' confidence intervals (error bars or ribbons), highlight optimal feature
+#' counts, and optionally facet by algorithm.
+#'
+#' @param elim_obj A \code{FeatureElimination} object returned by
+#'   \code{\link{run_feature_elimination}}.
+#' @param best_features A named list of selected features per algorithm,
+#'   typically from \code{\link{select_elbow}}. If provided, optimal points
+#'   are highlighted on the plot. Default is \code{NULL}.
+#' @param facet Logical. If \code{TRUE}, separate panels are created for each
+#'   algorithm. Default is \code{FALSE}.
+#' @param palette_name Character string specifying the Wes Anderson palette
+#'   name for algorithm colors. Default is \code{"Darjeeling1"}.
+#' @param use_low_sat Logical. If \code{TRUE}, uses a low-saturation color
+#'   palette for better print readability. Default is \code{TRUE}.
+#' @param ci_style Character string specifying the style for confidence
+#'   intervals. Options are \code{"errorbar"}, \code{"ribbon"}, or
+#'   \code{"none"}. Default is \code{"errorbar"}.
+#' @param save_plot Logical. If \code{TRUE}, the plot is saved to a PDF file.
+#'   Default is \code{FALSE}.
+#' @param save_dir Character string specifying the directory to save the plot.
+#'   If \code{NULL} and \code{save_plot = TRUE}, the plot is saved to
+#'   \code{"./Sensitivity/"}. Default is \code{NULL}.
+#' @param width Numeric. Width of the saved plot in inches. If \code{facet = TRUE},
+#'   defaults to \code{12}, otherwise \code{8}.
+#' @param height Numeric. Height of the saved plot in inches. Default is \code{5}.
+#' @param ncol Integer. Number of columns for faceted plots. Ignored if
+#'   \code{facet = FALSE}. Default is \code{NULL}.
+#' @param ... Additional arguments passed to \code{ggplot2::labs()}, such as
+#'   \code{subtitle} or \code{caption}.
+#'
+#' @return Invisibly returns the \code{ggplot} object. The plot is drawn on
+#'   the current graphics device and optionally saved to PDF.
 #' @export
+#' @examples
+#' \dontrun{
+#' # Basic plot
+#' plot_elbow(elim_obj)
+#'
+#' # With optimal features highlighted and faceted
+#' best <- select_elbow(elim_obj, elbow_method = "difference")
+#' plot_elbow(elim_obj, best_features = best$best_features, facet = TRUE)
+#'
+#' # Custom confidence interval style and save
+#' plot_elbow(elim_obj,
+#'   ci_style = "ribbon",
+#'   save_plot = TRUE,
+#'   save_dir = "./figures",
+#'   width = 10,
+#'   height = 6
+#' )
+#' }
 plot_elbow <- function(elim_obj,
                        best_features = NULL,
                        facet = FALSE,
@@ -461,7 +727,7 @@ plot_elbow <- function(elim_obj,
   }
   
   p <- p + ggplot2::labs(title = "Feature Sensitivity Analysis (Backward Elimination)",
-                         x = "Number of Features", y = "AUC (mean ± SE)", ...) +
+                         x = "Number of Features", y = "AUC (mean +/- SE)", ...) +
     ggprism::theme_prism(base_size = 13) +
     ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"),
                    legend.position = "bottom")

@@ -17,7 +17,7 @@ Sub_deploy_dispatcher(sub_train_obj, raw_newdata, method = "nmf")
 A Subtyping object containing predicted cluster labels in info.data.
 }
 \description{
-Standardized interface for deploying subtyping models. It handles
+Standardized interface for deploying subtyping models. It handles 
 feature alignment, normalization synchronization, and space projection.
 }
 \examples{

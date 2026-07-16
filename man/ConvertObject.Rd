@@ -36,11 +36,11 @@ A single entry-point for all cross-class conversions.
 \details{
 Supported conversions
 \tabular{ll}{
-\strong{From}  \tab \strong{To} \cr
-Stat           \tab Train_Model, Subtyping, PrognosiX \cr
-Subtyping      \tab Stat, PrognosiX, Train_Model \cr
-PrognosiX      \tab Stat, Subtyping \cr
-Train_Model    \tab Stat, Subtyping \cr
+  \strong{From}  \tab \strong{To} \cr
+  Stat           \tab Train_Model, Subtyping, PrognosiX \cr
+  Subtyping      \tab Stat, PrognosiX, Train_Model \cr
+  PrognosiX      \tab Stat, Subtyping \cr
+  Train_Model    \tab Stat, Subtyping \cr
 }
 }
 \examples{

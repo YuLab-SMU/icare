@@ -63,7 +63,10 @@ CreatePrognosiXObject(
 A PrognosiX S4 object.
 }
 \description{
-Create PrognosiX Object
+This function constructs a PrognosiX S4 object from raw data frames or by
+converting an existing Stat, Subtyping, or PrognosiX object. It handles
+time/status column extraction, row matching, and initial preparation for
+downstream prognostic modeling.
 }
 \examples{
 \dontrun{

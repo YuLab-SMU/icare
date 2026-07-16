@@ -20,42 +20,40 @@ plot_dca_survival(
 )
 }
 \arguments{
-\item{learners}{A \strong{named list} of trained \code{mlr3} survival learners.
-Each element must be a learner that supports \code{"distr"} predictions.
-Example: \code{list("Ranger" = learner_ranger)}.}
+\item{learners}{A **named list** of trained `mlr3` survival learners.
+Each element must be a learner that supports `"distr"` predictions.
+Example: `list("Ranger" = learner_ranger)`.}
 
-\item{object}{A \code{TaskSurv} or \code{PrognosiX} object containing the validation data.}
+\item{object}{A `TaskSurv` or `PrognosiX` object containing the validation data.}
 
 \item{eval_time}{Numeric. The time point at which to evaluate event probabilities.}
 
 \item{thresholds}{Numeric vector. Risk thresholds (probabilities of event) at
-which net benefit is calculated. Defaults to \code{seq(0.01, 0.99, length.out = 50)}.}
+which net benefit is calculated. Defaults to `seq(0.01, 0.99, length.out = 50)`.}
 
 \item{colors}{Character vector or single string. Can be:
-\itemize{
-\item A built-in palette keyword: \code{"default"}, \code{"clinical"}, \code{"vibrant"}, or \code{"jama"}.
-\item A fully/partially named vector, e.g. \code{c(Ranger = "#2c7fb8")}. Missing reference
-strategies (\code{TreatAll}, \code{TreatNone}) will be filled automatically with high-contrast distinct colors.
-}}
+- A built-in palette keyword: `"default"`, `"clinical"`, `"vibrant"`, or `"jama"`.
+- A fully/partially named vector, e.g. `c(Ranger = "#2c7fb8")`. Missing reference
+  strategies (`TreatAll`, `TreatNone`) will be filled automatically with high-contrast distinct colors.}
 
 \item{linetypes}{Named character vector of line types for the strategies.
-Can be partially named (e.g., \code{c(Ranger = "solid")}); missing reference styles
-will default to distinct \code{"dashed"} and \code{"dotted"} profiles automatically.}
+Can be partially named (e.g., `c(Ranger = "solid")`); missing reference styles
+will default to distinct `"dashed"` and `"dotted"` profiles automatically.}
 
-\item{include_reference}{Logical. Should the "Treat All" and "Treat None" curves be added? Default is \code{TRUE}.}
+\item{include_reference}{Logical. Should the "Treat All" and "Treat None" curves be added? Default is `TRUE`.}
 
-\item{ylim}{Numeric vector of length 2. Y-axis limits for net benefit. Defaults to \code{c(-0.05, NA)}.}
+\item{ylim}{Numeric vector of length 2. Y-axis limits for net benefit. Defaults to `c(-0.05, NA)`.}
 
 \item{title}{Character. Custom plot title.}
 
 \item{subtitle}{Character. Custom plot subtitle.}
 
-\item{print_stats}{Logical. Should summary statistics be printed to the console? Default \code{TRUE}.}
+\item{print_stats}{Logical. Should summary statistics be printed to the console? Default `TRUE`.}
 
-\item{clin_range}{Numeric vector of length 2. Default is \code{c(0.05, 0.5)}.}
+\item{clin_range}{Numeric vector of length 2. Default is `c(0.05, 0.5)`.}
 }
 \value{
-A list with three components: \code{plot}, \code{table}, and \code{summary}.
+A list with three components: `plot`, `table`, and `summary`.
 }
 \description{
 Computes and plots decision curves at a specified time point for one or more

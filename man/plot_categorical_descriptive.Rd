@@ -38,12 +38,12 @@ a default figure directory is used).}
 }
 \value{
 If object is a Stat object, the updated Stat object with
-\code{compute.descriptive$count_plots} slot. Otherwise, a list of plots.
+  `compute.descriptive$count_plots` slot. Otherwise, a list of plots.
 }
 \description{
 This function generates bar plots displaying the distribution of categorical
 variables and their percentages across different groups. It handles both
-\code{Stat} objects and data frames. Plots can optionally be saved.
+`Stat` objects and data frames. Plots can optionally be saved.
 }
 \examples{
 \dontrun{

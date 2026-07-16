@@ -37,7 +37,7 @@ PlotTunedROC(
 A \code{ggplot} object.
 }
 \description{
-Generates an ROC curve for the fine-tuned model and optionally
-compares it with the original best model. Automatically handles factor level
+Generates an ROC curve for the fine-tuned model and optionally 
+compares it with the original best model. Automatically handles factor level 
 alignment for numeric-origin groups.
 }

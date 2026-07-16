@@ -26,7 +26,7 @@ no unit is shown. Default is \code{NULL}.}
 }
 \value{
 A \code{nomogram} object (invisibly) and prints the nomogram plot.
-The object can be used for further customization.
+  The object can be used for further customization.
 }
 \description{
 Creates a nomogram for visualizing and predicting survival probabilities

@@ -42,8 +42,8 @@ FeatureSelectRFE(
 \item{seed}{Random seed.}
 }
 \value{
-A list with elements: \code{result} (rfe object),
-\code{opt_vars} (optimal features), \code{plot} (ggplot).
+A list with elements: \code{result} (rfe object), 
+  \code{opt_vars} (optimal features), \code{plot} (ggplot).
 }
 \description{
 Recursive Feature Elimination (RFE) for Train_Model objects

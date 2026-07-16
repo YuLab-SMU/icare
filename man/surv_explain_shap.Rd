@@ -2,7 +2,7 @@
 % Please edit documentation in R/prognosis_02_framework.R
 \name{surv_explain_shap}
 \alias{surv_explain_shap}
-\title{SurvSHAP(t) Explanations for Survival Models — Production Version}
+\title{SurvSHAP(t) Explanations for Survival Models -- Production Version}
 \usage{
 surv_explain_shap(
   learner,
@@ -49,15 +49,15 @@ Default is \code{"#2980b9"}.}
 }
 \value{
 A list with six components:
-\describe{
-\item{shap_long}{A tidy data frame with columns \code{feature}, \code{time},
-\code{shap_value}, and \code{observation}.}
-\item{explainer}{A \code{survex} explainer object.}
-\item{eval_times}{The evaluation time points actually used.}
-\item{plots}{A list with \code{bar_plot} (feature importance) and
-\code{line_plot} (SHAP dynamics over time).}
-\item{original_features}{A data frame with the original feature values.}
-}
+  \describe{
+    \item{shap_long}{A tidy data frame with columns \code{feature}, \code{time},
+      \code{shap_value}, and \code{observation}.}
+    \item{explainer}{A \code{survex} explainer object.}
+    \item{eval_times}{The evaluation time points actually used.}
+    \item{plots}{A list with \code{bar_plot} (feature importance) and
+      \code{line_plot} (SHAP dynamics over time).}
+    \item{original_features}{A data frame with the original feature values.}
+  }
 }
 \description{
 Computes time-dependent SurvSHAP(t) explanations for survival predictions.
@@ -68,9 +68,9 @@ interpretations using Kernel SHAP.
 The function uses the \code{survex} package for efficient SHAP computation.
 Key features:
 \itemize{
-\item \strong{Time-dependent}: SHAP values are computed at multiple time points.
-\item \strong{Sampling acceleration}: Sub-samples time points and observations for speed.
-\item \strong{Native mlr3 support}: Handles factor/character columns without errors.
+  \item \strong{Time-dependent}: SHAP values are computed at multiple time points.
+  \item \strong{Sampling acceleration}: Sub-samples time points and observations for speed.
+  \item \strong{Native mlr3 support}: Handles factor/character columns without errors.
 }
 }
 \examples{

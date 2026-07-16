@@ -2,7 +2,7 @@
 % Please edit documentation in R/viz_functions.R
 \name{PlotAUCPval}
 \alias{PlotAUCPval}
-\title{Feature selection plot: AUC vs. –log10(p‑value) (enhanced)}
+\title{Feature selection plot: AUC vs. -log10(p-value) (enhanced)}
 \usage{
 PlotAUCPval(
   deg_df,
@@ -30,7 +30,7 @@ PlotAUCPval(
 
 \item{auc_thresh}{AUC threshold for selection. Default 0.55.}
 
-\item{p_thresh}{P‑value threshold. Default 0.05.}
+\item{p_thresh}{P-value threshold. Default 0.05.}
 
 \item{selected_fill}{Fill colour for selected features.}
 
@@ -53,7 +53,7 @@ the default Stat figure directory is used.}
 A \code{ggplot} object.
 }
 \description{
-Calculates per‑feature ROC AUC and plots it against –log10(p‑value).
+Calculates per-feature ROC AUC and plots it against -log10(p-value).
 Points that satisfy both \code{auc_thresh} and \code{p_thresh} are highlighted.
 }
 \examples{
@@ -61,6 +61,7 @@ Points that satisfy both \code{auc_thresh} and \code{p_thresh} are highlighted.
 stat_obj <- stat_var_feature(stat_obj_test)
 last_sig <- ExtractLastTestSig(stat_obj)
 last_sig$feature <- last_sig$id
-PlotAUCPval(last_sig, stat_obj_test@clean.data, group_col = "SWAB", save_plot = FALSE,p_thresh = 0.1, auc_thresh = 0.5)
+PlotAUCPval(last_sig, stat_obj_test@clean.data, group_col = "SWAB", 
+save_plot = FALSE,p_thresh = 0.1, auc_thresh = 0.5)
 }
 }

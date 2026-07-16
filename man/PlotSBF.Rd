@@ -27,7 +27,7 @@ PlotSBF(
 
 \item{save_dir}{Output dir.}
 
-\item{width, height}{Dimensions. Defaults 7 × 6.}
+\item{width, height}{Dimensions. Defaults 7 x 6.}
 
 \item{format}{Format. Default "pdf".}
 }

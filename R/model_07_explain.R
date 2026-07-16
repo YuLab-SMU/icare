@@ -1,26 +1,26 @@
 # =============================================================================
 # model_04_explain.R
-# Model Explanation Module — DALEX / SHAP / Beeswarm
+# Model Explanation Module -- DALEX / SHAP / Beeswarm
 #
 # Interfaces:
 #   Train_Model S4 object (module_01_object.R)
 #   ExtractModel()         (module_03_compare.R)
 #
 # Functions:
-#   CreateExplainer()          — Create DALEX explainer
-#   ExplainModelPerformance()  — ROC / LIFT / residual boxplot
-#   ExplainVariableImportance()— Permutation importance (with error bars)
-#   ExplainSHAP()              — Single‑observation SHAP waterfall
-#   ExplainSHAPBeeswarm()      — Global SHAP beeswarm ★
-#   ExplainBreakDown()         — Break Down decomposition (with interactions)
-#   ExplainCeterisParibus()    — Ceteris Paribus what‑if curves
-#   ExplainPartialDependence() — Global PDP / ALE
-#   ExplainAll()               — One‑click full pipeline (including beeswarm)
+#   CreateExplainer()          -- Create DALEX explainer
+#   ExplainModelPerformance()  -- ROC / LIFT / residual boxplot
+#   ExplainVariableImportance()-- Permutation importance (with error bars)
+#   ExplainSHAP()              -- Single-observation SHAP waterfall
+#   ExplainSHAPBeeswarm()      -- Global SHAP beeswarm *
+#   ExplainBreakDown()         -- Break Down decomposition (with interactions)
+#   ExplainCeterisParibus()    -- Ceteris Paribus what-if curves
+#   ExplainPartialDependence() -- Global PDP / ALE
+#   ExplainAll()               -- One-click full pipeline (including beeswarm)
 #
 # Dependencies: DALEX, iBreakDown, ingredients, ggplot2, shapviz (optional)
 # =============================================================================
 
-# ── 0. Package check ─────────────────────────────────────────────────────────
+# -- 0. Package check ---------------------------------------------------------
 
 .check_xai_packages <- function() {
   required <- c("DALEX", "iBreakDown", "ingredients", "ggplot2")
@@ -38,7 +38,7 @@
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 
 
-# ── 1. CreateExplainer ────────────────────────────────────────────────────────
+# -- 1. CreateExplainer --------------------------------------------------------
 
 #' Create a DALEX Explainer (Unified Entry for Single & Ensemble Models)
 #'
@@ -51,7 +51,7 @@
 #'   \item \code{"ensemble"}: the ensemble stored in
 #'         \code{object@best.model.result$ensemble} is used.  The ensemble
 #'         must contain a \code{predict_fn}.  Voting results are
-#'         automatically converted to positive‑class probabilities.
+#'         automatically converted to positive-class probabilities.
 #'   \item A character string (e.g. \code{"rf"}, \code{"gbm"}): the
 #'         corresponding model from \code{object@train.models} is used.
 #'   \item A \code{caret::train} object: this model is used directly
@@ -69,7 +69,7 @@
 #' @param y         Response vector (numeric 0/1).  If \code{NULL}, it is
 #'   extracted from the \code{group_col} column of \code{data}.
 #' @param group_col Name of the response column (default \code{"group"}).
-#' @param label     Explainer label.  Auto‑generated when \code{NULL}.
+#' @param label     Explainer label.  Auto-generated when \code{NULL}.
 #' @param verbose   Print DALEX verbose output? Default \code{FALSE}.
 #'
 #' @return A \code{DALEX::explainer} object.
@@ -84,7 +84,7 @@
 #' # ---- 2. Explain a specific model by name ----
 #' explainer_gbm <- CreateExplainer(model_obj, model = "gbm")
 #'
-#' # ---- 3. Explain a fine‑tuned model (caret train object) ----
+#' # ---- 3. Explain a fine-tuned model (caret train object) ----
 #' tuned_rf <- model_obj@best.model.result$fine_tuned_model
 #' explainer_tuned <- CreateExplainer(model_obj, model = tuned_rf)
 #'
@@ -119,7 +119,7 @@ CreateExplainer <- function(object,
   
   .check_xai_packages()
   
-  # ── 1. Resolve group_col and data ──────────────────────────────────────
+  # -- 1. Resolve group_col and data --------------------------------------
   if (inherits(object, "Train_Model")) {
     if (is.null(group_col)) group_col <- object@group_col
     if (is.null(data)) {
@@ -137,12 +137,12 @@ CreateExplainer <- function(object,
     data[[group_col]] <- as.factor(data[[group_col]])
   }
   
-  # ── 2. Determine Positive Class (Handle numeric/X-prefixed levels) ─────
+  # -- 2. Determine Positive Class (Handle numeric/X-prefixed levels) -----
   # DALEX typically needs probabilities for the 'positive' class (usually the 2nd level)
   raw_levels <- levels(data[[group_col]])
   positive_class <- raw_levels[2] 
   
-  # ── 3. Resolve actual model to explain ────────────────────────────────
+  # -- 3. Resolve actual model to explain --------------------------------
   if (inherits(object, "Train_Model")) {
     if (is.null(model)) {
       # Automatically use fine_tuned_model if it exists, else best_model
@@ -166,7 +166,7 @@ CreateExplainer <- function(object,
     if (is.null(label)) label <- object$method
   }
   
-  # ── 4. Build Predict Function (Safe against numeric levels) ──────────
+  # -- 4. Build Predict Function (Safe against numeric levels) ----------
   # This function ensures that newdata doesn't contain y, and extracts the correct prob col
   if (is.null(model) || !is.character(model) || model != "ensemble") {
     
@@ -207,7 +207,7 @@ CreateExplainer <- function(object,
     }
   }
   
-  # ── 5. Prepare y (numeric 0/1) and X ────────────────────────────────
+  # -- 5. Prepare y (numeric 0/1) and X --------------------------------
   if (is.null(y)) {
     # DALEX works best when y is numeric 0 and 1
     # We ensure y matches the factor underlying levels
@@ -216,7 +216,7 @@ CreateExplainer <- function(object,
   
   X <- data[, setdiff(colnames(data), group_col), drop = FALSE]
   
-  # ── 6. Create Explainer ─────────────────────────────────────────────
+  # -- 6. Create Explainer ---------------------------------------------
   explainer <- DALEX::explain(
     model            = best_model,
     data             = X,
@@ -226,92 +226,21 @@ CreateExplainer <- function(object,
     verbose          = verbose
   )
   
-  cat(sprintf("✓ Explainer created | Label: '%s' | Pos Class: '%s' | %d features\n", 
+  cat(sprintf("[OK] Explainer created | Label: '%s' | Pos Class: '%s' | %d features\n", 
               explainer$label, positive_class, ncol(X)))
   
   return(explainer)
 }
 
-
-# ── 2. ExplainModelPerformance ────────────────────────────────────────────────
-
-#' Model Performance Evaluation (Fixed)
-#'
-#' Computes overall performance metrics using DALEX and plots a clean ROC curve.
-#'
-#' @param explainer A DALEX explainer.
-#' @param geom      Plot type: `"roc"` (default), `"lift"`, or `"boxplot"`.
-#' @param save_plots Save as PDF? Default `FALSE`.
-#' @param save_dir   Output directory.
-#' @param plot_width,plot_height  Plot dimensions (inches).
-#'
-#' @return Invisibly returns the DALEX model_performance object.
-#' @export
-ExplainModelPerformance <- function(explainer,
-                                    geom        = c("roc", "lift", "boxplot"),
-                                    save_plots  = FALSE,
-                                    save_dir    = "ModelExplain",
-                                    plot_width  = 6,
-                                    plot_height = 5) {
-  .check_xai_packages()
-  geom <- match.arg(geom)
-  
-  cat("-- Model Performance ------------------------------------------------------\n")
-  mp <- DALEX::model_performance(explainer)
-  print(mp)
-  
-  # Extract AUC from the performance object
-  auc_val <- mp$measures$auc[1]
-  
-  # Build a reliable ROC curve using pROC (avoids DALEX plotting issues)
-  if (geom == "roc") {
-    probs <- explainer$predict_function(explainer$model, explainer$data)
-    true  <- explainer$y
-    roc_obj <- pROC::roc(true, probs, levels = c(0, 1), direction = "auto", quiet = TRUE)
-    roc_df <- data.frame(
-      Sensitivity = roc_obj$sensitivities,
-      Specificity = roc_obj$specificities
-    )
-    
-    p <- ggplot2::ggplot(roc_df, ggplot2::aes(x = 1 - Specificity, y = Sensitivity)) +
-      ggplot2::geom_line(color = "#4361ee", linewidth = 1.2) +
-      ggplot2::geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "grey50") +
-      ggplot2::labs(
-        title    = paste("Model Performance -", explainer$label),
-        subtitle = paste("AUC =", round(auc_val, 3)),
-        x        = "1 - Specificity",
-        y        = "Sensitivity"
-      ) +
-      ggplot2::coord_equal() +
-      ggprism::theme_prism(base_size = 13) +
-      ggplot2::theme(plot.title = ggplot2::element_text(face = "bold", hjust = 0.5))
-    
-    print(p)
-    .save_plot(p, save_plots, save_dir, "performance", plot_width, plot_height)
-  } else {
-    # For lift or boxplot, fall back to DALEX's plot
-    p <- plot(mp, geom = geom) +
-      ggplot2::labs(title = paste("Model Performance -", explainer$label)) +
-      ggprism::theme_prism(base_size = 13) +
-      ggplot2::theme(plot.title = ggplot2::element_text(face = "bold"))
-    print(p)
-    .save_plot(p, save_plots, save_dir, "performance", plot_width, plot_height)
-  }
-  
-  invisible(mp)
-}
-
-
-
-# ── 3. ExplainVariableImportance ──────────────────────────────────────────────
-#' Variable Importance (Permutation) – Universal for Any Caret Model (Fixed)
+# -- 2. ExplainVariableImportance ----------------------------------------------
+#' Variable Importance (Permutation) - Universal for Any Caret Model (Fixed)
 #'
 #' @param explainer     A DALEX explainer.
 #' @param B             Number of permutations (default 10).
 #' @param type          Loss type: "difference", "ratio", "raw".
 #' @param show_boxplots (Ignored; kept for compatibility)
 #' @param top_n         Number of most important features to display.
-#' @param filter_zero   Remove features with near‑zero importance.
+#' @param filter_zero   Remove features with near-zero importance.
 #' @param save_plots    Save plot? Default FALSE.
 #' @param save_dir      Output directory.
 #' @param plot_width,plot_height  Dimensions.
@@ -340,7 +269,7 @@ ExplainVariableImportance <- function(explainer,
   # Keep only features (remove baseline and full model)
   vi_plot <- vi[!vi$variable %in% c("_baseline_", "_full_model_"), ]
   
-  # Optionally filter zero‑importance
+  # Optionally filter zero-importance
   if (filter_zero) {
     mean_loss <- aggregate(vi_plot$dropout_loss, by = list(vi_plot$variable), FUN = mean)
     colnames(mean_loss) <- c("variable", "mean_loss")
@@ -368,7 +297,7 @@ ExplainVariableImportance <- function(explainer,
     levels = rev(importance_summary$variable)
   )
   
-  # Build dot‑and‑whisker plot
+  # Build dot-and-whisker plot
   p <- ggplot2::ggplot(importance_summary, ggplot2::aes(x = mean_loss, y = variable)) +
     ggplot2::geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
     ggplot2::geom_errorbarh(ggplot2::aes(xmin = mean_loss - se_loss, xmax = mean_loss + se_loss),
@@ -408,20 +337,20 @@ ExplainVariableImportance <- function(explainer,
 }
 
 
-# ── 4. ExplainSHAP ────────────────────────────────────────────────────────────
+# -- 3. ExplainSHAP ------------------------------------------------------------
 
-#' Single‑Observation SHAP Waterfall (Custom Style, Flexible Filtering)
+#' Single-Observation SHAP Waterfall (Custom Style, Flexible Filtering)
 #'
-#' Computes Shapley values and draws a publication‑ready waterfall plot.
+#' Computes Shapley values and draws a publication-ready waterfall plot.
 #' By default, variables with exactly zero SHAP contribution are hidden.
 #'
 #' @param explainer         A DALEX explainer.
-#' @param new_observation   Single‑row data frame or integer row index.
+#' @param new_observation   Single-row data frame or integer row index.
 #' @param B                 Number of random permutations (default 25).
 #' @param remove_zero       Logical; remove variables with zero SHAP? Default TRUE.
 #' @param save_plots        Save plot? Default FALSE.
 #' @param save_dir          Output directory.
-#' @param plot_width, plot_height  Dimensions (inches).
+#' @param plot_width,plot_height  Dimensions (inches).
 #'
 #' @return A ggplot object. Invisibly returns the DALEX predict_parts (shap) object.
 #' @export
@@ -438,7 +367,7 @@ ExplainSHAP <- function(explainer,
   obs  <- .resolve_observation(explainer, new_observation)
   pred <- explainer$predict_function(explainer$model, obs)
   
-  cat("── Single‑Observation SHAP Waterfall ────────────────────────────\n")
+  cat("-- Single-Observation SHAP Waterfall ----------------------------\n")
   cat(sprintf("Predicted probability for this observation: %.4f\n", pred))
   
   shap_obj <- DALEX::predict_parts(
@@ -455,7 +384,7 @@ ExplainSHAP <- function(explainer,
     shap_df <- shap_df[shap_df$B == 0, ]
   }
   
-  # Optionally drop zero‑importance features
+  # Optionally drop zero-importance features
   if (remove_zero) {
     shap_df <- shap_df[abs(shap_df$contribution) > 1e-12, ]
   }
@@ -477,7 +406,7 @@ ExplainSHAP <- function(explainer,
     ) +
     ggplot2::scale_fill_identity() +
     ggplot2::labs(
-      title    = paste0("SHAP Waterfall — ", explainer$label),
+      title    = paste0("SHAP Waterfall -- ", explainer$label),
       subtitle = sprintf("Shapley values (B = %d permutations)", B),
       x        = "SHAP contribution",
       y        = NULL
@@ -497,7 +426,7 @@ ExplainSHAP <- function(explainer,
 }
 
 
-# ── 5. ExplainSHAPBeeswarm ★ ─────────────────────────────────────────────────
+# -- 5. ExplainSHAPBeeswarm * -------------------------------------------------
 
 #' Global SHAP Beeswarm
 #'
@@ -505,9 +434,9 @@ ExplainSHAP <- function(explainer,
 #'
 #' Plot interpretation:
 #' \itemize{
-#'   \item y‑axis: features, sorted by mean |SHAP| (most important at the top)
-#'   \item x‑axis: SHAP value (positive → increases predicted probability,
-#'         negative → decreases it)
+#'   \item y-axis: features, sorted by mean |SHAP| (most important at the top)
+#'   \item x-axis: SHAP value (positive -> increases predicted probability,
+#'         negative -> decreases it)
 #'   \item colour: feature value (red = high, blue = low)
 #'   \item each point represents one sample
 #' }
@@ -517,21 +446,21 @@ ExplainSHAP <- function(explainer,
 #' implementation (visually equivalent).
 #'
 #' @param explainer    A DALEX explainer.
-#' @param N            Number of samples (default 100, suggest 50–200).
+#' @param N            Number of samples (default 100, suggest 50-200).
 #' @param B            SHAP permutations per sample (default 10).
 #' @param seed         Random seed (default 42).
 #' @param max_features Maximum number of features to display (default 15).
 #' @param save_plots   Save PDF? Default FALSE.
 #' @param save_dir     Output directory (default "ModelExplain").
-#' @param plot_width, plot_height  Dimensions (inches, default 9 x 6).
+#' @param plot_width,plot_height  Dimensions (inches, default 9 x 6).
 #'
 #' @return Invisibly returns a named list:
 #' \itemize{
-#'   \item shap_matrix  — N × p matrix of SHAP values
-#'   \item X_sample     — corresponding feature matrix
-#'   \item shapviz_obj  — shapviz object (if available, otherwise NULL)
-#'   \item plot         — ggplot2 object
-#'   \item importance   — data.frame of feature importance rankings
+#'   \item shap_matrix  -- N x p matrix of SHAP values
+#'   \item X_sample     -- corresponding feature matrix
+#'   \item shapviz_obj  -- shapviz object (if available, otherwise NULL)
+#'   \item plot         -- ggplot2 object
+#'   \item importance   -- data.frame of feature importance rankings
 #' }
 #' @export
 ExplainSHAPBeeswarm <- function(explainer,
@@ -545,7 +474,7 @@ ExplainSHAPBeeswarm <- function(explainer,
                                 plot_height  = 6) {
   .check_xai_packages()
   
-  cat("── Global SHAP Beeswarm ──────────────────────────────────────────\n")
+  cat("-- Global SHAP Beeswarm ------------------------------------------\n")
   cat(sprintf("  Samples N = %d | Permutations per sample B = %d | Seed = %d\n", N, B, seed))
   cat("  Computing SHAP values, please wait...\n")
   
@@ -604,7 +533,7 @@ ExplainSHAPBeeswarm <- function(explainer,
                                show_numbers = FALSE,
                                max_display  = max_features) +
           ggplot2::labs(
-            title    = paste0("SHAP Beeswarm — ", explainer$label),
+            title    = paste0("SHAP Beeswarm -- ", explainer$label),
             subtitle = sprintf("N = %d samples, B = %d permutations | colour: feature value (red=high, blue=low)",
                                n_use, B),
             x        = "SHAP value (impact on predicted probability)",
@@ -695,7 +624,7 @@ ExplainSHAPBeeswarm <- function(explainer,
       labels  = c("Low", "Mid", "High")
     ) +
     ggplot2::labs(
-      title    = paste0("SHAP Beeswarm — ", model_label),
+      title    = paste0("SHAP Beeswarm -- ", model_label),
       subtitle = sprintf("N = %d samples, B = %d permutations | colour: feature value (red=high, blue=low)", N, B),
       x        = "SHAP value (impact on predicted probability)",
       y        = NULL
@@ -711,7 +640,7 @@ ExplainSHAPBeeswarm <- function(explainer,
 }
 
 
-# ── 6. ExplainBreakDown ───────────────────────────────────────────────────────
+# -- 4. ExplainBreakDown -------------------------------------------------------
 
 #' Break Down Decomposition (Custom Style, Flexible Filtering)
 #'
@@ -719,7 +648,7 @@ ExplainSHAPBeeswarm <- function(explainer,
 #' horizontal bar chart with Wes Anderson colors.
 #'
 #' @param explainer         A DALEX explainer.
-#' @param new_observation   Single‑row data frame or integer row index.
+#' @param new_observation   Single-row data frame or integer row index.
 #' @param type              "break_down_interactions" (default) or "break_down".
 #' @param order             Optional vector of variable names.
 #' @param remove_zero       Logical; remove variables with zero contribution?
@@ -728,7 +657,7 @@ ExplainSHAPBeeswarm <- function(explainer,
 #'                          Default TRUE.
 #' @param save_plots        Save plot? Default FALSE.
 #' @param save_dir          Output directory.
-#' @param plot_width, plot_height  Dimensions.
+#' @param plot_width,plot_height  Dimensions.
 #'
 #' @return A ggplot object. Invisibly returns the DALEX predict_parts object.
 #' @export
@@ -745,7 +674,7 @@ ExplainBreakDown <- function(explainer,
   .check_xai_packages()
   
   obs <- .resolve_observation(explainer, new_observation)
-  cat("── Break Down Decomposition ─────────────────────────────────────\n")
+  cat("-- Break Down Decomposition -------------------------------------\n")
   
   args <- list(explainer = explainer, new_observation = obs, type = type)
   if (!is.null(order)) args$order <- order
@@ -798,7 +727,7 @@ ExplainBreakDown <- function(explainer,
     ) +
     ggplot2::scale_fill_identity() +
     ggplot2::labs(
-      title    = paste0("Break Down — ", explainer$label),
+      title    = paste0("Break Down -- ", explainer$label),
       subtitle = if (type == "break_down_interactions") "With interaction detection" else "Sequential variable attribution",
       x        = "Contribution to prediction",
       y        = NULL
@@ -823,20 +752,20 @@ ExplainBreakDown <- function(explainer,
 }
 
 
-# ── 7. ExplainCeterisParibus ─────────────────────────────────────────────────
+# -- 5. ExplainCeterisParibus -------------------------------------------------
 
-#' Ceteris Paribus What‑If Curves
+#' Ceteris Paribus What-If Curves
 #'
 #' Shows how the model prediction changes when a single variable varies
 #' while all other features are held constant.
 #'
 #' @param explainer            A DALEX explainer.
-#' @param new_observation      Single‑row data frame or row index.
+#' @param new_observation      Single-row data frame or row index.
 #' @param variables            Variables to plot (default: all continuous).
 #' @param categorical_variables  Categorical variables (displayed as bar charts).
 #' @param save_plots           Save plot? Default FALSE.
 #' @param save_dir             Output directory.
-#' @param plot_width, plot_height  Dimensions.
+#' @param plot_width,plot_height  Dimensions.
 #'
 #' @return Invisibly returns the predict_profile object.
 #' @export
@@ -851,7 +780,7 @@ ExplainCeterisParibus <- function(explainer,
   .check_xai_packages()
   
   obs <- .resolve_observation(explainer, new_observation)
-  cat("── Ceteris Paribus Curves ───────────────────────────────────────\n")
+  cat("-- Ceteris Paribus Curves ---------------------------------------\n")
   
   cp_args <- list(explainer = explainer, new_observation = obs)
   if (!is.null(variables)) cp_args$variables <- variables
@@ -866,7 +795,7 @@ ExplainCeterisParibus <- function(explainer,
   if (length(cont_vars) > 0) {
     p_cont <- plot(cp, variables = cont_vars) +
       ggplot2::labs(
-        title    = paste0("Ceteris Paribus — ", explainer$label),
+        title    = paste0("Ceteris Paribus -- ", explainer$label),
         subtitle = "Predicted probability when varying a single feature"
       ) +
       ggprism::theme_prism(base_size = 13) +
@@ -879,7 +808,7 @@ ExplainCeterisParibus <- function(explainer,
     p_cat <- plot(cp, variables = categorical_variables,
                   categorical_type = "bars") +
       ggplot2::labs(
-        title    = paste0("Ceteris Paribus (categorical) — ", explainer$label),
+        title    = paste0("Ceteris Paribus (categorical) -- ", explainer$label),
         subtitle = "Predicted probability per category"
       ) +
       ggprism::theme_prism(base_size = 13) +
@@ -899,7 +828,7 @@ ExplainCeterisParibus <- function(explainer,
 }
 
 
-# ── 8. ExplainPartialDependence ───────────────────────────────────────────────
+# -- 8. ExplainPartialDependence -----------------------------------------------
 
 #' Partial Dependence Plots (PDP / ALE)
 #'
@@ -916,7 +845,7 @@ ExplainCeterisParibus <- function(explainer,
 #' @param N           Number of samples for estimation (default 500).
 #' @param save_plots  Save PDF? Default FALSE.
 #' @param save_dir    Output directory.
-#' @param plot_width, plot_height  Dimensions.
+#' @param plot_width,plot_height  Dimensions.
 #'
 #' @return Invisibly returns the model_profile object.
 #' @export
@@ -931,7 +860,7 @@ ExplainPartialDependence <- function(explainer,
                                      plot_width  = 8,
                                      plot_height = 5) {
   .check_xai_packages()
-  cat("── Partial Dependence (PDP) ─────────────────────────────────────\n")
+  cat("-- Partial Dependence (PDP) -------------------------------------\n")
   
   mp_args <- list(explainer = explainer, type = type, N = N)
   if (!is.null(variables)) mp_args$variables <- variables
@@ -946,7 +875,7 @@ ExplainPartialDependence <- function(explainer,
   
   p <- plot(pdp, variables = plot_vars) +
     ggplot2::labs(
-      title    = paste0("Partial Dependence — ", explainer$label),
+      title    = paste0("Partial Dependence -- ", explainer$label),
       subtitle = paste0(
         switch(type,
                partial = "PDP (averaged CP profiles)",
@@ -976,9 +905,9 @@ ExplainPartialDependence <- function(explainer,
 }
 
 
-# ── 9. ExplainAll ─────────────────────────────────────────────────────────────
+# -- 6. ExplainAll -------------------------------------------------------------
 
-#' Explanatory Model Analysis — Full Pipeline
+#' Explanatory Model Analysis -- Full Pipeline
 #'
 #' @description Runs the complete DALEX-based explanation suite, including global 
 #' performance, variable importance, SHAP, Break Down, and PDP/CP profiles.
@@ -1014,7 +943,7 @@ ExplainAll <- function(object,
   .check_xai_packages()
   
   cat("\n==================================================================\n")
-  cat("  Explanatory Model Analysis — Full Pipeline\n")
+  cat("  Explanatory Model Analysis -- Full Pipeline\n")
   cat("==================================================================\n\n")
   
   # --- 1. Robust group_col resolution ---
@@ -1101,7 +1030,7 @@ ExplainAll <- function(object,
 }
 
 
-# ── Internal helper functions ────────────────────────────────────────────────
+# -- Internal helper functions ------------------------------------------------
 
 #' @keywords internal
 .resolve_observation <- function(explainer, new_observation) {
@@ -1113,7 +1042,7 @@ ExplainAll <- function(object,
     return(explainer$data[idx, , drop = FALSE])
   }
   if (!is.data.frame(new_observation))
-    stop("new_observation must be a single‑row data frame or an integer row index.")
+    stop("new_observation must be a single-row data frame or an integer row index.")
   new_observation
 }
 

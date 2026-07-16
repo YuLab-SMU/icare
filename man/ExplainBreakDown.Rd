@@ -20,7 +20,7 @@ ExplainBreakDown(
 \arguments{
 \item{explainer}{A DALEX explainer.}
 
-\item{new_observation}{Single‑row data frame or integer row index.}
+\item{new_observation}{Single-row data frame or integer row index.}
 
 \item{type}{"break_down_interactions" (default) or "break_down".}
 
@@ -36,7 +36,7 @@ Default TRUE.}
 
 \item{save_dir}{Output directory.}
 
-\item{plot_width, }{plot_height  Dimensions.}
+\item{plot_width, plot_height}{Dimensions.}
 }
 \value{
 A ggplot object. Invisibly returns the DALEX predict_parts object.

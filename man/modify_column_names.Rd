@@ -8,18 +8,19 @@ modify_column_names(data, tolower = F)
 }
 \arguments{
 \item{data}{A data frame whose column names need to be modified.}
+
+\item{tolower}{Logical. If \code{TRUE}, column names are converted to
+lowercase before other modifications. Default is \code{FALSE}.}
 }
 \value{
 A data frame with modified column names.
 }
 \description{
 This function modifies the column names of a data frame by performing the following:
-\enumerate{
-\item Converts all column names to lowercase.
-\item Replaces spaces with underscores.
-\item Removes any non-alphanumeric characters except for underscores.
-\item Ensures all column names are unique by appending numbers to duplicated names.
-}
+1. Converts all column names to lowercase.
+2. Replaces spaces with underscores.
+3. Removes any non-alphanumeric characters except for underscores.
+4. Ensures all column names are unique by appending numbers to duplicated names.
 }
 \examples{
 data <- data.frame("First Name" = c("John", "Jane"), "Age" = c(25, 30))

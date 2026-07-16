@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_05_train.R
 \name{evaluate_model_performance}
 \alias{evaluate_model_performance}
-\title{Evaluate Model Performance Metrics (Caret‑based)}
+\title{Evaluate Model Performance Metrics (Caret-based)}
 \usage{
 evaluate_model_performance(
   data,
@@ -27,5 +27,5 @@ A data frame with one row per model, or \code{NULL} if all models fail.
 \description{
 Uses \code{\link[caret]{confusionMatrix}} to compute all classification
 metrics and \code{\link[pROC]{roc}} for AUC.  Automatically detects group
-levels – no hard‑coded \code{"0"} / \code{"1"}.
+levels - no hard-coded \code{"0"} / \code{"1"}.
 }

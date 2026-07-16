@@ -32,13 +32,13 @@ The updated validation \code{Subtyping} object.
 \description{
 Dispatches to the appropriate prediction method depending on \code{method}:
 \describe{
-\item{\code{"kmeans"}}{Assigns each validation sample to the nearest
-training centroid (Euclidean distance in the scaled feature space).}
-\item{\code{"lpa"}}{Uses \code{mclust::predict.Mclust} to classify
-samples under the fitted Gaussian-mixture model.}
-\item{\code{"nmf"}}{Projects samples via NNLS onto the training W matrix
-(features × components); assignment is the component with the highest
-coefficient.}
+  \item{\code{"kmeans"}}{Assigns each validation sample to the nearest
+    training centroid (Euclidean distance in the scaled feature space).}
+  \item{\code{"lpa"}}{Uses \code{mclust::predict.Mclust} to classify
+    samples under the fitted Gaussian-mixture model.}
+  \item{\code{"nmf"}}{Projects samples via NNLS onto the training W matrix
+    (features x components); assignment is the component with the highest
+    coefficient.}
 }
 }
 \details{

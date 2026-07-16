@@ -19,23 +19,32 @@ state_plot_missing_data(
 }
 \arguments{
 \item{object}{An object of class 'Stat' or a data frame. If it is a 'Stat' object, the function uses the
-\code{raw.data} slot for missing data analysis. If it is a data frame, it directly performs the analysis.}
+`raw.data` slot for missing data analysis. If it is a data frame, it directly performs the analysis.}
 
-\item{palette_name}{A character string specifying the palette name for the plot colors. Default is \code{"Royal1"}.}
+\item{palette_name}{A character string specifying the palette name for the plot colors. Default is `"Royal1"`.}
 
-\item{alpha}{A numeric value between 0 and 1 specifying the transparency level of the density plots. Default is \code{0.9}.}
+\item{alpha}{A numeric value between 0 and 1 specifying the transparency level of the density plots. Default is `0.9`.}
 
-\item{save_plots}{A logical value indicating whether to save the plots as PNG files. Default is \code{TRUE}.}
+\item{save_plots}{A logical value indicating whether to save the plots as PNG files. Default is `TRUE`.}
 
-\item{save_dir}{A character string specifying the directory where the plots will be saved. Default is \code{"here('StatObject', 'missing_info')"} (within the \code{StatObject} folder).}
+\item{save_dir}{A character string specifying the directory where the plots will be saved. Default is `"here('StatObject', 'missing_info')"` (within the `StatObject` folder).}
 
-\item{plot_width}{A numeric value specifying the width of the saved plots. Default is \code{5}.}
+\item{plot_width}{A numeric value specifying the width of the saved plots. Default is `5`.}
 
-\item{plot_height}{A numeric value specifying the height of the saved plots. Default is \code{5}.}
+\item{plot_height}{A numeric value specifying the height of the saved plots. Default is `5`.}
+
+\item{save_data}{Logical. If `TRUE`, saves the missing data summaries as CSV files.
+Default is `TRUE`.}
+
+\item{var_filename}{Character string. Filename for the variable-wise missing
+data CSV. Default is `"var_missing_data.csv"`.}
+
+\item{sample_filename}{Character string. Filename for the sample-wise missing
+data CSV. Default is `"sample_missing_data.csv"`.}
 }
 \value{
 If the input is a 'Stat' object, returns the updated 'Stat' object with the missing data information stored
-in the \code{process.info} slot. If the input is a data frame, returns the missing data summary as a list.
+         in the `process.info` slot. If the input is a data frame, returns the missing data summary as a list.
 }
 \description{
 This function generates and saves missing data plots (variable-wise and sample-wise distributions) for

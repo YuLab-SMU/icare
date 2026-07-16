@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_07_explain.R
 \name{ExplainCeterisParibus}
 \alias{ExplainCeterisParibus}
-\title{Ceteris Paribus What‑If Curves}
+\title{Ceteris Paribus What-If Curves}
 \usage{
 ExplainCeterisParibus(
   explainer,
@@ -18,7 +18,7 @@ ExplainCeterisParibus(
 \arguments{
 \item{explainer}{A DALEX explainer.}
 
-\item{new_observation}{Single‑row data frame or row index.}
+\item{new_observation}{Single-row data frame or row index.}
 
 \item{variables}{Variables to plot (default: all continuous).}
 
@@ -28,7 +28,7 @@ ExplainCeterisParibus(
 
 \item{save_dir}{Output directory.}
 
-\item{plot_width, }{plot_height  Dimensions.}
+\item{plot_width, plot_height}{Dimensions.}
 }
 \value{
 Invisibly returns the predict_profile object.

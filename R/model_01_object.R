@@ -279,12 +279,11 @@ CreateModelObject <- function(
 #'   \item \code{feature_importance} - Feature importance scores (if available)
 #' }
 #' @export
-#' @seealso \code{\link{validate_binary_classification}} for validating the extracted dataset
-#' 
 #' @examples
 #' \dontrun{
-#' # Assuming 'trained_model' is a valid Train_Model object
-#' extracted <- ExtractModel(trained_model)
+#' data(train_obj_test)
+#' # Assuming 'train_obj_test' is a valid Train_Model object
+#' extracted <- ExtractModel(train_obj_test)
 #' print(extracted$best_model)
 #' }
 ExtractModel <- function(object) {

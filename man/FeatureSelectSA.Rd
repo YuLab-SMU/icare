@@ -34,7 +34,7 @@ FeatureSelectSA(
 
 \item{metric}{Internal fitness metric.}
 
-\item{improve}{SA restart after \code{improve} iters without improvement.}
+\item{improve}{SA restart after `improve` iters without improvement.}
 
 \item{allowParallel}{Logical.}
 

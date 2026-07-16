@@ -16,7 +16,7 @@ Sub_create_val_object(
 }
 \arguments{
 \item{clean.data}{Data frame of raw validation features
-(samples × variables).}
+(samples x variables).}
 
 \item{info.data}{Data frame of clinical/meta variables for the validation
 set (optional; same row order as \code{clean.data}).}
@@ -41,10 +41,10 @@ A fully populated validation \code{Subtyping} object.
 \description{
 Convenience wrapper that chains:
 \enumerate{
-\item \code{CreateSubtypingObject} — wraps raw validation data.
-\item \code{Sub_apply_norm_params} — applies training min-max parameters.
-\item \code{Sub_predict_subtypes}  — predicts subtypes for each requested
-method.
+  \item \code{CreateSubtypingObject} -- wraps raw validation data.
+  \item \code{Sub_apply_norm_params} -- applies training min-max parameters.
+  \item \code{Sub_predict_subtypes}  -- predicts subtypes for each requested
+    method.
 }
 }
 \examples{

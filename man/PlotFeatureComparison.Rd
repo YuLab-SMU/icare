@@ -29,7 +29,7 @@ PlotFeatureComparison(
 
 \item{save_dir}{Output dir.}
 
-\item{width, height}{Dimensions. Defaults 12 × 8.}
+\item{width, height}{Dimensions. Defaults 12 x 8.}
 
 \item{format}{Format. Default "pdf".}
 }
@@ -37,6 +37,6 @@ PlotFeatureComparison(
 A patchwork composite plot.
 }
 \description{
-Composite plot showing: (1) number of features selected,
+Composite plot showing: (1) number of features selected, 
 (2) performance metrics, (3) overlap statistics.
 }

@@ -20,21 +20,21 @@ CreateStatObject(
 
 \item{info.data}{A data.frame containing additional metadata related to the data. Defaults to an empty data frame.}
 
-\item{group_col}{A character string specifying the name of the column used for grouping. Default is \code{"group"}.}
+\item{group_col}{A character string specifying the name of the column used for grouping. Default is `"group"`.}
 
-\item{na.action}{Character string specifying how to handle NA values.
+\item{na.action}{Character string specifying how to handle NA values. 
 Options are "allow" (keep NA values, default), "omit" (remove rows with NA),
 or "error" (stop if NA values are found).}
 
 \item{...}{Additional arguments passed to methods (not used in this function).}
 }
 \value{
-An object of class \code{Stat}, which contains the processed data and metadata as slots.
+An object of class `Stat`, which contains the processed data and metadata as slots.
 }
 \description{
-This function creates a \code{Stat} object, which is used to store and manage various components
+This function creates a `Stat` object, which is used to store and manage various components
 of statistical analysis, such as raw data, cleaned data, additional metadata, and processing
-information. It performs basic checks and preparation on the input data before creating the object
+information. It performs basic checks and preparation on the input data before creating the object.
 }
 \examples{
 raw <- data.frame(id = 1:10, value = rnorm(10), group = rep(c("A","B"), each=5))

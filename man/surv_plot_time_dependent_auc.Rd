@@ -9,7 +9,8 @@ surv_plot_time_dependent_auc(learner, object)
 \arguments{
 \item{learner}{Trained mlr3 learner}
 
-\item{task}{TaskSurv object}
+\item{object}{A \code{TaskSurv} or \code{PrognosiX} object. The function
+extracts the task using \code{surv_extract_task()}.}
 }
 \value{
 ggplot object

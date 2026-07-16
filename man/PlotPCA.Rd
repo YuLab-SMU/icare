@@ -2,7 +2,7 @@
 % Please edit documentation in R/viz_functions.R
 \name{PlotPCA}
 \alias{PlotPCA}
-\title{PCA scatter plot coloured by metadata (zero‑variance safe, colour‑named, enhanced)}
+\title{PCA scatter plot coloured by metadata (zero-variance safe, colour-named, enhanced)}
 \usage{
 PlotPCA(
   object,
@@ -30,7 +30,7 @@ point colour. Defaults to \code{group_col}.}
 
 \item{pcs}{Integer vector length 2 selecting PCs. Default \code{c(1,2)}.}
 
-\item{ellipse}{Draw group ellipses (95 \\% CI). Default \code{TRUE}.}
+\item{ellipse}{Draw group ellipses (95 \% CI). Default \code{TRUE}.}
 
 \item{label_points}{Logical. Label sample names. Default \code{FALSE}.}
 
@@ -51,7 +51,7 @@ the default Stat figure directory is used.}
 A \code{ggplot} object.
 }
 \description{
-PCA scatter plot coloured by metadata (zero‑variance safe, colour‑named, enhanced)
+PCA scatter plot coloured by metadata (zero-variance safe, colour-named, enhanced)
 }
 \examples{
 \dontrun{

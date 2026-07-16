@@ -16,13 +16,10 @@ reference data (median for numeric, mode for factor/character)? Default is \code
 }
 \value{
 A numeric vector of risk scores (crank) for each observation in \code{newdata}.
-Higher values indicate higher predicted risk.
+  Higher values indicate higher predicted risk.
 }
 \description{
-This enhanced version of \code{predict_prognosix} avoids the common "different column info"
-error by aligning new data with the exact feature types stored in the training task.
-It also retains the original imputation functionality using the reference data
-(\code{prog_obj@clean.data}).
+Predict prognostic risk scores while automatically handling data type mismatches and missing values.
 }
 \details{
 The function first extracts the training task from the \code{PrognosiX} object to obtain

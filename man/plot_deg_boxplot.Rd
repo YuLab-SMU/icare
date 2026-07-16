@@ -68,7 +68,9 @@ the plot with significance stars. The plot can be saved to a specified directory
 stat_obj <- stat_var_feature(stat_obj_test)
 last_sig <- ExtractLastTestSig(stat_obj)
 print(last_sig)
-plot_deg_boxplot(last_test_sig = last_sig, data = stat_obj@clean.data,group='SWAB',save_dir = "./")
-plot_deg_boxplot(last_test_sig = last_sig,data = stat_obj@clean.data,group='SWAB',save_dir = "./",top_n = 3)
+plot_deg_boxplot(last_test_sig = last_sig, data = stat_obj@clean.data,
+group='SWAB',save_dir = "./")
+plot_deg_boxplot(last_test_sig = last_sig,data = stat_obj@clean.data,
+group='SWAB',save_dir = "./",top_n = 3)
 }
 }

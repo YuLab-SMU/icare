@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_08_clinical_analysis.R
 \name{PlotClinicalCorrelation}
 \alias{PlotClinicalCorrelation}
-\title{Prediction‑Clinical Correlation Matrix (corrplot Style)}
+\title{Prediction-Clinical Correlation Matrix (corrplot Style)}
 \usage{
 PlotClinicalCorrelation(
   model_obj,

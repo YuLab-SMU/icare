@@ -22,7 +22,7 @@ FeatureSelectionPipeline(
 \item{object}{A Train_Model or Stat S4 object.}
 
 \item{methods}{Character vector: "rfe","ga","sa","sbf" (default all four).
-Can also pass a named list of pre‑run selection results.}
+Can also pass a named list of pre-run selection results.}
 
 \item{combine}{How to combine across methods: "union", "intersect", or "none".}
 
@@ -44,15 +44,15 @@ Can also pass a named list of pre‑run selection results.}
 }
 \value{
 An invisible list with:
-\describe{
-\item{results}{Named list of selection results per method.}
-\item{selected_features}{Character vector of final features.}
-\item{feature_matrix}{Binary matrix used for Upset.}
-\item{upset_plot}{ggplot (if \code{upset_plot = TRUE}).}
-}
+  \describe{
+  \item{results}{Named list of selection results per method.}
+  \item{selected_features}{Character vector of final features.}
+  \item{feature_matrix}{Binary matrix used for Upset.}
+  \item{upset_plot}{ggplot (if \code{upset_plot = TRUE}).}
+  }
 }
 \description{
-Runs up to four caret‑based selection methods on the same \code{Train_Model}
+Runs up to four caret-based selection methods on the same `Train_Model`
 object, returns the union or intersection of selected features, and
 generates a comparative Upset plot.
 }

@@ -27,7 +27,7 @@ PlotBenchmarkForest(
 Invisibly returns the \code{ggplot} object.
 }
 \description{
-Creates a faceted pointrange plot showing mean AUC and 95\% confidence
+Creates a faceted pointrange plot showing mean AUC and 95% confidence
 intervals for each algorithm, grouped by imputation and normalization methods.
 }
 \examples{

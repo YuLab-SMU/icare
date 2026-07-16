@@ -6,7 +6,7 @@
 \title{Available Survival Learners}
 \format{
 A character vector of learner IDs, e.g., \code{"surv.coxph"},
-\code{"surv.ranger"}, etc. Returns an empty vector if \code{mlr3} is not installed.
+  \code{"surv.ranger"}, etc. Returns an empty vector if \code{mlr3} is not installed.
 }
 \usage{
 surv_keys

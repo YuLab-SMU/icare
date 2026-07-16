@@ -46,7 +46,7 @@ PlotTunedCalibration(
 A \code{ggplot} object.
 }
 \description{
-Comprehensive calibration analysis for the fine-tuned model.
-Includes binned observations, a LOESS smoother, and key statistics (Brier score,
+Comprehensive calibration analysis for the fine-tuned model. 
+Includes binned observations, a LOESS smoother, and key statistics (Brier score, 
 Slope, Intercept, and Eavg).
 }

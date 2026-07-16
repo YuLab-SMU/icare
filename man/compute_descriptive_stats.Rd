@@ -23,7 +23,7 @@ compute_descriptive_stats(
 \value{
 A list containing the following components:
 \describe{
-\item{Group_Counts}{The counts of each group if a \code{group_col} is provided.}
+\item{Group_Counts}{The counts of each group if a `group_col` is provided.}
 \item{Count_Results}{A list of counts for each categorical variable.}
 \item{Num_Results}{A list of descriptive statistics for numeric variables, including separate statistics for normal and non-normal distributions.}
 \item{Normality_Test}{A list of p-values and normality test results for numeric variables.}

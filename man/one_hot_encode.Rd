@@ -40,7 +40,7 @@ A new data frame with one-hot encoded variables.
 }
 \description{
 This function performs one-hot encoding on categorical variables with limited unique values,
-as determined by the \code{diagnose_variable_type} function. It skips encoding the \code{group_col}
+as determined by the `diagnose_variable_type` function. It skips encoding the `group_col`
 and moves it to the last column of the resulting data frame if provided.
 }
 \examples{

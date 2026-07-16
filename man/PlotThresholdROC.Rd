@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_08_clinical_analysis.R
 \name{PlotThresholdROC}
 \alias{PlotThresholdROC}
-\title{Compare Threshold‑Based Classifiers with Original Score (Final, Fixed)}
+\title{Compare Threshold-Based Classifiers with Original Score (Final, Fixed)}
 \usage{
 PlotThresholdROC(
   thresh_result,
@@ -13,9 +13,9 @@ PlotThresholdROC(
 )
 }
 \arguments{
-\item{thresh_result}{Output from \code{CalculateThresholds}.}
+\item{thresh_result}{Output from `CalculateThresholds`.}
 
-\item{compare_model}{A second \code{thresh_result} for another model (optional).}
+\item{compare_model}{A second `thresh_result` for another model (optional).}
 
 \item{compare_label}{Label for the comparison model.}
 
@@ -25,5 +25,5 @@ PlotThresholdROC(
 A ggplot object.
 }
 \description{
-Compare Threshold‑Based Classifiers with Original Score (Final, Fixed)
+Compare Threshold-Based Classifiers with Original Score (Final, Fixed)
 }

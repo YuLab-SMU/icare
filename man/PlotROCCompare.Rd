@@ -36,6 +36,6 @@ PlotROCCompare(
 A ggplot object.
 }
 \description{
-Plots two ROC curves with optional 95\% confidence ribbons, styled with
+Plots two ROC curves with optional 95% confidence ribbons, styled with
 wesanderson palette and ggprism theme.
 }

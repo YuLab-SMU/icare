@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_07_explain.R
 \name{ExplainVariableImportance}
 \alias{ExplainVariableImportance}
-\title{Variable Importance (Permutation) – Universal for Any Caret Model (Fixed)}
+\title{Variable Importance (Permutation) - Universal for Any Caret Model (Fixed)}
 \usage{
 ExplainVariableImportance(
   explainer,
@@ -29,7 +29,7 @@ ExplainVariableImportance(
 
 \item{top_n}{Number of most important features to display.}
 
-\item{filter_zero}{Remove features with near‑zero importance.}
+\item{filter_zero}{Remove features with near-zero importance.}
 
 \item{save_plots}{Save plot? Default FALSE.}
 
@@ -43,5 +43,5 @@ ExplainVariableImportance(
 Invisibly returns the DALEX model_parts object.
 }
 \description{
-Variable Importance (Permutation) – Universal for Any Caret Model (Fixed)
+Variable Importance (Permutation) - Universal for Any Caret Model (Fixed)
 }

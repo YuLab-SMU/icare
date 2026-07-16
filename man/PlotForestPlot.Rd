@@ -2,7 +2,7 @@
 % Please edit documentation in R/viz_functions.R
 \name{PlotForestPlot}
 \alias{PlotForestPlot}
-\title{Forest plot — univariate / multivariate Cox HR}
+\title{Forest plot -- univariate / multivariate Cox HR}
 \usage{
 PlotForestPlot(
   object,
@@ -46,6 +46,6 @@ Selects the result stored in \code{univariate.analysis}.}
 A \code{ggplot} object.
 }
 \description{
-Renders a publication-style forest plot with HR, 95 \\% CI, and p-value
+Renders a publication-style forest plot with HR, 95 \% CI, and p-value
 columns alongside the graphical HR display.
 }

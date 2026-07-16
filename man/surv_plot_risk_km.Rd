@@ -28,8 +28,8 @@ risk group cutoffs. Must be one of \code{"median"}, \code{"tertile"},
 \code{"quartile"}, \code{"p_optimize"}, or \code{"custom"}.}
 
 \item{custom_cutoffs}{A numeric vector of custom cutoffs (required when
-\code{cutoff_method = "custom"}). Length 1 → binary split, length 2 → three
-groups, length 3 → four groups, etc.}
+\code{cutoff_method = "custom"}). Length 1 -> binary split, length 2 -> three
+groups, length 3 -> four groups, etc.}
 
 \item{n_boot}{An integer specifying the number of bootstrap samples for
 \code{p_optimize} method. Default is \code{10}.}
@@ -53,7 +53,7 @@ Default is \code{TRUE}.}
 }
 \value{
 A \code{\link[survminer]{ggsurvplot}} object with the Kaplan-Meier plot.
-The cutoffs used and group distribution are stored as attributes.
+  The cutoffs used and group distribution are stored as attributes.
 }
 \description{
 Generates Kaplan-Meier survival curves stratified by risk groups defined by
@@ -63,12 +63,12 @@ determination methods including median, tertile, quartile, and p-value optimizat
 \details{
 The cutoff methods work as follows:
 \itemize{
-\item \code{"median"}: Splits at the median risk score (binary groups).
-\item \code{"tertile"}: Splits at the 1/3 and 2/3 quantiles (3 groups).
-\item \code{"quartile"}: Splits at the 1/4, 1/2, and 3/4 quantiles (4 groups).
-\item \code{"p_optimize"}: Finds the cutoff that maximizes log-rank test
-significance across bootstrap samples (binary groups).
-\item \code{"custom"}: Uses user-provided cutoffs for arbitrary group numbers.
+  \item \code{"median"}: Splits at the median risk score (binary groups).
+  \item \code{"tertile"}: Splits at the 1/3 and 2/3 quantiles (3 groups).
+  \item \code{"quartile"}: Splits at the 1/4, 1/2, and 3/4 quantiles (4 groups).
+  \item \code{"p_optimize"}: Finds the cutoff that maximizes log-rank test
+    significance across bootstrap samples (binary groups).
+  \item \code{"custom"}: Uses user-provided cutoffs for arbitrary group numbers.
 }
 }
 \examples{

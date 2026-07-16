@@ -36,8 +36,8 @@ VarFeature_boxplot(
 
 \item{data_type}{"clean" or "scale".}
 
-\item{save_dir}{Output directory. If NULL, auto‑creates one under
-\verb{./figures/deg_info/}.}
+\item{save_dir}{Output directory. If NULL, auto-creates one under
+`./figures/deg_info/`.}
 
 \item{save_plots}{Logical. Save the plot? Default TRUE.}
 

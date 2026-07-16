@@ -26,8 +26,8 @@ ExplainPartialDependence(
 
 \item{k}{Number of clusters (integer).}
 
-\item{type}{Type: \code{"partial"} (PDP, default), \code{"conditional"}, or
-\code{"accumulated"} (ALE).}
+\item{type}{Type: `"partial"` (PDP, default), `"conditional"`, or
+`"accumulated"` (ALE).}
 
 \item{N}{Number of samples for estimation (default 500).}
 
@@ -35,7 +35,7 @@ ExplainPartialDependence(
 
 \item{save_dir}{Output directory.}
 
-\item{plot_width, }{plot_height  Dimensions.}
+\item{plot_width, plot_height}{Dimensions.}
 }
 \value{
 Invisibly returns the model_profile object.

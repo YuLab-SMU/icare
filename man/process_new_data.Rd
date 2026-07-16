@@ -14,7 +14,7 @@ process_new_data(
 )
 }
 \arguments{
-\item{stat_object}{A trained \code{Stat} object containing processing information.}
+\item{stat_object}{A trained `Stat` object containing processing information.}
 
 \item{new_data}{A new data frame to be processed.}
 
@@ -31,7 +31,7 @@ A processed data frame.
 }
 \description{
 This function applies the preprocessing steps (missing value handling, outlier handling, normalization)
-from an existing trained \code{Stat} object to a new dataset.
+from an existing trained `Stat` object to a new dataset.
 }
 \examples{
 \dontrun{

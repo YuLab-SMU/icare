@@ -32,7 +32,7 @@ CompareModelThresholds(
 
 \item{save_dir}{Output directory.}
 
-\item{...}{Additional arguments passed to \code{CalculateThresholds} for the first model
+\item{...}{Additional arguments passed to `CalculateThresholds` for the first model
 (e.g., target_ppv, target_npv).}
 }
 \value{

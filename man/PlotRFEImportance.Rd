@@ -29,7 +29,7 @@ PlotRFEImportance(
 
 \item{save_dir}{Output dir.}
 
-\item{width, height}{Dimensions. Defaults 7 × 8.}
+\item{width, height}{Dimensions. Defaults 7 x 8.}
 
 \item{format}{Format. Default "pdf".}
 }

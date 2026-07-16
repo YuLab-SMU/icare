@@ -13,11 +13,11 @@ predict_risk_groups(
 )
 }
 \arguments{
-\item{prog_obj}{A \code{PrognosiX} object}
+\item{prog_obj}{A `PrognosiX` object}
 
 \item{newdata}{Data frame of new samples}
 
-\item{cutoff_method}{\code{"median"}, \code{"tertile"}, or \code{"custom"}}
+\item{cutoff_method}{`"median"`, `"tertile"`, or `"custom"`}
 
 \item{custom_cutoffs}{Numeric vector (length >=1). For length >2, labels become "Low Risk", "Medium Risk 1", ..., "High Risk"}
 

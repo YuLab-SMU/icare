@@ -16,28 +16,28 @@ diagnose_variable_type(
 \item{data}{A data frame.}
 
 \item{group_col}{A character string naming the grouping column to be excluded
-(default is \code{"group"}). Set to \code{NULL} to skip exclusion.}
+(default is `"group"`). Set to `NULL` to skip exclusion.}
 
 \item{max_unique_values}{Numeric, maximum number of unique values a column
 may have to be considered "low cardinality" when
-\code{treat_low_card_numeric_as_categorical = TRUE}. Default is 5.}
+`treat_low_card_numeric_as_categorical = TRUE`. Default is 5.}
 
 \item{encode_threshold}{Numeric, minimum number of unique values for a
 categorical variable to be flagged for encoding. Default is 10.}
 
 \item{treat_low_card_numeric_as_categorical}{Logical, whether to treat
-low‑cardinality numeric columns (e.g. 0/1, 1–5 ratings) as categorical
-variables. Default is \code{FALSE}.}
+low-cardinality numeric columns (e.g. 0/1, 1-5 ratings) as categorical
+variables. Default is `FALSE`.}
 }
 \value{
 A list with three components:
 \describe{
 \item{numeric_vars}{Character vector of variable names classified as numeric.}
 \item{categorical_vars}{Character vector of variable names classified as
-categorical (includes characters, factors, logicals, and optionally
-low‑cardinality numerics).}
+  categorical (includes characters, factors, logicals, and optionally
+  low-cardinality numerics).}
 \item{vars_to_encode}{Character vector of categorical variables that have
-more than \code{encode_threshold} unique values and may need encoding.}
+  more than `encode_threshold` unique values and may need encoding.}
 }
 }
 \description{
@@ -50,7 +50,7 @@ categorical upon explicit request.
 The function excludes a specified grouping column (if present) from analysis.
 Categorical variables (character, factor, logical) are always recognized as
 such. Numeric columns are kept as numeric by default, unless
-\code{treat_low_card_numeric_as_categorical = TRUE} is set, in which case numeric
+`treat_low_card_numeric_as_categorical = TRUE` is set, in which case numeric
 columns with few distinct values become categorical.
 }
 \examples{
@@ -59,7 +59,7 @@ columns with few distinct values become categorical.
 df <- data.frame(
   group = rep(1:2, each = 5),
   age = c(25, 30, 35, 40, 45, 50, 55, 60, 65, 70),
-  rating = c(1,2,1,2,3,2,1,3,2,1),   # low‑cardinality numeric
+  rating = c(1,2,1,2,3,2,1,3,2,1),   # low-cardinality numeric
   city = c("A","B","A","C","D","E","F","G","H","I"),
   stringsAsFactors = FALSE
 )
@@ -68,7 +68,7 @@ df <- data.frame(
 res <- diagnose_variable_type(df, group_col = "group")
 print(res)
 
-# Force low‑cardinality numerics to categorical
+# Force low-cardinality numerics to categorical
 res2 <- diagnose_variable_type(df, group_col = "group",
                                treat_low_card_numeric_as_categorical = TRUE)
 print(res2)

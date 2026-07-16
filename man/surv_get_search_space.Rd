@@ -15,8 +15,8 @@ defaults to 100 features.}
 }
 \value{
 A \code{\link[paradox]{ParamSet}} object defining the hyperparameter
-search space. If no predefined space exists for the learner, attempts to
-fetch from \code{mlr3tuningspaces}; if that fails, returns an empty \code{ParamSet}.
+  search space. If no predefined space exists for the learner, attempts to
+  fetch from \code{mlr3tuningspaces}; if that fails, returns an empty \code{ParamSet}.
 }
 \description{
 Returns a predefined hyperparameter search space for a given survival learner.
@@ -27,17 +27,18 @@ parameters like \code{mtry} based on the number of features in the task.
 The function maintains predefined search spaces for over 30 survival learners,
 organized into categories:
 \itemize{
-\item \strong{Random Forests \& Ensemble Trees}: \code{surv.ranger}, \code{surv.rfsrc}, \code{surv.aorsf}, etc.
-\item \strong{Gradient Boosting}: \code{surv.xgboost.cox}, \code{surv.gbm}, \code{surv.mboost}, etc.
-\item \strong{Regularized Regression}: \code{surv.glmnet}, \code{surv.cv_glmnet}, \code{surv.penalized}, etc.
-\item \strong{Decision Trees \& SVM}: \code{surv.rpart}, \code{surv.ctree}, \code{surv.svm}, etc.
-\item \strong{Splines \& Flexible Models}: \code{surv.flexreg}, \code{surv.flexspline}, etc.
-\item \strong{Neural Networks}: \code{surv.survdnn}
-\item \strong{Non-parametric}: \code{surv.kaplan}, \code{surv.nelson} (empty ParamSet)
+  \item \strong{Random Forests & Ensemble Trees}: \code{surv.ranger}, \code{surv.rfsrc}, \code{surv.aorsf}, etc.
+  \item \strong{Gradient Boosting}: \code{surv.xgboost.cox}, \code{surv.gbm}, \code{surv.mboost}, etc.
+  \item \strong{Regularized Regression}: \code{surv.glmnet}, \code{surv.cv_glmnet}, \code{surv.penalized}, etc.
+  \item \strong{Decision Trees & SVM}: \code{surv.rpart}, \code{surv.ctree}, \code{surv.svm}, etc.
+  \item \strong{Splines & Flexible Models}: \code{surv.flexreg}, \code{surv.flexspline}, etc.
+  \item \strong{Neural Networks}: \code{surv.survdnn}
+  \item \strong{Non-parametric}: \code{surv.kaplan}, \code{surv.nelson} (empty ParamSet)
 }
 }
 \examples{
 \dontrun{
+data(pro_obj_test)
 library(mlr3proba)
 
 # Get search space for random forest

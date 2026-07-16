@@ -24,16 +24,16 @@ PlotClusterHeatmap(
 )
 }
 \arguments{
-\item{object}{An S4 object, a list, or a matrix containing data. If an S4 object or a list,
+\item{object}{An S4 object, a list, or a matrix containing data. If an S4 object or a list, 
 it must contain slots or elements named \code{clean.data} (data matrix) and \code{info.data} (metadata frame).}
 
-\item{deg_df}{A data frame containing Differential Expression Analysis results. Must include
+\item{deg_df}{A data frame containing Differential Expression Analysis results. Must include 
 columns: \code{id}, \code{p.adjust}, \code{logFC}, and \code{target_group}.}
 
-\item{group_by}{Character. The column name in metadata used for primary patient clustering.
+\item{group_by}{Character. The column name in metadata used for primary patient clustering. 
 Default is \code{"cluster_lpa"}.}
 
-\item{annotation_cols}{Character vector. Optional column names from the metadata to display
+\item{annotation_cols}{Character vector. Optional column names from the metadata to display 
 as tracking tracks (e.g., \code{c("Age", "Gender", "Stage")}) above the heatmap.}
 
 \item{top_n}{Integer. Maximum number of top features to slice per cluster based on LogFC. Default is 3.}
@@ -48,7 +48,7 @@ as tracking tracks (e.g., \code{c("Age", "Gender", "Stage")}) above the heatmap.
 
 \item{state_palette}{Named character vector. Colors assigned to the primary cluster levels.}
 
-\item{annotation_palette}{A named list of color vectors or color mapping functions corresponding
+\item{annotation_palette}{A named list of color vectors or color mapping functions corresponding 
 to columns in \code{annotation_cols}.}
 
 \item{heatmap_palette}{Character vector of 3 colors representing the low, middle, and high values of the Z-score.}
@@ -65,8 +65,8 @@ to columns in \code{annotation_cols}.}
 Invisibly returns a structured \code{\link[ComplexHeatmap:Heatmap-class]{Heatmap}}object.
 }
 \description{
-Generates an enhanced cluster heatmap designed for clinical laboratory omics data.
-Features automated Z-score thresholding, custom log transformations, split-group ordering,
+Generates an enhanced cluster heatmap designed for clinical laboratory omics data. 
+Features automated Z-score thresholding, custom log transformations, split-group ordering, 
 and multi-layered top annotations for clinical metadata.
 }
 \examples{

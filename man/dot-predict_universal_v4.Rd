@@ -30,7 +30,7 @@
 A data frame containing probability estimates for each class.
 }
 \description{
-A standardized prediction interface that handles feature alignment,
+A standardized prediction interface that handles feature alignment, 
 preprocessing, and model dispatching for both single models and ensembles.
 }
 \examples{

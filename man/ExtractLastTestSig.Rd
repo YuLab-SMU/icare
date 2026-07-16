@@ -7,15 +7,15 @@
 ExtractLastTestSig(object)
 }
 \arguments{
-\item{object}{An object of class \code{Stat}. The function attempts to extract the \code{last_test_sig} from the \code{var.result} slot.}
+\item{object}{An object of class `Stat`. The function attempts to extract the `last_test_sig` from the `var.result` slot.}
 }
 \value{
-Returns the last significant test results stored in the \code{last_test_sig} slot of the \code{var.result} list.
-If the \code{last_test_sig} is not found, it returns \code{NULL}.
+Returns the last significant test results stored in the `last_test_sig` slot of the `var.result` list.
+If the `last_test_sig` is not found, it returns `NULL`.
 }
 \description{
-This function extracts the last significant test results stored in the \code{var.result} slot of a \code{Stat} object. If
-the \code{last_test_sig} result is not available, it returns \code{NULL}.
+This function extracts the last significant test results stored in the `var.result` slot of a `Stat` object. If
+the `last_test_sig` result is not available, it returns `NULL`.
 }
 \examples{
 \dontrun{

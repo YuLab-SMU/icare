@@ -4,7 +4,6 @@
 # These are helper functions used across modules
 # All start with dot (.) to indicate they are internal
 # ============================================================================
-
 #' @keywords internal
 .check_class <- function(object, allowed) {
   if (!inherits(object, allowed))
@@ -218,4 +217,311 @@ remove_constant_columns <- function(data,
   }
   
   return(result)
+}
+
+
+#' Example Stat Object for Testing
+#'
+#' A \code{Stat} S4 object created from the Bacteremia public dataset.
+#' Used for demonstration and testing of statistical analysis functions.
+#'
+#' @details
+#' This object was created from the first 1000 rows of the 
+#' \href{https://zenodo.org/records/7554815}{Bacteremia public dataset}.
+#' The \code{BloodCulture} column is used as the grouping variable.
+#'
+#' The object contains:
+#' \itemize{
+#'   \item \code{@raw.data}: Raw data with BloodCulture as grouping column
+#'   \item \code{@clean.data}: Processed numeric data
+#'   \item \code{@info.data}: Metadata including BloodCulture group
+#'   \item \code{@group_col}: "BloodCulture"
+#' }
+#'
+#' @format A \code{Stat} S4 object with slots:
+#' \describe{
+#'   \item{raw.data}{Original data frame}
+#'   \item{clean.data}{Cleaned numeric data matrix}
+#'   \item{info.data}{Metadata data frame}
+#'   \item{group_col}{Character, grouping column name ("BloodCulture")}
+#'   \item{...}{Additional slots for analysis results}
+#' }
+#'
+#' @source \url{https://zenodo.org/records/7554815}
+#' @keywords datasets
+"stat_obj_test"
+
+
+#' Example PrognosiX Object for Testing
+#'
+#' A \code{PrognosiX} S4 object converted from \code{stat_obj_test}.
+#' Used for demonstration and testing of survival/prognostic analysis functions.
+#'
+#' @details
+#' This object was created by converting \code{stat_obj_test} using
+#' \code{CreatePrognosiXObject()}, with \code{"time"} and \code{"status"}
+#' columns extracted from the clinical metadata.
+#'
+#' The object contains:
+#' \itemize{
+#'   \item \code{@survival.data}: Combined data with time and status
+#'   \item \code{@clean.data}: Numeric feature matrix
+#'   \item \code{@info.data}: Metadata with time and status columns
+#'   \item \code{@time_col}: "time"
+#'   \item \code{@status_col}: "status"
+#' }
+#'
+#' @format A \code{PrognosiX} S4 object with slots:
+#' \describe{
+#'   \item{clean.data}{Numeric feature matrix}
+#'   \item{info.data}{Metadata with time and status}
+#'   \item{survival.data}{Combined survival data}
+#'   \item{time_col}{Character, time column name}
+#'   \item{status_col}{Character, status column name}
+#'   \item{...}{Additional slots for survival analysis results}
+#' }
+#'
+#' @source Derived from \code{stat_obj_test}, which originates from
+#'   \url{https://zenodo.org/records/7554815}
+#' @keywords datasets
+"pro_obj_test"
+
+
+#' Example Subtyping Object for Testing
+#'
+#' A \code{Subtyping} S4 object converted from \code{stat_obj_test}.
+#' Used for demonstration and testing of clustering/subtyping functions.
+#'
+#' @details
+#' This object was created by converting \code{stat_obj_test} using
+#' \code{CreateSubtypingObject()} and contains clustering results
+#' from methods such as K-means, LPA, and NMF.
+#'
+#' The object contains:
+#' \itemize{
+#'   \item \code{@clean.data}: Numeric feature matrix
+#'   \item \code{@info.data}: Metadata including clustering labels
+#'   \item \code{@clustered.data}: Data with assigned cluster labels
+#'   \item \code{@visualization.results}: t-SNE and UMAP embeddings
+#' }
+#'
+#' @format A \code{Subtyping} S4 object with slots:
+#' \describe{
+#'   \item{clean.data}{Numeric feature matrix}
+#'   \item{info.data}{Metadata data frame}
+#'   \item{clustered.data}{Data frame with cluster assignments}
+#'   \item{visualization.results}{List of dimensionality reduction results}
+#'   \item{...}{Additional slots for clustering results}
+#' }
+#'
+#' @source Derived from \code{stat_obj_test}, which originates from
+#'   \url{https://zenodo.org/records/7554815}
+#' @keywords datasets
+"subtype_obj_test"
+
+
+#' Example Train_Model Object for Testing
+#'
+#' A \code{Train_Model} S4 object converted from \code{stat_obj_test}.
+#' Used for demonstration and testing of machine learning model training
+#' and evaluation functions.
+#'
+#' @details
+#' This object was created by converting \code{stat_obj_test} using
+#' \code{CreateModelObject()} or \code{ModelTrainAnalysis()}, and contains
+#' trained models for binary classification.
+#'
+#' The object contains:
+#' \itemize{
+#'   \item \code{@train.models}: List of trained models (glm, rf, gbm, etc.)
+#'   \item \code{@split.data}: Train/test split data
+#'   \item \code{@group_col}: "BloodCulture"
+#'   \item \code{@split.scale.data}: Scaled train/test data
+#' }
+#'
+#' @format A \code{Train_Model} S4 object with slots:
+#' \describe{
+#'   \item{train.models}{List of trained caret models}
+#'   \item{split.data}{List of train/test data splits}
+#'   \item{split.scale.data}{Scaled train/test data splits}
+#'   \item{group_col}{Character, grouping column name}
+#'   \item{...}{Additional slots for model evaluation results}
+#' }
+#'
+#' @source Derived from \code{stat_obj_test}, which originates from
+#'   \url{https://zenodo.org/records/7554815}
+#' @keywords datasets
+"train_obj_test"
+
+
+#' Global variables used in non-standard evaluation
+#' @keywords internal
+#' @noRd
+utils::globalVariables(c(
+  ".",
+  "::<-",
+  "AUC",
+  "AUC_mean",
+  "AUC_se",
+  "Actual",
+  "Algorithm",
+  "Best_Score",
+  "C_Index",
+  "CI_lower",
+  "CI_upper",
+  "Category",
+  "Class",
+  "Cluster",
+  "Component",
+  "Confidence",
+  "Count",
+  "Dataset",
+  "Dim1",
+  "Dim2",
+  "Dimension 1",
+  "Dimension 2",
+  "Estimate",
+  "FPR",
+  "Facet_Median",
+  "Feature",
+  "Feature_Removed",
+  "Fill",
+  "Freq",
+  "Frequency",
+  "G",
+  "Generation",
+  "Group",
+  "HR",
+  "HR_95CI",
+  "HR_label",
+  "ID",
+  "Importance",
+  "Imputation",
+  "Index",
+  "Iteration",
+  "Label",
+  "Lower",
+  "Mean",
+  "Mean_AUC",
+  "Method",
+  "Method1",
+  "Method2",
+  "Metric",
+  "Missing_Percentage",
+  "Model",
+  "NetBenefit",
+  "New",
+  "Normalization",
+  "NumFeatures",
+  "OUT_DIR",
+  "Overall",
+  "Overlap",
+  "PC1",
+  "PC2",
+  "P_Value",
+  "P_label",
+  "P_value",
+  "Parameter",
+  "Pct",
+  "Performance",
+  "Performance_Drop",
+  "Predicted",
+  "Predicted_Subtype",
+  "Probability",
+  "Proportion",
+  "Ref",
+  "Risk",
+  "SD",
+  "SE",
+  "Sample",
+  "Score",
+  "Selected",
+  "Selected_Factor",
+  "Selected_Status",
+  "Sensitivity",
+  "Sig",
+  "Specificity",
+  "Status",
+  "Strategy",
+  "Subgroup",
+  "TPR",
+  "Threshold",
+  "Time",
+  "TimePoint",
+  "Upper",
+  "Value",
+  "Variable",
+  "Variables",
+  "bin",
+  "change",
+  "cluster_name",
+  "contribution",
+  "correct",
+  "dif",
+  "dropout_loss",
+  "feat_scaled",
+  "feature",
+  "feature_value",
+  "feature_value_num",
+  "fill_col",
+  "fill_group",
+  "fpr",
+  "group",
+  "groups",
+  "id",
+  "logFC",
+  "log_val",
+  "lower",
+  "mean_abs",
+  "mean_pred",
+  "mean_shap",
+  "med",
+  "mlr_learners",
+  "n_features",
+  "neg_log10p",
+  "new_sens",
+  "new_spec",
+  "nri_type",
+  "nri_value",
+  "obs_rate",
+  "observation",
+  "observed",
+  "outcome",
+  "perc",
+  "predicted",
+  "prob",
+  "rainbow",
+  "ref_sens",
+  "ref_spec",
+  "sample_id",
+  "se_loss",
+  "shap",
+  "shap_value",
+  "significance",
+  "sil_width",
+  "stratum",
+  "tAUC",
+  "target_group",
+  "threshold",
+  "times",
+  "tpr",
+  "truth",
+  "upper",
+  "value",
+  "variable",
+  "x",
+  "y",
+  "y_position",
+  "yhat"
+))
+
+#' Match factor levels of two data frames
+#' @keywords internal
+match_factor_levels <- function(data, ref) {
+  for (col in intersect(colnames(data), colnames(ref))) {
+    if (is.factor(ref[[col]])) {
+      data[[col]] <- factor(data[[col]], levels = levels(ref[[col]]))
+    }
+  }
+  data
 }

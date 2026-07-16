@@ -59,21 +59,19 @@ plot_best_model_roc(
 \value{
 A list of data frames containing ROC curve coordinates and AUC information for each dataset:
 \itemize{
-\item training - Data frame with training set ROC coordinates
-\item testing - Data frame with testing set ROC coordinates
-\item validation - Data frame with validation set ROC coordinates (if provided)
-\item external_validation - Data frame with external validation ROC coordinates (if provided)
+  \item training - Data frame with training set ROC coordinates
+  \item testing - Data frame with testing set ROC coordinates
+  \item validation - Data frame with validation set ROC coordinates (if provided)
+  \item external_validation - Data frame with external validation ROC coordinates (if provided)
 }
 }
 \description{
 Generates and optionally saves ROC curves comparing model performance across:
-\itemize{
-\item Training set
-\item Testing set
-\item Validation set (optional)
-\item External validation set (optional)
+- Training set
+- Testing set
+- Validation set (optional)
+- External validation set (optional)
 Includes AUC values with confidence intervals in legend labels.
-}
 }
 \examples{
 \dontrun{

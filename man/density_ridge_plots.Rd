@@ -24,22 +24,22 @@ density_ridge_plots(
 \item{vars_per_plot}{Integer. The number of variables (columns) to include
 in each individual plot. Default is 1.}
 
-\item{save_dir}{String. The directory to save the plots in. Default is \code{NULL}.
-When \code{save_plots = TRUE} and this is \code{NULL}, a default figure directory is used.}
+\item{save_dir}{String. The directory to save the plots in. Default is `NULL`.
+When `save_plots = TRUE` and this is `NULL`, a default figure directory is used.}
 
-\item{palette_name}{String. The name of the color palette to use. Default \code{"Zissou1"}.}
+\item{palette_name}{String. The name of the color palette to use. Default `"Zissou1"`.}
 
 \item{group_col}{String. The name of the column in the data used to group
-the samples. Default is \code{"group"}.}
+the samples. Default is `"group"`.}
 
 \item{max_unique_values}{Integer. The maximum number of unique values
 allowed for categorical variables. Defaults to 5.}
 
 \item{sub_var}{Character vector. A subset of variable names (columns)
-to include in the plot. If \code{NULL}, all numeric variables will be included.}
+to include in the plot. If `NULL`, all numeric variables will be included.}
 
-\item{save_plots}{Logical. If \code{TRUE}, the plots will be saved as PDF
-files in the specified \code{save_dir}. Default is \code{TRUE}.}
+\item{save_plots}{Logical. If `TRUE`, the plots will be saved as PDF
+files in the specified `save_dir`. Default is `TRUE`.}
 
 \item{plot_width}{Numeric. The width of each saved plot (in inches). Default 5.}
 
@@ -49,7 +49,7 @@ files in the specified \code{save_dir}. Default is \code{TRUE}.}
 }
 \value{
 A list of ggplot objects containing the generated density ridge plots.
-If \code{save_plots} is \code{TRUE}, the plots are also saved as PDF files.
+  If `save_plots` is `TRUE`, the plots are also saved as PDF files.
 }
 \description{
 This function generates density ridge plots for numeric variables in the dataset,

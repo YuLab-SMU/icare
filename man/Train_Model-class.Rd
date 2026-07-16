@@ -12,28 +12,28 @@ modeling pipeline, including feature selection, model training.
 \section{Slots}{
 
 \describe{
-\item{\code{data.df}}{A \code{data.frame} containing the original input data.}
+\item{\code{data.df}}{A `data.frame` containing the original input data.}
 
-\item{\code{clean.df}}{A \code{data.frame} containing cleaned and preprocessed data.}
+\item{\code{clean.df}}{A `data.frame` containing cleaned and preprocessed data.}
 
 \item{\code{group_col}}{A column name or identifier indicating group labels.}
 
-\item{\code{process.info}}{A \code{list} storing information about class balancing.}
+\item{\code{process.info}}{A `list` storing information about class balancing.}
 
-\item{\code{split.data}}{A \code{list} of training/testing data splits.}
+\item{\code{split.data}}{A `list` of training/testing data splits.}
 
-\item{\code{split.scale.data}}{A \code{list} of scaled training/testing data.}
+\item{\code{split.scale.data}}{A `list` of scaled training/testing data.}
 
-\item{\code{feature.selection}}{A \code{list} of selected features for modeling.}
+\item{\code{feature.selection}}{A `list` of selected features for modeling.}
 
-\item{\code{feature.result}}{A \code{list} containing feature evaluation results.}
+\item{\code{feature.result}}{A `list` containing feature evaluation results.}
 
-\item{\code{filtered.set}}{A \code{list} of data or variables filtered by some criteria.}
+\item{\code{filtered.set}}{A `list` of data or variables filtered by some criteria.}
 
-\item{\code{train.models}}{A \code{list} of trained models.}
+\item{\code{train.models}}{A `list` of trained models.}
 
-\item{\code{all.results}}{A \code{list} storing evaluation results from all models.}
+\item{\code{all.results}}{A `list` storing evaluation results from all models.}
 
-\item{\code{best.model.result}}{A \code{list} containing the best model and its performance.}
+\item{\code{best.model.result}}{A `list` containing the best model and its performance.}
 }}
 

@@ -1,19 +1,19 @@
 ## ============================================================
 ##  object_utils.R
 ##  Utility functions for Stat / Train_Model / Subtyping / PrognosiX
-##  ── ConvertObject   (any-to-any conversion)
-##  ── SubsetObject    (samples + features)
-##  ── FilterByMeta    (filter by metadata value / range)
-##  ── FilterByFeature (filter by expression threshold)
-##  ── SplitByMeta     (split into list by metadata column)
-##  ── DownsampleObject
-##  ── SelectFeatures / RemoveFeatures / RenameFeatures
-##  ── AddMetadata
-##  ── MergeObjects    (same-class merge)
-##  ── InspectObject   (summary printer)
+##  -- ConvertObject   (any-to-any conversion)
+##  -- SubsetObject    (samples + features)
+##  -- FilterByMeta    (filter by metadata value / range)
+##  -- FilterByFeature (filter by expression threshold)
+##  -- SplitByMeta     (split into list by metadata column)
+##  -- DownsampleObject
+##  -- SelectFeatures / RemoveFeatures / RenameFeatures
+##  -- AddMetadata
+##  -- MergeObjects    (same-class merge)
+##  -- InspectObject   (summary printer)
 ## ============================================================
 
-## ── internal helpers ─────────────────────────────────────────────────────────
+## -- internal helpers ---------------------------------------------------------
 
 .check_class <- function(object, allowed) {
   if (!inherits(object, allowed))
@@ -61,7 +61,7 @@
   tryCatch(slot(object, "info.data"), error = function(e) data.frame())
 }
 
-## ── 1. ConvertObject ─────────────────────────────────────────────────────────
+## -- 1. ConvertObject ---------------------------------------------------------
 #' Convert any package object to another class
 #'
 #' A single entry-point for all cross-class conversions.
@@ -112,7 +112,7 @@ ConvertObject <- function(object,
     return(object)
   }
   
-  # ── helper: build a minimal Stat from any object ─────────────────────
+  # -- helper: build a minimal Stat from any object ---------------------
   # Track conversion chain to prevent infinite recursion
   .to_stat <- function(obj, grp = group_col, visited = NULL) {
     # Initialize visited set if not provided
@@ -136,12 +136,12 @@ ConvertObject <- function(object,
                      group_col  = if (!is.null(grp)) grp else "group")
   }
   
-  # ── dispatch table ────────────────────────────────────────────────────
+  # -- dispatch table ----------------------------------------------------
   result <- switch(
     
     paste(from, to, sep = "_to_"),
     
-    ## ── Stat → * ─────────────────────────────────────────────────────
+    ## -- Stat -> * -----------------------------------------------------
     Stat_to_Train_Model = {
       grp <- if (!is.null(group_col)) group_col else object@group_col
       CreateModelObject(object = object, group_col = grp)
@@ -151,7 +151,7 @@ ConvertObject <- function(object,
       # Determine the group column name from the Stat object
       grp_col <- if (!is.null(group_col)) group_col else object@group_col
       
-      # ── Extract group labels BEFORE CreateSubtypingObject ───────────
+      # -- Extract group labels BEFORE CreateSubtypingObject -----------
       # CreateSubtypingObject calls ensure_numeric_data() internally, which
       # converts character/factor group labels (e.g. "A", "B") into integer
       # codes (0, 1, 2 ...).  We must capture the original labels here, from
@@ -172,7 +172,7 @@ ConvertObject <- function(object,
         colnames(sub_obj@scale.data) <- orig_colnames
       }
       
-      # ── Move group_col from clean.data → info.data ──────────────────
+      # -- Move group_col from clean.data -> info.data ------------------
       # If the group column is present in clean.data, migrate it to info.data
       # and strip it from the numeric feature matrices (clean.data, scale.data).
       if (!is.null(grp_values) && grp_col %in% colnames(sub_obj@clean.data)) {
@@ -209,7 +209,7 @@ ConvertObject <- function(object,
                             status_col = status_col)
     },
     
-    ## ── Subtyping → * ────────────────────────────────────────────────
+    ## -- Subtyping -> * ------------------------------------------------
     Subtyping_to_Stat = {
       .to_stat(object, group_col)
     },
@@ -226,7 +226,7 @@ ConvertObject <- function(object,
       CreateModelObject(object = stat_tmp, group_col = grp)
     },
     
-    ## ── PrognosiX → * ────────────────────────────────────────────────
+    ## -- PrognosiX -> * ------------------------------------------------
     PrognosiX_to_Stat = {
       .to_stat(object, group_col)
     },
@@ -241,7 +241,7 @@ ConvertObject <- function(object,
       CreateModelObject(object = stat_tmp, group_col = grp)
     },
     
-    ## ── Train_Model → * ──────────────────────────────────────────────
+    ## -- Train_Model -> * ----------------------------------------------
     Train_Model_to_Stat = {
       grp <- if (!is.null(group_col)) group_col else object@group_col
       CreateStatObject(clean.data = object@clean.df, group_col = grp)
@@ -261,15 +261,15 @@ ConvertObject <- function(object,
                             status_col = status_col)
     },
     
-    ## ── unsupported ───────────────────────────────────────────────────
+    ## -- unsupported ---------------------------------------------------
     stop("Conversion from '", from, "' to '", to, "' is not supported.")
   )
   
-  cat(from, "→", to, "conversion complete.\n")
+  cat(from, "->", to, "conversion complete.\n")
   return(result)
 }
 
-## ── 2. SubsetObject ──────────────────────────────────────────────────────────
+## -- 2. SubsetObject ----------------------------------------------------------
 
 #' Subset a package object by sample and / or feature names
 #'
@@ -298,7 +298,7 @@ SubsetObject <- function(object, samples = NULL, features = NULL) {
     object@scale.data <- .subset_df(object@scale.data, samples, features)
     if (length(object@meta.featurename) > 0 && !is.null(features))
       object@meta.featurename <- intersect(object@meta.featurename, features)
-    cat("Stat subsetted:", nrow(object@clean.data), "×",
+    cat("Stat subsetted:", nrow(object@clean.data), "x",
         ncol(object@clean.data), "\n")
   }
   
@@ -307,7 +307,7 @@ SubsetObject <- function(object, samples = NULL, features = NULL) {
     object@scale.data     <- .subset_df(object@scale.data,     samples, features)
     object@info.data      <- .subset_df(object@info.data,      samples, NULL)
     object@clustered.data <- .subset_df(object@clustered.data, samples, features)
-    cat("Subtyping subsetted:", nrow(object@clean.data), "×",
+    cat("Subtyping subsetted:", nrow(object@clean.data), "x",
         ncol(object@clean.data), "\n")
   }
   
@@ -316,7 +316,7 @@ SubsetObject <- function(object, samples = NULL, features = NULL) {
     object@info.data     <- .subset_df(object@info.data,     samples, NULL)
     object@survival.data <- .subset_df(object@survival.data, samples, NULL)
     object@sub.data      <- .subset_df(object@sub.data,      samples, NULL)
-    cat("PrognosiX subsetted:", nrow(object@clean.data), "×",
+    cat("PrognosiX subsetted:", nrow(object@clean.data), "x",
         ncol(object@clean.data), "\n")
   }
   
@@ -329,7 +329,7 @@ SubsetObject <- function(object, samples = NULL, features = NULL) {
     object@train.models      <- list()
     object@all.results       <- list()
     object@best.model.result <- list()
-    cat("Train_Model subsetted:", nrow(object@clean.df), "×",
+    cat("Train_Model subsetted:", nrow(object@clean.df), "x",
         ncol(object@clean.df), "\n")
     message("Note: split / model slots reset after subsetting.")
   }
@@ -338,7 +338,7 @@ SubsetObject <- function(object, samples = NULL, features = NULL) {
 }
 
 
-## ── 3. FilterByMeta ──────────────────────────────────────────────────────────
+## -- 3. FilterByMeta ----------------------------------------------------------
 
 #' Filter object samples by a metadata column
 #'
@@ -399,7 +399,7 @@ FilterByMeta <- function(object, col, values = NULL, range = NULL,
 }
 
 
-## ── 4. FilterByFeature ───────────────────────────────────────────────────────
+## -- 4. FilterByFeature -------------------------------------------------------
 
 #' Filter samples by a feature value threshold
 #'
@@ -409,8 +409,8 @@ FilterByMeta <- function(object, col, values = NULL, range = NULL,
 #' @param object    Any of the four object classes.
 #' @param feature   Feature (column) name in \code{clean.data}.
 #' @param threshold Numeric cut-off value.
-#' @param direction \code{"above"} (default) keeps samples ≥ threshold;
-#'   \code{"below"} keeps samples ≤ threshold; \code{"equal"} keeps exact
+#' @param direction \code{"above"} (default) keeps samples >= threshold;
+#'   \code{"below"} keeps samples <= threshold; \code{"equal"} keeps exact
 #'   matches.
 #' @param invert    Logical. Inverts the selection when \code{TRUE}.
 #' @returns An object of the same class.
@@ -445,7 +445,7 @@ FilterByFeature <- function(object, feature, threshold,
 }
 
 
-## ── 5. SplitByMeta ───────────────────────────────────────────────────────────
+## -- 5. SplitByMeta -----------------------------------------------------------
 
 #' Split an object into a list by a metadata column
 #'
@@ -482,7 +482,7 @@ SplitByMeta <- function(object, col) {
 }
 
 
-## ── 6. DownsampleObject ──────────────────────────────────────────────────────
+## -- 6. DownsampleObject ------------------------------------------------------
 
 #' Downsample an object to a fixed number of samples
 #'
@@ -541,7 +541,7 @@ DownsampleObject <- function(object, n, per_group = FALSE,
 }
 
 
-## ── 7. SelectFeatures / RemoveFeatures / RenameFeatures ──────────────────────
+## -- 7. SelectFeatures / RemoveFeatures / RenameFeatures ----------------------
 
 #' Keep a set of features in an object
 #'
@@ -662,7 +662,7 @@ RenameFeatures <- function(object, old, new) {
 }
 
 
-## ── 8. AddMetadata ───────────────────────────────────────────────────────────
+## -- 8. AddMetadata -----------------------------------------------------------
 
 #' Add or overwrite a column in info.data
 #'
@@ -677,7 +677,8 @@ RenameFeatures <- function(object, old, new) {
 #' @export
 #' @examples
 #' \dontrun{
-#'stat_obj <- AddMetadata(stat_obj_test, col = "new_meta", values = sample(1:2, nrow(stat_obj_test@clean.data), replace=TRUE))
+#'stat_obj <- AddMetadata(stat_obj_test, col = "new_meta", values = 
+#'sample(1:2, nrow(stat_obj_test@clean.data), replace=TRUE))
 #'}
 AddMetadata <- function(object, col, values) {
   .check_class(object, c("Stat", "Train_Model", "Subtyping", "PrognosiX"))
@@ -701,7 +702,7 @@ AddMetadata <- function(object, col, values) {
 }
 
 
-## ── 9. MergeObjects ──────────────────────────────────────────────────────────
+## -- 9. MergeObjects ----------------------------------------------------------
 
 #' Merge two or more objects of the same class
 #'
@@ -783,13 +784,13 @@ MergeObjects <- function(x, y = NULL) {
                    }
   )
   
-  cat("MergeObjects:", length(obj_list), from, "objects merged →",
+  cat("MergeObjects:", length(obj_list), from, "objects merged ->",
       nrow(.object_clean_data(result)), "samples total.\n")
   return(result)
 }
 
 
-## ── 10. InspectObject ────────────────────────────────────────────────────────
+## -- 10. InspectObject --------------------------------------------------------
 
 #' Print a structured summary of any package object
 #'
@@ -808,16 +809,16 @@ InspectObject <- function(object) {
   
   .dim_str <- function(df) {
     if (is.null(df) || nrow(df) == 0) return("empty")
-    paste0(nrow(df), " × ", ncol(df))
+    paste0(nrow(df), " x ", ncol(df))
   }
   .list_str <- function(lst) {
     if (length(lst) == 0) return("(empty)")
     paste0("(", length(lst), " element(s): ", paste(names(lst), collapse = ", "), ")")
   }
   
-  cat("══════════════════════════════════════════\n")
+  cat("==========================================\n")
   cat("  Object class :", class(object)[1], "\n")
-  cat("══════════════════════════════════════════\n")
+  cat("==========================================\n")
   
   if (inherits(object, "Stat")) {
     cat("  raw.data           :", .dim_str(object@raw.data), "\n")
@@ -874,6 +875,6 @@ InspectObject <- function(object) {
     cat("  subgroup.risk      :", .list_str(object@subgroup.risk), "\n")
   }
   
-  cat("══════════════════════════════════════════\n")
+  cat("==========================================\n")
   invisible(object)
 }

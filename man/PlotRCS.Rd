@@ -53,5 +53,5 @@ A \code{ggplot} object.
 }
 \description{
 Fits an RCS model (linear, logistic, or Cox) and plots the non-linear
-association with 95 \\% CI ribbon.
+association with 95 \% CI ribbon.
 }

@@ -13,11 +13,11 @@ Prog_deploy_dispatcher(
 )
 }
 \arguments{
-\item{prog_train_obj}{A \code{PrognosiX} object}
+\item{prog_train_obj}{A `PrognosiX` object}
 
 \item{newdata}{Data frame of new samples}
 
-\item{cutoff_method}{One of \code{"median"}, \code{"tertile"}, \code{"custom"}}
+\item{cutoff_method}{One of `"median"`, `"tertile"`, `"custom"`}
 
 \item{custom_cutoffs}{Numeric vector for custom thresholds}
 

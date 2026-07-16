@@ -6,7 +6,9 @@
 \alias{PrognosiX}
 \title{PrognosiX Class}
 \description{
-PrognosiX Class
+An S4 class to store survival data, clinical metadata, and various results from the
+prognostic analysis pipeline, including univariate analysis, feature selection,
+survival modeling, and subgroup risk assessment.
 }
 \section{Slots}{
 

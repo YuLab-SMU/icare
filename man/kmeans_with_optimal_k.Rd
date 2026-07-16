@@ -42,10 +42,10 @@ kmeans_with_optimal_k(
 Determines the optimal number of clusters using the silhouette index
 (via \code{NbClust}) and produces four publication-ready plots:
 \enumerate{
-\item Silhouette-width curve (elbow-style)
-\item Cluster scatter (PCA projection, \code{factoextra::fviz_cluster})
-\item Silhouette bar chart per sample
-\item WSS elbow curve
+  \item Silhouette-width curve (elbow-style)
+  \item Cluster scatter (PCA projection, \code{factoextra::fviz_cluster})
+  \item Silhouette bar chart per sample
+  \item WSS elbow curve
 }
 }
 \examples{

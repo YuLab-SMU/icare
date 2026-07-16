@@ -1,9 +1,9 @@
 # =============================================================================
 # clinical_analysis.R
 # Comprehensive Clinical Analysis Module
-# Subgroups · Confounders · Thresholds · Decision Curves
+# Subgroups - Confounders - Thresholds - Decision Curves
 # =============================================================================
-# Supports: Train_Model, caret train, ensemble, fine‑tuned models
+# Supports: Train_Model, caret train, ensemble, fine-tuned models
 
 # 0. Package check -----------------------------------------------------------
 #' @keywords internal
@@ -19,7 +19,7 @@
   invisible(TRUE)
 }
 
-# ── Internal prediction helper ─────────────────────────────────────────────
+# -- Internal prediction helper ---------------------------------------------
 #' @keywords internal
 .predict_probs <- function(model_obj, newdata, model_name = NULL,
                            positive_class = NULL) {
@@ -76,7 +76,7 @@
     stop("model_obj must be a Train_Model or caret train object.")
   }
 }
-# ── 1. Attach clinical data to model object ────────────────────────────────
+# -- 1. Attach clinical data to model object --------------------------------
 #' Attach Clinical Data to Train_Model Object
 #'
 #' Stores the entire clinical data frame inside \code{@process.info$clinical_data}.
@@ -97,8 +97,8 @@ AttachClinicalData <- function(object, clinical_data) {
   return(object)
 }
 
-# ── 2. Correlation matrix plot ─────────────────────────────────────────────
-#' Prediction‑Clinical Correlation Matrix (corrplot Style)
+# -- 2. Correlation matrix plot ---------------------------------------------
+#' Prediction-Clinical Correlation Matrix (corrplot Style)
 #'
 #' Converts categorical variables to numeric, combines them with model
 #' predictions, and draws a Spearman correlation matrix using \code{corrplot}.
@@ -176,10 +176,10 @@ PlotClinicalCorrelation <- function(model_obj,
   invisible(M)
 }
 
-# ── 3. Subgroup forest plot ────────────────────────────────────────────────
+# -- 3. Subgroup forest plot ------------------------------------------------
 #' Subgroup Performance Forest Plot
 #'
-#' Computes AUC with 95% CI within each subgroup defined by a categorical
+#' Computes AUC with 95\% CI within each subgroup defined by a categorical
 #' clinical variable.
 #'
 #' @param model_obj,clinical_data,subgroup_var,newdata,model_name As above.
@@ -238,7 +238,7 @@ PlotSubgroupForest <- function(model_obj,
   return(p)
 }
 
-# ── 4. Confounder adjustment forest plot ───────────────────────────────────
+# -- 4. Confounder adjustment forest plot -----------------------------------
 #' Multivariable Logistic Adjustment Bar Plot (Significance Fill)
 #'
 #' Fits \code{outcome ~ prediction + clinical_vars} using the binary outcome
@@ -312,12 +312,12 @@ PlotConfounderForest <- function(model_obj,
   return(p)
 }
 
-# ── 5. Threshold analysis ─────────────────────────────────────────────────
-#' Calculate Multi‑Threshold Metrics with Custom Targets
+# -- 5. Threshold analysis -------------------------------------------------
+#' Calculate Multi-Threshold Metrics with Custom Targets
 #'
 #' Computes a full table of Accuracy, PPV, NPV across all unique thresholds,
 #' then finds:
-#'   - Youden index (Se + Sp − 1)
+#'   - Youden index (Se + Sp - 1)
 #'   - Thresholds that reach a target Sensitivity, Specificity, PPV, or NPV
 #'   - Threshold that maximises Accuracy (if requested)
 #'
@@ -411,22 +411,81 @@ CalculateThresholds <- function(model_obj,
        positive      = positive,
        negative      = negative)
 }
-#' Calculate Multi‑Threshold Metrics from External Probabilities
+#' Calculate Multi-Threshold Metrics from External Probabilities
 #'
-#' This function works exactly like \code{CalculateThresholds}, but accepts
-#' directly a vector of predicted probabilities and the corresponding true
-#' labels, without needing a model object.  It is useful when the prediction
-#' scores come from an external source (e.g., literature, another software).
+#' Accepts predicted probabilities and true labels directly, without requiring a
+#' model object. This is useful when predictions come from an external source,
+#' such as literature or other software. The function computes classification
+#' metrics at each unique threshold, including Sensitivity, Specificity,
+#' Accuracy, PPV, NPV, and F1, and returns selected thresholds based on
+#' user-defined targets.
 #'
-#' @param probs        Numeric vector of predicted probabilities (range 0‑1).
-#' @param true         Factor vector of true binary labels.
-#' @param positive     Character string specifying the positive class
-#'   (e.g., \code{"yes"}).  Must be one of the levels of \code{true}.
-#' @param target_se, target_sp, target_ppv, target_npv, target_acc
-#'   Same as in \code{CalculateThresholds}.
-#' @return A list with the same structure as \code{CalculateThresholds},
-#'   suitable for all downstream plotting and analysis functions.
+#' @param probs Numeric vector of predicted probabilities (range 0–1).
+#' @param true Factor vector of true binary labels.
+#' @param positive Character string specifying the positive class
+#'   (e.g., \code{"yes"}). Must be one of the levels of \code{true}.
+#' @param target_se Numeric. Target Sensitivity threshold. If specified, the
+#'   function returns the threshold that achieves at least this Sensitivity
+#'   (closest lower threshold). Default \code{NULL}.
+#' @param target_sp Numeric. Target Specificity threshold. If specified, returns
+#'   the threshold that achieves at least this Specificity. Default \code{NULL}.
+#' @param target_ppv Numeric. Target Positive Predictive Value threshold.
+#'   If specified, returns the threshold that achieves at least this PPV.
+#'   Default \code{NULL}.
+#' @param target_npv Numeric. Target Negative Predictive Value threshold.
+#'   If specified, returns the threshold that achieves at least this NPV.
+#'   Default \code{NULL}.
+#' @param target_acc Logical. If \code{TRUE}, returns the threshold that
+#'   maximises Accuracy. Default \code{TRUE}.
+#'
 #' @export
+#'
+#' @return A list with the same structure as \code{\link{CalculateThresholds}},
+#'   containing:
+#'   \itemize{
+#'     \item \code{thresholds}: Named numeric vector of selected thresholds
+#'       (Youden, targets, MaxAcc).
+#'     \item \code{metrics_df}: Data frame of all metrics at each unique threshold.
+#'     \item \code{probabilities}: Input probabilities.
+#'     \item \code{true}: Input true labels.
+#'     \item \code{positive}: Positive class name.
+#'     \item \code{negative}: Negative class name.
+#'   }
+#' @examples
+#' \dontrun{
+#' library(caret)
+#' 
+#' # Simulate example data
+#' set.seed(123)
+#' true_labels <- factor(sample(c("yes", "no"), 100, replace = TRUE),
+#'                       levels = c("no", "yes"))
+#' predicted_probs <- runif(100)
+#' 
+#' # Basic usage with Youden and Max Accuracy thresholds
+#' result <- CalculateThresholdsFromProbs(
+#'   probs = predicted_probs,
+#'   true = true_labels,
+#'   positive = "yes"
+#' )
+#' 
+#' # View selected thresholds
+#' print(result$thresholds)
+#' 
+#' # View first few rows of metrics table
+#' head(result$metrics_df)
+#' 
+#' # With target specificity and sensitivity
+#' result2 <- CalculateThresholdsFromProbs(
+#'   probs = predicted_probs,
+#'   true = true_labels,
+#'   positive = "yes",
+#'   target_se = 0.9,
+#'   target_sp = 0.8,
+#'   target_ppv = 0.85
+#' )
+#' 
+#' print(result2$thresholds)
+#' }
 CalculateThresholdsFromProbs <- function(probs,
                                          true,
                                          positive,
@@ -505,7 +564,7 @@ CalculateThresholdsFromProbs <- function(probs,
        positive      = positive,
        negative      = negative)
 }
-# ── 6. Threshold accuracy / PPV / NPV curve ────────────────────────────────
+# -- 6. Threshold accuracy / PPV / NPV curve --------------------------------
 #' Accuracy/PPV/NPV vs Threshold Plot with Custom Threshold Markers
 #'
 #' @param thresh_result Output from \code{CalculateThresholds}.
@@ -558,7 +617,7 @@ PlotThresholdAccuracy <- function(thresh_result,
   return(p)
 }
 
-# ── 7. Decision zone density plot ─────────────────────────────────────────
+# -- 7. Decision zone density plot -----------------------------------------
 #' Decision Density with Threshold Zones
 #'
 #' @param thresh_result Output from \code{CalculateThresholds}.
@@ -629,7 +688,7 @@ PlotThresholdDensity <- function(thresh_result,
   return(p)
 }
 
-# ── 8. Waterfall plot ──────────────────────────────────────────────────────
+# -- 8. Waterfall plot ------------------------------------------------------
 #' Waterfall Plot for Threshold Classification
 #'
 #' @param thresh_result Output from \code{CalculateThresholds}.
@@ -657,7 +716,7 @@ PlotThresholdWaterfall <- function(thresh_result,
   p <- ggplot2::ggplot(df, ggplot2::aes(x = reorder(id, dif), y = dif, fill = correct)) +
     ggplot2::geom_bar(stat = "identity", width = 1) +
     ggplot2::scale_fill_manual(values = colors) +
-    ggplot2::labs(title = paste("Waterfall Plot —", which_threshold, "Threshold"),
+    ggplot2::labs(title = paste("Waterfall Plot --", which_threshold, "Threshold"),
                   x = "Samples (sorted)", y = "Difference from threshold") +
     ggprism::theme_prism(base_size = 13) +
     ggplot2::theme(axis.text.x = ggplot2::element_blank(),
@@ -672,7 +731,7 @@ PlotThresholdWaterfall <- function(thresh_result,
   return(p)
 }
 
-# ── 9. Confusion matrix for a chosen threshold ────────────────────────────
+# -- 9. Confusion matrix for a chosen threshold ----------------------------
 #' Confusion Matrix Heatmap (Customizable Colors)
 #'
 #' @param thresh_result Output from \code{CalculateThresholds}.
@@ -709,7 +768,7 @@ PlotThresholdConfusion <- function(thresh_result,
     ggplot2::geom_text(ggplot2::aes(label = paste0(Freq, "\n(", Pct, "%)")),
                        size = 5, fontface = "bold") +
     ggplot2::scale_fill_gradientn(colours = fill_colors) +
-    ggplot2::labs(title = paste("Confusion Matrix —", which_threshold, "Threshold"),
+    ggplot2::labs(title = paste("Confusion Matrix --", which_threshold, "Threshold"),
                   x = "Actual", y = "Predicted", fill = "Count") +
     ggprism::theme_prism(base_size = 13) +
     ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))
@@ -723,8 +782,8 @@ PlotThresholdConfusion <- function(thresh_result,
   return(p)
 }
 
-# ── 10. Multi‑threshold ROC comparison ─────────────────────────────────────
-#' Compare Threshold‑Based Classifiers with Original Score (Final, Fixed)
+# -- 10. Multi-threshold ROC comparison -------------------------------------
+#' Compare Threshold-Based Classifiers with Original Score (Final, Fixed)
 #'
 #' @param thresh_result Output from `CalculateThresholds`.
 #' @param compare_model A second `thresh_result` for another model (optional).
@@ -783,7 +842,7 @@ PlotThresholdROC <- function(thresh_result,
     ggplot2::annotate("text", x = 0.75, y = 0.25,
                       label = paste0("AUC = ", auc_main), size = 4, color = cols[1]) +
     ggplot2::labs(title = "ROC with Threshold Operating Points",
-                  x = "1 – Specificity", y = "Sensitivity") +
+                  x = "1 - Specificity", y = "Sensitivity") +
     ggprism::theme_prism(base_size = 13) +
     ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))
   
@@ -808,13 +867,13 @@ PlotThresholdROC <- function(thresh_result,
   return(p)
 }
 
-# ── 11. NRI / IDI analysis ─────────────────────────────────────────────────
+# -- 11. NRI / IDI analysis -------------------------------------------------
 #' Calculate NRI and IDI between two survival/mortality prediction models
 #'
 #' @description
 #' Computes the Net Reclassification Improvement (NRI) and Integrated
 #' Discrimination Improvement (IDI) for two sets of predicted probabilities,
-#' using the \code{nricens} package. Results are displayed as a forest‑style
+#' using the \code{nricens} package. Results are displayed as a forest-style
 #' plot with 95% confidence intervals, optionally saved to PDF.
 #'
 #' @param thresh_result1 A list from a threshold evaluation (must contain
@@ -920,7 +979,7 @@ CalculateNRI <- function(thresh_result1,
         x = "Value (%)",
         y = NULL
       ) +
-      # Shaded region for clinical equivalence (±5%)
+      # Shaded region for clinical equivalence (+/-5%)
       ggplot2::annotate("rect", xmin = -5, xmax = 5, ymin = -Inf, ymax = Inf,
                         fill = "grey90", alpha = 0.3) +
       # Academic theme
@@ -1005,9 +1064,9 @@ ApplyThreshold <- function(thresh_result,
 
 #' Compare Classification Performance at Specified Thresholds (Bar Plot)
 #'
-#' Applies user‑chosen thresholds (or Youden) to two sets of predicted
+#' Applies user-chosen thresholds (or Youden) to two sets of predicted
 #' probabilities, computes confusion matrices and common metrics, and displays
-#' a side‑by‑side bar plot.
+#' a side-by-side bar plot.
 #'
 #' @param thresh_result1 First threshold result (from \code{CalculateThresholds}).
 #' @param thresh_result2 Second threshold result.
@@ -1093,7 +1152,7 @@ CompareClassification <- function(thresh_result1,
   
   invisible(list(metrics = metrics_df, cm1 = cm1, cm2 = cm2, plot = p))
 }
-# ── 12. Standalone step functions ──────────────────────────────────────────
+# -- 12. Standalone step functions ------------------------------------------
 #' Clinical Correlation Analysis (Standalone)
 #' @inheritParams ClinicalAnalysis
 #' @export
@@ -1123,28 +1182,49 @@ ClinicalConfounder <- function(model_obj, clinical_data = NULL, ...) {
   PlotConfounderForest(model_obj, clinical_data, ...)
 }
 
-#' Threshold Analysis (Standalone) – Dual Mode
+#' Threshold Analysis (Standalone) - Dual Mode
 #'
 #' Can be used in two ways:
 #' 1. Provide \code{model_obj} (and optional \code{model_name}, \code{newdata}),
 #'    thresholds are calculated internally and then visualized.
-#' 2. Provide a pre‑computed \code{thresh} object (from
+#' 2. Provide a pre-computed \code{thresh} object (from
 #'    \code{CalculateThresholds} or \code{CalculateThresholdsFromProbs}),
 #'    all plots are generated directly.  \code{model_obj} can be \code{NULL}.
 #'
 #' @param model_obj  A Train_Model or caret model.  If \code{thresh} is supplied,
 #'   this is ignored.
-#' @param thresh     Optional pre‑computed threshold result.  When provided,
+#' @param thresh     Optional pre-computed threshold result.  When provided,
 #'   \code{model_obj}, \code{newdata}, \code{model_name} and all \code{...}
 #'   arguments are not used.
+#' @param newdata    Data frame for prediction. Required when \code{model_obj}
+#'   is provided and \code{thresh} is \code{NULL}. Defaults to the testing set
+#'   from the \code{Train_Model} object if available.
+#' @param model_name Character string specifying which model inside
+#'   \code{model_obj} to use. Only applicable when \code{model_obj} is a
+#'   \code{Train_Model} with multiple trained models. If \code{NULL}, the best
+#'   model is used.
 #' @param compare_model  Optional second \code{thresh_result} for ROC comparison and NRI.
 #' @param compare_label  Label for the comparison model.
 #' @param save_plot  Save plots?
 #' @param save_dir   Output directory.
 #' @param ...        Further arguments passed to \code{CalculateThresholds} when
 #'   \code{thresh} is not supplied (e.g., \code{target_ppv}, \code{target_npv}).
+#'
 #' @return Invisible list with threshold results.
+#'
 #' @export
+#' 
+#' @examples
+#' \dontrun{
+#' # Example 1: Use a Train_Model object directly
+#' result <- ClinicalThreshold(model_obj = model_obj,
+#'                             newdata = test_data,
+#'                             save_plot = FALSE)
+#'
+#' # Example 2: Use a pre-computed threshold object
+#' thresh <- CalculateThresholds(model_obj, test_data)
+#' result <- ClinicalThreshold(thresh = thresh)
+#' }
 ClinicalThreshold <- function(model_obj = NULL,
                               thresh = NULL,
                               newdata = NULL,
@@ -1156,11 +1236,11 @@ ClinicalThreshold <- function(model_obj = NULL,
                               ...) {
   .check_clinical_pkgs()
   
-  # --- Case 2: pre‑computed thresholds ---
+  # --- Case 2: pre-computed thresholds ---
   if (!is.null(thresh)) {
     if (!is.list(thresh) || is.null(thresh$thresholds))
       stop("'thresh' must be a list returned by CalculateThresholds or CalculateThresholdsFromProbs.")
-    cat("Using pre‑computed threshold object...\n")
+    cat("Using pre-computed threshold object...\n")
     # No clinical data needed for plots
   } else {
     # --- Case 1: compute from model object ---
@@ -1225,7 +1305,7 @@ CompareModelThresholds <- function(model_obj1,
   
   invisible(list(thresh1 = thresh1, thresh2 = thresh2))
 }
-# ── 13. Master Clinical Analysis Pipeline ──────────────────────────────────
+# -- 13. Master Clinical Analysis Pipeline ----------------------------------
 #' Complete Clinical Analysis Pipeline
 #'
 #' Runs correlation heatmap, subgroup forests, confounder adjustment,

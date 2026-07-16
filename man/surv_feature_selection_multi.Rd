@@ -2,7 +2,7 @@
 % Please edit documentation in R/prognosis_02_framework.R
 \name{surv_feature_selection_multi}
 \alias{surv_feature_selection_multi}
-\title{Multi‑strategy feature selection for survival analysis}
+\title{Multi-strategy feature selection for survival analysis}
 \usage{
 surv_feature_selection_multi(
   object,
@@ -20,29 +20,29 @@ surv_feature_selection_multi(
 
 \item{methods}{Character vector of method names to apply. Available methods:
 \describe{
-\item{\code{"uni_cox"}}{Univariate Cox regression; keeps features with p < \code{p_threshold}.}
-\item{\code{"lasso"}}{LASSO penalized Cox (alpha = 1, lambda.min).}
-\item{\code{"ridge"}}{Ridge penalized Cox (alpha = 0, lambda.min).}
-\item{\code{"enet"}}{Elastic net (alpha = 0.5, lambda.min).}
-\item{\code{"rf_imp"}}{Random forest (ranger) permutation importance; keeps top \code{top_ratio} features.}
-\item{\code{"rfsrc_imp"}}{Random survival forest (randomForestSRC) importance; keeps top \code{top_ratio}.}
-\item{\code{"xgb_imp"}}{XGBoost gain importance; keeps top \code{top_ratio}.}
-\item{\code{"vimp"}}{VIMP variable importance from \code{randomForestSRC::vimp} (recommended).}
-\item{\code{"boruta"}}{Boruta wrapper algorithm (requires \code{Boruta} package; disabled by default).}
-\item{\code{"stepwise"}}{Stepwise Cox regression (both directions, AIC). Only for low‑dimensional data (p < 30).}
-\item{\code{"stab_sel"}}{Stability selection using \code{c060::stabpath} with Lasso.}
-\item{\code{"mrmr"}}{Minimum Redundancy Maximum Relevance using Cox risk score as proxy (approximate).}
+  \item{\code{"uni_cox"}}{Univariate Cox regression; keeps features with p < \code{p_threshold}.}
+  \item{\code{"lasso"}}{LASSO penalized Cox (alpha = 1, lambda.min).}
+  \item{\code{"ridge"}}{Ridge penalized Cox (alpha = 0, lambda.min).}
+  \item{\code{"enet"}}{Elastic net (alpha = 0.5, lambda.min).}
+  \item{\code{"rf_imp"}}{Random forest (ranger) permutation importance; keeps top \code{top_ratio} features.}
+  \item{\code{"rfsrc_imp"}}{Random survival forest (randomForestSRC) importance; keeps top \code{top_ratio}.}
+  \item{\code{"xgb_imp"}}{XGBoost gain importance; keeps top \code{top_ratio}.}
+  \item{\code{"vimp"}}{VIMP variable importance from \code{randomForestSRC::vimp} (recommended).}
+  \item{\code{"boruta"}}{Boruta wrapper algorithm (requires \code{Boruta} package; disabled by default).}
+  \item{\code{"stepwise"}}{Stepwise Cox regression (both directions, AIC). Only for low-dimensional data (p < 30).}
+  \item{\code{"stab_sel"}}{Stability selection using \code{c060::stabpath} with Lasso.}
+  \item{\code{"mrmr"}}{Minimum Redundancy Maximum Relevance using Cox risk score as proxy (approximate).}
 }}
 
-\item{p_threshold}{Numeric. P‑value threshold for univariate Cox (default 0.05).}
+\item{p_threshold}{Numeric. P-value threshold for univariate Cox (default 0.05).}
 
-\item{top_ratio}{Numeric. For importance‑based methods (RF, XGBoost, VIMP), keep this proportion of top features (default 0.5).}
+\item{top_ratio}{Numeric. For importance-based methods (RF, XGBoost, VIMP), keep this proportion of top features (default 0.5).}
 
 \item{combine}{Character. How to combine results from different methods:
 \itemize{
-\item \code{"union"} – take union of all selected feature sets.
-\item \code{"intersection"} – take intersection (common features).
-\item \code{"freq"} – keep features selected by at least \code{freq_cutoff} methods.
+  \item \code{"union"} - take union of all selected feature sets.
+  \item \code{"intersection"} - take intersection (common features).
+  \item \code{"freq"} - keep features selected by at least \code{freq_cutoff} methods.
 }}
 
 \item{freq_cutoff}{Integer. Minimum number of methods that must select a feature when \code{combine = "freq"} (default 2).}
@@ -53,11 +53,11 @@ surv_feature_selection_multi(
 }
 \value{
 A list with three components:
-\describe{
-\item{\code{selected}}{Character vector of finally selected feature names.}
-\item{\code{method_table}}{Data frame with rows = all features, columns = each method, indicating selection status (TRUE/FALSE).}
-\item{\code{method_results}}{List of raw outputs from each method (e.g., fitted models, importance vectors) for further inspection.}
-}
+  \describe{
+    \item{\code{selected}}{Character vector of finally selected feature names.}
+    \item{\code{method_table}}{Data frame with rows = all features, columns = each method, indicating selection status (TRUE/FALSE).}
+    \item{\code{method_results}}{List of raw outputs from each method (e.g., fitted models, importance vectors) for further inspection.}
+  }
 }
 \description{
 Applies multiple feature selection methods to a survival task and returns a

@@ -12,8 +12,8 @@ This should be a valid Stat object.}
 }
 \value{
 Returns the 'raw.data' slot of the Stat object if it exists.
-If the object does not have a 'raw.data' slot or the slot is empty,
-it returns NULL.
+         If the object does not have a 'raw.data' slot or the slot is empty,
+         it returns NULL.
 }
 \description{
 This function extracts the 'raw.data' slot from an object of class 'Stat'.

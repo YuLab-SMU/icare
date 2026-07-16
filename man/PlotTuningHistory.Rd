@@ -7,7 +7,7 @@
 PlotTuningHistory(model_obj, save_plot = FALSE, save_dir = NULL)
 }
 \arguments{
-\item{model_obj}{A \code{Train_Model} object that has been fine‑tuned.}
+\item{model_obj}{A \code{Train_Model} object that has been fine-tuned.}
 
 \item{save_plot}{Logical.}
 

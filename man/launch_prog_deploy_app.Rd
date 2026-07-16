@@ -12,13 +12,13 @@ launch_prog_deploy_app(
 )
 }
 \arguments{
-\item{prog_manager}{A \code{Prog_Manager} object}
+\item{prog_manager}{A `Prog_Manager` object}
 
 \item{title}{Browser title (overrides custom text)}
 
 \item{var_dict}{Data frame with columns Feature, Description, Units}
 
-\item{project_info}{List with elements \code{abstract} and \code{citation}}
+\item{project_info}{List with elements `abstract` and `citation`}
 }
 \value{
 Runs the Shiny app

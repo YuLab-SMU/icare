@@ -47,17 +47,17 @@ for each algorithm.}
 }
 \value{
 A data frame of class \code{"PreprocessingBenchmark"}.
-Columns include \code{Algorithm}, \code{Imputation}, \code{Normalization},
-\code{Mean_AUC}, \code{SD_AUC}, \code{CI_lower}, \code{CI_upper},
-\code{n_success}, and \code{failure_rate}.
-An attribute \code{error_log} is attached with any failures encountered.
+  Columns include \code{Algorithm}, \code{Imputation}, \code{Normalization},
+  \code{Mean_AUC}, \code{SD_AUC}, \code{CI_lower}, \code{CI_upper},
+  \code{n_success}, and \code{failure_rate}.
+  An attribute \code{error_log} is attached with any failures encountered.
 }
 \description{
 Nested cross-validation benchmarking framework for preprocessing
 methodology studies in binary classification.
 }
 \details{
-The framework avoids near‑zero variance filtering and correlation filtering
+The framework avoids near-zero variance filtering and correlation filtering
 to preserve orthogonality in preprocessing comparisons. All preprocessing
 operations are learned on the training folds and applied to the corresponding
 test folds.
@@ -79,5 +79,5 @@ attr(result, "error_log")
 }
 \references{
 Kuhn M. (2008). Building Predictive Models in R Using the
-caret Package. \emph{Journal of Statistical Software}, 28(5), 1–26.
+caret Package. \emph{Journal of Statistical Software}, 28(5), 1-26.
 }

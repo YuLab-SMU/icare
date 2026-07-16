@@ -2,7 +2,7 @@
 % Please edit documentation in R/stat_06_deg.R
 \name{VarFeature_radarchart}
 \alias{VarFeature_radarchart}
-\title{Generate Radar Chart for Variable Features (with auto‑save option)}
+\title{Generate Radar Chart for Variable Features (with auto-save option)}
 \usage{
 VarFeature_radarchart(
   object,
@@ -19,7 +19,7 @@ VarFeature_radarchart(
 \arguments{
 \item{object}{Stat object or data frame.}
 
-\item{group_col}{Group column name. If NULL, auto‑detect from Stat object.}
+\item{group_col}{Group column name. If NULL, auto-detect from Stat object.}
 
 \item{palette_name}{Colour palette.}
 
@@ -38,7 +38,7 @@ VarFeature_radarchart(
 Updated Stat object or ggplot.
 }
 \description{
-Generate Radar Chart for Variable Features (with auto‑save option)
+Generate Radar Chart for Variable Features (with auto-save option)
 }
 \examples{
 \dontrun{

@@ -300,7 +300,7 @@ lpa_with_optimal_k <- function(data,
   }
 
   # ====================================================================
-  # Plot 3: Variable profile plot  (mclust book §5.3)
+  # Plot 3: Variable profile plot  (mclust book 5.3)
   #   Mean +/- SE of each variable per cluster
   # ====================================================================
   profile_plot <- NULL
@@ -349,7 +349,7 @@ lpa_with_optimal_k <- function(data,
   }
 
   # ====================================================================
-  # Plot 4: Classification-probability heatmap  (mclust book §5.2)
+  # Plot 4: Classification-probability heatmap  (mclust book 5.2)
   #   Rows = clusters, Cols = samples (sorted by assigned cluster)
   # ====================================================================
   class_prob_plot <- NULL

@@ -32,6 +32,6 @@ PlotMultiAlluvial(
 \item{width, height, format}{Export dimensions.}
 }
 \description{
-Visualizes sample transitions across multiple clustering methods using
+Visualizes sample transitions across multiple clustering methods using 
 the 'Lodes' format for ggalluvial.
 }

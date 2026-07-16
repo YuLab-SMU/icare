@@ -40,8 +40,8 @@ CreateSubtypingObject(
 \item{convert_factors}{Logical; if TRUE, automatically convert factor/character
 columns to numeric. Default TRUE.}
 
-\item{na.action}{Character string specifying how to handle NA values.
-Options are "omit" (remove rows with NA, default for subtyping),
+\item{na.action}{Character string specifying how to handle NA values. 
+Options are "omit" (remove rows with NA, default for subtyping), 
 "allow" (keep NA values), or "error" (stop if NA found).}
 }
 \description{

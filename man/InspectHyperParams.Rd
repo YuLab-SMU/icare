@@ -10,8 +10,8 @@ InspectHyperParams(method)
 \item{method}{Character. A caret model name (e.g., "rf", "xgbTree").}
 }
 \value{
-A data frame with columns: \code{parameter}, \code{label},
-\code{class}, and \code{default_range} (a character hint).
+A data frame with columns: \code{parameter}, \code{label}, 
+  \code{class}, and \code{default_range} (a character hint).
 }
 \description{
 Returns a data frame listing all tuneable parameters and their default

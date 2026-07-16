@@ -24,27 +24,27 @@ plot_deg_Roc_plot(
 }
 \arguments{
 \item{deg_test}{A data frame containing the results of differential expression analysis.
-It should have a column \code{change} indicating whether a feature is "Stable" or changed.}
+It should have a column `change` indicating whether a feature is "Stable" or changed.}
 
 \item{mat_test}{A data frame containing the expression values of features across samples.
 It should have columns representing features (e.g., genes) and rows representing samples.}
 
-\item{group_col}{The column in \code{mat_test} that indicates the grouping of samples (e.g., control vs case).
-Default is \code{'group'}.}
+\item{group_col}{The column in `mat_test` that indicates the grouping of samples (e.g., control vs case).
+Default is `'group'`.}
 
-\item{control}{The label used to indicate the control group in the data. Default is \code{'health'}.}
+\item{control}{The label used to indicate the control group in the data. Default is `'health'`.}
 
-\item{case}{The label used to indicate the case group in the data. Default is \code{'lung cancer'}.}
+\item{case}{The label used to indicate the case group in the data. Default is `'lung cancer'`.}
 
 \item{top_n}{The number of top features to consider based on log fold change. Default is 5.}
 
 \item{palette_name}{The name of the palette to be used for the ROC curves.}
 
-\item{name_identity}{The name or identifier used for the features in the \code{deg_test} data frame. Default is \code{'deg'}.}
+\item{name_identity}{The name or identifier used for the features in the `deg_test` data frame. Default is `'deg'`.}
 
-\item{save_plots}{A logical value indicating whether the plot should be saved. Default is \code{TRUE}.}
+\item{save_plots}{A logical value indicating whether the plot should be saved. Default is `TRUE`.}
 
-\item{save_dir}{The directory path where the plot will be saved. Default is \code{get_output_dir("StatObject", "deg_info")}.}
+\item{save_dir}{The directory path where the plot will be saved. Default is `get_output_dir("StatObject", "deg_info")`.}
 
 \item{plot_width}{The width of the saved plot in cm. Default is 5.}
 
@@ -52,16 +52,16 @@ Default is \code{'group'}.}
 
 \item{base_size}{The base font size for the plot. Default is 14.}
 
-\item{title}{The title of the plot. Default is \code{'ROC Curve'}.}
+\item{title}{The title of the plot. Default is `'ROC Curve'`.}
 
-\item{normalize_auc}{Logical, if \code{TRUE}, for any feature with AUC < 0.5,
+\item{normalize_auc}{Logical, if `TRUE`, for any feature with AUC < 0.5,
 the predictor values are negated (multiplied by -1) and the ROC curve is
 recalculated so that the new AUC becomes 1 - original AUC, ensuring all
-curves lie above the diagonal. Default is \code{TRUE}.}
+curves lie above the diagonal. Default is `TRUE`.}
 }
 \value{
-A \code{ggplot} object representing the ROC curve for the top features.
-If \code{save_plots} is \code{TRUE}, the plot is saved to the specified directory.
+A `ggplot` object representing the ROC curve for the top features.
+         If `save_plots` is `TRUE`, the plot is saved to the specified directory.
 }
 \description{
 This function generates a ROC curve for the top features identified in differential expression analysis.
@@ -70,9 +70,11 @@ for each feature. The plot can be saved to a specified directory.
 }
 \examples{
 \dontrun{
+data(stat_obj_test)
 stat_obj <- stat_var_feature(stat_obj_test)
 last_sig <- ExtractLastTestSig(stat_obj)
 print(last_sig)
-plot_deg_Roc_plot(deg_test = last_sig, mat_test = stat_obj@clean.data,group_col = 'SWAB',save_dir = "./")
+plot_deg_Roc_plot(deg_test = last_sig, mat_test = stat_obj@clean.data,
+group_col = 'SWAB',save_dir = "./")
 }
 }

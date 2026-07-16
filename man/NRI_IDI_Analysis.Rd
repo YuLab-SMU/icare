@@ -64,6 +64,6 @@ Invisible list with all results.
 }
 \description{
 Runs the full suite of NRI/IDI analyses (ROC, IDI curve, NRI heatmap,
-NRI bar plot, prediction distribution, threshold‑NRI curve) for two
+NRI bar plot, prediction distribution, threshold-NRI curve) for two
 models.  Accepts Train_Model objects or raw probability vectors.
 }

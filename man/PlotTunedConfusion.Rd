@@ -34,6 +34,6 @@ PlotTunedConfusion(
 A \code{ggplot} object.
 }
 \description{
-Generates a heatmap-style confusion matrix. Percentages are
+Generates a heatmap-style confusion matrix. Percentages are 
 calculated per actual class (column-wise).
 }

@@ -23,12 +23,10 @@ batch_Wilcoxon_Unified(
 \item{group_col}{Name of the grouping column.}
 
 \item{analysis_type}{One of:
-\itemize{
-\item "auto" (default): automatically detect based on number of groups
-\item "binary": force binary classification (2 groups)
-\item "multiclass": one-vs-rest comparison (2+ groups)
-\item "ordered": sequential pairwise comparison (2+ groups with order)
-}}
+- "auto" (default): automatically detect based on number of groups
+- "binary": force binary classification (2 groups)
+- "multiclass": one-vs-rest comparison (2+ groups)
+- "ordered": sequential pairwise comparison (2+ groups with order)}
 
 \item{logfc_mat}{Optional data frame for logFC calculation.}
 
@@ -46,7 +44,7 @@ batch_Wilcoxon_Unified(
 }
 \value{
 Data frame with DEG results. For multi-class: includes "target_group" column.
-For ordered: includes "comparison" column.
+        For ordered: includes "comparison" column.
 }
 \description{
 Automatically detects number of groups and routes to appropriate function.

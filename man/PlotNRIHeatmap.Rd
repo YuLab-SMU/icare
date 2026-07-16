@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_09_nri_idi.R
 \name{PlotNRIHeatmap}
 \alias{PlotNRIHeatmap}
-\title{NRI Reclassification Heatmap (Per‑Model Labels, Auto‑Match)}
+\title{NRI Reclassification Heatmap (Per-Model Labels, Auto-Match)}
 \usage{
 PlotNRIHeatmap(
   nri_result,
@@ -16,9 +16,9 @@ PlotNRIHeatmap(
 \item{nri_result}{Output of \code{CalculateCategoryNRI}.}
 
 \item{ref_category_labels}{Character vector of risk category names for
-the reference model (y‑axis).}
+the reference model (y-axis).}
 
-\item{new_category_labels}{Character vector for the new model (x‑axis).}
+\item{new_category_labels}{Character vector for the new model (x-axis).}
 
 \item{save_plot}{Logical.}
 
@@ -28,7 +28,7 @@ the reference model (y‑axis).}
 A ggplot object.
 }
 \description{
-Faceted heatmap showing reclassification counts for events and non‑events.
+Faceted heatmap showing reclassification counts for events and non-events.
 Axis labels for risk categories can be customized independently. If the
 provided labels do not match the number of categories, a warning is issued
 and default labels are used.

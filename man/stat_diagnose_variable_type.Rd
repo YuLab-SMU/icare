@@ -18,28 +18,28 @@ the raw data and group column will be extracted. If a data frame, the function
 operates directly on it.}
 
 \item{group_col}{A character string specifying the grouping column (default "group").
-This column is excluded from analysis if present. When \code{object} is a "Stat"
+This column is excluded from analysis if present. When `object` is a "Stat"
 object, the group column stored in the object overrides this argument.}
 
 \item{max_unique_values}{Numeric, maximum number of unique values a column may have
-to be considered "low cardinality" when \code{treat_low_card_numeric_as_categorical = TRUE}.
+to be considered "low cardinality" when `treat_low_card_numeric_as_categorical = TRUE`.
 Default is 5.}
 
 \item{encode_threshold}{Numeric, minimum number of unique values for a categorical
 variable to be flagged for encoding. Default is 10.}
 
-\item{treat_low_card_numeric_as_categorical}{Logical, whether to treat low‑cardinality
-numeric columns (e.g. 0/1, 1–5 ratings) as categorical variables. Default is \code{FALSE}.}
+\item{treat_low_card_numeric_as_categorical}{Logical, whether to treat low-cardinality
+numeric columns (e.g. 0/1, 1-5 ratings) as categorical variables. Default is `FALSE`.}
 }
 \value{
 If input is a "Stat" object, the updated object with the diagnosed variable
-types stored in the \code{variable.types} slot. If input is a data frame, a list containing:
-\describe{
-\item{numeric_vars}{Character vector of numeric variables.}
-\item{categorical_vars}{Character vector of categorical variables.}
-\item{vars_to_encode}{Character vector of categorical variables that have more than
-\code{encode_threshold} unique values and may need encoding.}
-}
+  types stored in the `variable.types` slot. If input is a data frame, a list containing:
+  \describe{
+  \item{numeric_vars}{Character vector of numeric variables.}
+  \item{categorical_vars}{Character vector of categorical variables.}
+  \item{vars_to_encode}{Character vector of categorical variables that have more than
+    `encode_threshold` unique values and may need encoding.}
+  }
 }
 \description{
 This function analyzes the variable types (numeric, categorical, and those

@@ -21,12 +21,12 @@ stat_compute_descriptive(
 \item{max_unique_values}{The maximum number of unique values a variable can have to be considered categorical (default is 5).}
 }
 \value{
-If the input is a 'Stat' object, the function returns the updated 'Stat' object with a new slot \code{compute.descriptive}
-containing the results. If the input is a data frame, it returns the descriptive statistics as a list.
+If the input is a 'Stat' object, the function returns the updated 'Stat' object with a new slot `compute.descriptive`
+         containing the results. If the input is a data frame, it returns the descriptive statistics as a list.
 }
 \description{
 This function computes descriptive statistics for numeric and categorical variables in the input data. It can handle both
-\code{Stat} objects and standard data frames. The function computes counts for categorical variables, and summary statistics
+`Stat` objects and standard data frames. The function computes counts for categorical variables, and summary statistics
 (mean, median, standard deviation, min, max) for numeric variables, along with normality tests for numeric variables.
 }
 \examples{
@@ -37,6 +37,7 @@ mtcars$vs  <- factor(mtcars$vs, labels = c("V-shaped", "Straight"))
 # Create a Stat object with "vs" as the grouping variable
 stat_obj <- CreateStatObject(raw.data = mtcars, group_col = "vs")
 #Compute descriptive statistics for a 'Stat' object
-updated_stat <- stat_compute_descriptive(object = stat_obj, count_feature = TRUE, group_col = "group")
+updated_stat <- stat_compute_descriptive(object = stat_obj, 
+count_feature = TRUE, group_col = "group")
 }
 }

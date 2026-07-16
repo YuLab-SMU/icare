@@ -19,52 +19,75 @@ plot_missing_data(
 )
 }
 \arguments{
-\item{data}{A data.frame containing the data to be analyzed. Missing values should be represented as \verb{<NA>} or \code{NA}.}
+\item{data}{A data.frame containing the data to be analyzed. Missing values should
+be represented as `<NA>` or `NA`.}
 
-\item{palette_name}{A character string specifying the palette name for the plot colors. Default is \code{"Royal1"}.
-Supported palettes are from the \code{wesanderson} package (e.g., "Royal1", "Zissou1", "GrandBudapest1").}
+\item{palette_name}{A character string specifying the Wes Anderson palette name
+for plot colors. Default is `"Royal1"`. Supported palettes include
+`"Zissou1"`, `"GrandBudapest1"`, etc.}
 
-\item{alpha}{A numeric value between 0 and 1 specifying the transparency level of the density plots. Default is \code{0.9}.}
+\item{alpha}{A numeric value between 0 and 1 specifying the transparency level
+of the density plots. Default is `0.9`.}
 
-\item{save_plots}{A logical value indicating whether to save the plots as PNG files. Default is \code{TRUE}.}
+\item{save_plots}{Logical. If `TRUE`, saves the density plots as PDF files.
+Default is `TRUE`.}
 
-\item{save_dir}{A character string specifying the directory where the plots will be saved. Default is \code{here("StatObject")},
-which uses the \code{here} package to generate the path.}
+\item{save_dir}{A character string specifying the directory where plots and
+CSV files will be saved. If `NULL`, uses the default output directory
+from `get_output_dir("StatObject", "missing_info")`. Default is `NULL`.}
 
-\item{plot_width}{A numeric value specifying the width of the saved plots. Default is \code{5}.}
+\item{plot_width}{Numeric. Width of the saved plots in inches. Default is `5`.}
 
-\item{plot_height}{A numeric value specifying the height of the saved plots. Default is \code{5}.}
+\item{plot_height}{Numeric. Height of the saved plots in inches. Default is `5`.}
 
-\item{base_size}{A numeric value specifying the base size for text and elements in the plot. Default is \code{14}.}
+\item{base_size}{Numeric. Base font size for plot text. Default is `14`.}
+
+\item{save_data}{Logical. If `TRUE`, saves the missing data summaries as CSV files.
+Default is `TRUE`.}
+
+\item{var_filename}{Character string. Filename for the variable-wise missing
+data CSV. Default is `"var_missing_data.csv"`.}
+
+\item{sample_filename}{Character string. Filename for the sample-wise missing
+data CSV. Default is `"sample_missing_data.csv"`.}
 }
 \value{
-A list containing the following:
-\itemize{
-\item \code{var_plot_obj}: The ggplot object for the variable-wise missing data distribution plot.
-\item \code{sample_plot_obj}: The ggplot object for the sample-wise missing data distribution plot.
-\item \code{combined_plot}: The ggplot object for the combined missing data distribution plot.
-\item \code{total_missing_values}: The total number of missing values in the data.
-\item \code{total_variables}: The total number of variables (columns) in the data.
-\item \code{total_samples}: The total number of samples (rows) in the data.
-\item \code{variables_with_missing}: The number of variables with at least one missing value.
-\item \code{samples_with_missing}: The number of samples with at least one missing value.
-\item \code{max_missing_variable}: The highest percentage of missing values in any variable (column).
-\item \code{min_missing_variable}: The lowest percentage of missing values in any variable (column).
-\item \code{max_missing_sample}: The highest percentage of missing values in any sample (row).
-\item \code{min_missing_sample}: The lowest percentage of missing values in any sample (row).
-}
+A list containing:
+  \itemize{
+    \item \code{var_plot_obj}: ggplot object for variable-wise missing distribution.
+    \item \code{sample_plot_obj}: ggplot object for sample-wise missing distribution.
+    \item \code{combined_plot}: ggplot object combining both distributions.
+    \item \code{total_missing_values}: Total number of missing values in the data.
+    \item \code{total_variables}: Number of variables (columns).
+    \item \code{total_samples}: Number of samples (rows).
+    \item \code{variables_with_missing}: Number of variables with at least one missing value.
+    \item \code{samples_with_missing}: Number of samples with at least one missing value.
+    \item \code{max_missing_variable}: Maximum percentage of missing values in any variable.
+    \item \code{min_missing_variable}: Minimum percentage of missing values in any variable.
+    \item \code{max_missing_sample}: Maximum percentage of missing values in any sample.
+    \item \code{min_missing_sample}: Minimum percentage of missing values in any sample.
+  }
 }
 \description{
-This function generates density plots to visualize the distribution of missing data in the given dataset.
-It provides a variable-wise and sample-wise missing data distribution plot, as well as a combined plot.
-The function also saves the plots as PNG files if specified and returns a summary of missing data statistics.
+Generates density plots to visualize the distribution of missing data in a dataset.
+Provides variable-wise and sample-wise missing data distributions, plus a combined
+plot. Optionally saves plots as PDF files and exports missing data summaries as CSV.
 }
 \examples{
 \dontrun{
 data("stat_obj_test")
-missing_info <- plot_missing_data(data = stat_obj_test@raw.data, save_plots =FALSE)
-# Generate missing data plots with customized parameters
-missing_info <- plot_missing_data(data = stat_obj_test@raw.data, save_plots =FALSE,
-                              palette_name = "Zissou1", alpha = 0.7, plot_width = 6, plot_height = 6)
+missing_info <- plot_missing_data(data = stat_obj_test@raw.data, save_plots = FALSE)
+
+# Customized parameters
+missing_info <- plot_missing_data(
+  data = stat_obj_test@raw.data,
+  palette_name = "Zissou1",
+  alpha = 0.7,
+  plot_width = 6,
+  plot_height = 6,
+  save_data = TRUE,
+  var_filename = "var_missing.csv",
+  sample_filename = "sample_missing.csv"
+)
 }
 }

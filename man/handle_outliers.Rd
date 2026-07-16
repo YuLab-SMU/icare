@@ -35,6 +35,7 @@ Handle Outliers
 \examples{
 \dontrun{
 out_info <- extract_outlier_data (stat_obj_test)
-clean_after <- handle_outliers(stat_obj_test@clean.data, out_info, method = "remove", save_data = FALSE)
+clean_after <- handle_outliers(stat_obj_test@clean.data, out_info,
+ method = "remove", save_data = FALSE)
 }
 }

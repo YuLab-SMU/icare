@@ -159,11 +159,11 @@ train_and_evaluate_models <- function(data,
 
 
 
-#' Evaluate Model Performance Metrics (Caret‑based)
+#' Evaluate Model Performance Metrics (Caret-based)
 #'
 #' Uses \code{\link[caret]{confusionMatrix}} to compute all classification
 #' metrics and \code{\link[pROC]{roc}} for AUC.  Automatically detects group
-#' levels – no hard‑coded \code{"0"} / \code{"1"}.
+#' levels - no hard-coded \code{"0"} / \code{"1"}.
 #'
 #' @param data          A data frame containing test features and the group column.
 #' @param model_result  A single \code{train} object or a named list of
@@ -291,7 +291,7 @@ evaluate_model_performance <- function(data,
 #'
 #' @details
 #' The function computes ROC curves using [pROC::roc()] and AUC values with
-#' 95% confidence intervals via [pROC::ci.auc()]. Models are sorted by AUC
+#' 95\% confidence intervals via [pROC::ci.auc()]. Models are sorted by AUC
 #' in descending order in the final plot. The legend displays both AUC and
 #' confidence intervals for each model.
 #'
@@ -374,7 +374,7 @@ plot_roc_curve <- function(model_list,
     
     roc_obj <- roc(validation_data[[group_col]], predictions,
                    levels = actual_levels,
-                   direction = "auto")   # ← FIXED
+                   direction = "auto")   # <- FIXED
     auc_value <- auc(roc_obj)
     roc_list[[model_name]] <- roc_obj
     auc_results[model_name] <- auc_value
@@ -509,14 +509,13 @@ check_factor_level <- function(data, group_col) {
 #' @param group_col Name of the target variable column (default: "group")
 #' @param palette_name Name of color palette for ROC curves (default: "AsteroidCity1")
 #' @param base_size Base font size for plots (default: 14)
-#' @param save_plots Logical indicating whether to save plots (default: TRUE)
+#' @param save_plots Logical indicating whether to save plots (default: FALSE)
 #' @param save_dir Directory path to save plots (default: here("ModelData", "best_model_result"))
 #' @param plot_width Width of saved plots in inches (default: 5)
 #' @param plot_height Height of saved plots in inches (default: 5)
 #' @param seed Random seed for reproducibility (default: 123)
 #' @param alpha Transparency level for ROC curves (default: 0.8)
-#' @param use_youden Logical indicating whether to use Youden's J statistic for cutoff
-#' @param custom_cutoff Optional custom probability cutoff (overrides use_youden if provided)
+#' @param custom_cutoff Optional custom probability cutoff (overrides Youden if provided)
 #'
 #' @return If input is Train_Model object, returns updated object with results in slots.
 #'         If input is list, returns list with performance metrics and ROC data.
@@ -531,10 +530,11 @@ check_factor_level <- function(data, group_col) {
 #' @importFrom doParallel registerDoParallel
 #' @import parallel
 #' @importFrom foreach registerDoSEQ
+#'
 #' @examples
 #' \dontrun{
-#' # Example with list input
-#' object_model <- ModelTrainAnalysis(object =train_obj_test)
+#' # Example with Train_Model object
+#' result <- ModelTrainAnalysis(object = train_obj_test)
 #' }
 ModelTrainAnalysis <- function(object,
                                methods = c("glm", "rpart", "naive_bayes", "bayesglm", "rf",
@@ -743,7 +743,7 @@ plot_best_model_roc <- function(best_model,
       Specificity = 1 - roc_training$specificities,
       Sensitivity = roc_training$sensitivities,
       Dataset = paste0("Training Set (AUC = ", sprintf("%.3f", auc_training),
-                       " ± ", sprintf("%.3f", (auc_ci_training[3]-auc_ci_training[1])/2), ")")
+                       " +/- ", sprintf("%.3f", (auc_ci_training[3]-auc_ci_training[1])/2), ")")
     )
 
     plot_data_list$training <- training_plot_data
@@ -759,7 +759,7 @@ plot_best_model_roc <- function(best_model,
       Specificity = 1 - roc_testing$specificities,
       Sensitivity = roc_testing$sensitivities,
       Dataset = paste0("Testing Set (AUC = ", sprintf("%.3f", auc_testing),
-                       " ± ", sprintf("%.3f", (auc_ci_testing[3]-auc_ci_testing[1])/2), ")")
+                       " +/- ", sprintf("%.3f", (auc_ci_testing[3]-auc_ci_testing[1])/2), ")")
     )
 
     plot_data_list$testing <- testing_plot_data
@@ -785,7 +785,7 @@ plot_best_model_roc <- function(best_model,
       Specificity = 1 - roc_validation$specificities,
       Sensitivity = roc_validation$sensitivities,
       Dataset = paste0("Validation Set (AUC = ", sprintf("%.3f", auc_validation),
-                       " ± ", sprintf("%.3f", (auc_ci_validation[3] - auc_ci_validation[1]) / 2), ")")
+                       " +/- ", sprintf("%.3f", (auc_ci_validation[3] - auc_ci_validation[1]) / 2), ")")
     )
     plot_data_list$validation <- validation_plot_data
   }
@@ -811,7 +811,7 @@ plot_best_model_roc <- function(best_model,
       Specificity = 1 - roc_external_validation$specificities,
       Sensitivity = roc_external_validation$sensitivities,
       Dataset = paste0("External Validation Set (AUC = ", sprintf("%.3f", auc_external_validation),
-                       " ± ", sprintf("%.3f", (auc_ci_external_validation[3] - auc_ci_external_validation[1]) / 2), ")")
+                       " +/- ", sprintf("%.3f", (auc_ci_external_validation[3] - auc_ci_external_validation[1]) / 2), ")")
     )
     plot_data_list$external_validation <- external_validation_plot_data
   }
@@ -916,14 +916,14 @@ SelectBestModel <- function(object,
     best_model_type   <- custom_selection
   } else {
     
-    # ── 1. Find best metric value, ignoring NA ──────────────────
+    # -- 1. Find best metric value, ignoring NA ------------------
     primary_vals <- all.results[[metric]]
     best_val <- max(primary_vals, na.rm = TRUE)
     
     # Candidates with the best metric
     candidates <- all.results[which(primary_vals == best_val), ]
     
-    # ── 2. If tie, use f1_score (ignoring NA) ───────────────────
+    # -- 2. If tie, use f1_score (ignoring NA) -------------------
     if (nrow(candidates) > 1 && "f1_score" %in% colnames(candidates)) {
       f1_vals <- candidates$f1_score
       f1_vals[is.na(f1_vals)] <- -Inf   # treat NA as worst
@@ -931,7 +931,7 @@ SelectBestModel <- function(object,
       candidates <- candidates[which(f1_vals == best_f1), ]
     }
     
-    # ── 3. If still tie, take the first row ─────────────────────
+    # -- 3. If still tie, take the first row ---------------------
     best.model.result <- candidates[1, , drop = FALSE]
     best_model_type   <- best.model.result$Model
     
@@ -942,7 +942,7 @@ SelectBestModel <- function(object,
     }
   }
   
-  # ── 4. Look up the actual model object ────────────────────────
+  # -- 4. Look up the actual model object ------------------------
   best_model <- model_list[[best_model_type]]
   if (is.null(best_model)) {
     stop("Model '", best_model_type, "' not found in trained models")

@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_08_clinical_analysis.R
 \name{ClinicalThreshold}
 \alias{ClinicalThreshold}
-\title{Threshold Analysis (Standalone) – Dual Mode}
+\title{Threshold Analysis (Standalone) - Dual Mode}
 \usage{
 ClinicalThreshold(
   model_obj = NULL,
@@ -20,9 +20,18 @@ ClinicalThreshold(
 \item{model_obj}{A Train_Model or caret model.  If \code{thresh} is supplied,
 this is ignored.}
 
-\item{thresh}{Optional pre‑computed threshold result.  When provided,
+\item{thresh}{Optional pre-computed threshold result.  When provided,
 \code{model_obj}, \code{newdata}, \code{model_name} and all \code{...}
 arguments are not used.}
+
+\item{newdata}{Data frame for prediction. Required when \code{model_obj}
+is provided and \code{thresh} is \code{NULL}. Defaults to the testing set
+from the \code{Train_Model} object if available.}
+
+\item{model_name}{Character string specifying which model inside
+\code{model_obj} to use. Only applicable when \code{model_obj} is a
+\code{Train_Model} with multiple trained models. If \code{NULL}, the best
+model is used.}
 
 \item{compare_model}{Optional second \code{thresh_result} for ROC comparison and NRI.}
 
@@ -40,11 +49,21 @@ Invisible list with threshold results.
 }
 \description{
 Can be used in two ways:
-\enumerate{
-\item Provide \code{model_obj} (and optional \code{model_name}, \code{newdata}),
-thresholds are calculated internally and then visualized.
-\item Provide a pre‑computed \code{thresh} object (from
-\code{CalculateThresholds} or \code{CalculateThresholdsFromProbs}),
-all plots are generated directly.  \code{model_obj} can be \code{NULL}.
+1. Provide \code{model_obj} (and optional \code{model_name}, \code{newdata}),
+   thresholds are calculated internally and then visualized.
+2. Provide a pre-computed \code{thresh} object (from
+   \code{CalculateThresholds} or \code{CalculateThresholdsFromProbs}),
+   all plots are generated directly.  \code{model_obj} can be \code{NULL}.
+}
+\examples{
+\dontrun{
+# Example 1: Use a Train_Model object directly
+result <- ClinicalThreshold(model_obj = model_obj,
+                            newdata = test_data,
+                            save_plot = FALSE)
+
+# Example 2: Use a pre-computed threshold object
+thresh <- CalculateThresholds(model_obj, test_data)
+result <- ClinicalThreshold(thresh = thresh)
 }
 }

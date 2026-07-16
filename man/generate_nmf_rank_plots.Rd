@@ -25,7 +25,7 @@ generate_nmf_rank_plots(
 }
 \description{
 Produces four panels: Cophenetic Correlation, Reconstruction Residual,
-Dispersion, and RSS – saved as PDF + PNG.
+Dispersion, and RSS - saved as PDF + PNG.
 }
 \examples{
 \dontrun{

@@ -43,12 +43,12 @@ palette. Default is \code{"AsteroidCity1"}.}
 }
 \value{
 A list with four components:
-\describe{
-\item{stability_index}{Jaccard stability index (mean pairwise Jaccard similarity).}
-\item{frequencies}{A data frame of features and their selection frequencies.}
-\item{plot}{A \code{ggplot} object of the top 15 features.}
-\item{success_rate}{The proportion of successful iterations.}
-}
+  \describe{
+    \item{stability_index}{Jaccard stability index (mean pairwise Jaccard similarity).}
+    \item{frequencies}{A data frame of features and their selection frequencies.}
+    \item{plot}{A \code{ggplot} object of the top 15 features.}
+    \item{success_rate}{The proportion of successful iterations.}
+  }
 }
 \description{
 Evaluates the stability of feature selection under repeated subsampling using

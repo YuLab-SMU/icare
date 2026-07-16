@@ -11,12 +11,12 @@ surv_summarize_benchmark(benchmark_results)
 }
 \value{
 A data frame with columns:
-\describe{
-\item{learner}{Learner ID.}
-\item{cv_score}{Cross-validated C-index score.}
-\item{...}{Additional performance metrics from training set evaluation.}
-}
-The data frame is sorted by \code{cv_score} in descending order.
+  \describe{
+    \item{learner}{Learner ID.}
+    \item{cv_score}{Cross-validated C-index score.}
+    \item{...}{Additional performance metrics from training set evaluation.}
+  }
+  The data frame is sorted by \code{cv_score} in descending order.
 }
 \description{
 Converts the output from \code{surv_benchmark_learners} into a sorted

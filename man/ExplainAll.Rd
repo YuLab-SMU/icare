@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_07_explain.R
 \name{ExplainAll}
 \alias{ExplainAll}
-\title{Explanatory Model Analysis — Full Pipeline}
+\title{Explanatory Model Analysis -- Full Pipeline}
 \usage{
 ExplainAll(
   object,
@@ -48,6 +48,6 @@ ExplainAll(
 Invisibly returns a list of all explanation objects.
 }
 \description{
-Runs the complete DALEX-based explanation suite, including global
+Runs the complete DALEX-based explanation suite, including global 
 performance, variable importance, SHAP, Break Down, and PDP/CP profiles.
 }

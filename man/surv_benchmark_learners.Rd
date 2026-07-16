@@ -32,12 +32,12 @@ when \code{tune = TRUE}. Default is \code{50}.}
 }
 \value{
 A list where each element corresponds to a learner and contains:
-\describe{
-\item{learner}{The trained learner object.}
-\item{best_params}{A list of best hyperparameter values (if tuning was performed).}
-\item{cv_performance}{A numeric cross-validated C-index.}
-\item{performance}{A data frame of training set metrics.}
-}
+  \describe{
+    \item{learner}{The trained learner object.}
+    \item{best_params}{A list of best hyperparameter values (if tuning was performed).}
+    \item{cv_performance}{A numeric cross-validated C-index.}
+    \item{performance}{A data frame of training set metrics.}
+  }
 }
 \description{
 Trains and evaluates multiple survival learners using cross-validation.

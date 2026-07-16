@@ -13,21 +13,21 @@ CreateModelObject(
 )
 }
 \arguments{
-\item{data}{A data.frame containing raw input data. It must not contain missing values. If this parameter is provided, the \code{object} parameter should be NULL.}
+\item{data}{A data.frame containing raw input data. It must not contain missing values. If this parameter is provided, the `object` parameter should be NULL.}
 
-\item{object}{A \code{Stat} class object containing preprocessed data. If this parameter is provided, the function will extract \code{clean.data} and \code{group_col} from it.}
+\item{object}{A `Stat` class object containing preprocessed data. If this parameter is provided, the function will extract `clean.data` and `group_col` from it.}
 
-\item{group_col}{The column name for the grouping variable. If the input is a \code{Stat} object, this value will be extracted from the object.}
+\item{group_col}{The column name for the grouping variable. If the input is a `Stat` object, this value will be extracted from the object.}
 
-\item{na.action}{Character string specifying how to handle NA values.
+\item{na.action}{Character string specifying how to handle NA values. 
 Options are "error" (stop if NA found, default for modeling), "omit" (remove rows with NA),
 or "allow" (keep NA values - may cause errors in modeling).}
 
 \item{...}{Additional parameters for future extensions (currently unused).}
 }
 \value{
-A \code{Train_Model} S4 object, which contains the data and grouping information for further modeling.
+A `Train_Model` S4 object, which contains the data and grouping information for further modeling.
 }
 \description{
-This function creates a \code{Train_Model} S4 object based on either a raw data frame or a preprocessed \code{Stat} object. It is designed to provide a structured object for subsequent modeling analyses.
+This function creates a `Train_Model` S4 object based on either a raw data frame or a preprocessed `Stat` object. It is designed to provide a structured object for subsequent modeling analyses.
 }

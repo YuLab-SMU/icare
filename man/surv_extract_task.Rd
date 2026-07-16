@@ -30,7 +30,8 @@ task <- TaskSurv$new("veteran", backend = veteran, time = "time", event = "statu
 task_out <- surv_extract_task(task)
 
 # From PrognosiX object (if available)
-# task_out <- surv_extract_task(prog_obj)
+data(pro_obj_test)
+task_out <- surv_extract_task(pro_obj_test)
 }
 }
 \seealso{

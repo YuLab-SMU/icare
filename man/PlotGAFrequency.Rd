@@ -29,7 +29,7 @@ PlotGAFrequency(
 
 \item{save_dir}{Output dir.}
 
-\item{width, height}{Dimensions. Defaults 8 × 10.}
+\item{width, height}{Dimensions. Defaults 8 x 10.}
 
 \item{format}{Format. Default "pdf".}
 }

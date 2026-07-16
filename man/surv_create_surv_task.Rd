@@ -21,7 +21,7 @@ event status (typically 1 for event, 0 for censored).}
 }
 \value{
 A \code{\link[mlr3proba]{TaskSurv}} object ready for use with
-\code{mlr3} survival learners.
+  \code{mlr3} survival learners.
 }
 \description{
 Creates a \code{TaskSurv} object from a data frame for use with \code{mlr3proba}

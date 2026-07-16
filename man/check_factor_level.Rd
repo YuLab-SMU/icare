@@ -18,7 +18,7 @@ TRUE if the column contains at least two levels, otherwise stops with an error m
 This function checks if the specified column in the provided dataset has at least two distinct levels. It is used to ensure that the validation data contains more than one class, which is a requirement for classification tasks.
 }
 \details{
-This function ensures that the column representing class labels (\code{group_col}) has at least two levels, which is essential for classification problems. If the column has fewer than two levels, the function stops and throws an error indicating that the validation data is not suitable for classification.
+This function ensures that the column representing class labels (`group_col`) has at least two levels, which is essential for classification problems. If the column has fewer than two levels, the function stops and throws an error indicating that the validation data is not suitable for classification.
 }
 \examples{
 \dontrun{

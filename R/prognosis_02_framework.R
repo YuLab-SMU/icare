@@ -24,7 +24,8 @@
 #' task_out <- surv_extract_task(task)
 #' 
 #' # From PrognosiX object (if available)
-#' # task_out <- surv_extract_task(prog_obj)
+#' data(pro_obj_test)
+#' task_out <- surv_extract_task(pro_obj_test)
 #' }
 surv_extract_task <- function(object) {
   .check_prognosis_packages()
@@ -80,11 +81,11 @@ surv_keys <- if (requireNamespace("mlr3", quietly = TRUE)) {
 #' The function maintains predefined search spaces for over 30 survival learners,
 #' organized into categories:
 #' \itemize{
-#'   \item \strong{Random Forests \& Ensemble Trees}: \code{surv.ranger}, \code{surv.rfsrc}, \code{surv.aorsf}, etc.
+#'   \item \strong{Random Forests & Ensemble Trees}: \code{surv.ranger}, \code{surv.rfsrc}, \code{surv.aorsf}, etc.
 #'   \item \strong{Gradient Boosting}: \code{surv.xgboost.cox}, \code{surv.gbm}, \code{surv.mboost}, etc.
 #'   \item \strong{Regularized Regression}: \code{surv.glmnet}, \code{surv.cv_glmnet}, \code{surv.penalized}, etc.
-#'   \item \strong{Decision Trees \& SVM}: \code{surv.rpart}, \code{surv.ctree}, \code{surv.svm}, etc.
-#'   \item \strong{Splines \& Flexible Models}: \code{surv.flexreg}, \code{surv.flexspline}, etc.
+#'   \item \strong{Decision Trees & SVM}: \code{surv.rpart}, \code{surv.ctree}, \code{surv.svm}, etc.
+#'   \item \strong{Splines & Flexible Models}: \code{surv.flexreg}, \code{surv.flexspline}, etc.
 #'   \item \strong{Neural Networks}: \code{surv.survdnn}
 #'   \item \strong{Non-parametric}: \code{surv.kaplan}, \code{surv.nelson} (empty ParamSet)
 #' }
@@ -94,6 +95,7 @@ surv_keys <- if (requireNamespace("mlr3", quietly = TRUE)) {
 #' 
 #' @examples
 #' \dontrun{
+#' data(pro_obj_test)
 #' library(mlr3proba)
 #' 
 #' # Get search space for random forest
@@ -180,24 +182,17 @@ surv_get_search_space <- function(learner_id, object = NULL) {
 #' @param tuning_budget An integer specifying the number of evaluations allowed
 #'   during tuning. Default is \code{50}.
 #'
-#' @return A list with two components:
-#'   \describe{
-#'     \item{tuner}{A \code{\link[mlr3tuning]{Tuner}} object, or \code{NULL}
-#'       if no tuning is needed.}
-#'     \item{terminator}{A \code{\link[mlr3tuning]{Terminator}} object, or
-#'       \code{NULL} if no tuning is needed.}
-#'   }
-#'
+#' @return A list 
 #' @details
 #' The function distinguishes between complex learners (requiring more
 #' sophisticated tuning strategies) and simple learners:
 #' \itemize{
 #'   \item \strong{Complex learners}: \code{surv.ranger}, \code{surv.xgboost.*},
-#'     \code{surv.gbm}, \code{surv.cforest} → random search with budget.
+#'     \code{surv.gbm}, \code{surv.cforest} -> random search with budget.
 #'   \item \strong{Simple learners}: For learners with parameters, grid search
 #'     with adaptive resolution based on the number of parameters.
 #'   \item \strong{No-tuning learners}: \code{surv.kaplan}, \code{surv.nelson}
-#'     → returns \code{NULL} for both components.
+#'     -> returns \code{NULL} for both components.
 #' }
 #'
 #' @examples
@@ -304,7 +299,6 @@ surv_create_surv_task <- function(data, time_col, event_col, id = "survival_task
 #' @param learner_id A character string specifying the learner ID (e.g., \code{"surv.coxph"}).
 #' @param task A \code{TaskSurv} object used to determine feature types and
 #'   learner capabilities.
-#'
 #' @return A configured \code{\link[mlr3]{Learner}} object, possibly wrapped in
 #'   a \code{PipeOp} pipeline if encoding is required.
 #'
@@ -317,7 +311,7 @@ surv_create_surv_task <- function(data, time_col, event_col, id = "survival_task
 #'   \item Checks if the task contains factor/character features and if the
 #'     learner supports them. If not, adds a \code{po("encode")} pipeline.
 #' }
-#'
+#' @import mlr3pipelines
 #' @keywords internal
 #' @noRd
 surv_get_learner <- function(learner_id, task) {
@@ -366,17 +360,18 @@ surv_get_learner <- function(learner_id, task) {
 #' \item{learner}{The trained learner object with optimal parameters.}
 #' \item{best_params}{List of best hyperparameter values.}
 #' \item{tuning_result}{Data frame of all evaluated parameter sets and performance.}
-#' \item{cv_performance}{Numeric cross‑validated performance score.}
+#' \item{cv_performance}{Numeric cross-validated performance score.}
 #' }
 #' @details
 #' The function extracts a task from \code{object}, instantiates the specified
-#' learner, and – if a non‑empty search space is provided – tunes its
+#' learner, and - if a non-empty search space is provided - tunes its
 #' hyperparameters using the chosen resampling and measure. The best parameters
 #' are then applied to the learner, which is retrained on the full task.
 #' After training, predictions are validated to ensure the model produces
 #' sensible \code{crank} values. If the search space is empty, training
 #' proceeds directly without tuning.
 #'
+#' @export
 #' @examples
 #' \dontrun{
 #' library(mlr3)
@@ -385,9 +380,6 @@ surv_get_learner <- function(learner_id, task) {
 #' result <- surv_train_and_tune(task, "surv.coxph", tuning_budget = 10)
 #' print(result$best_params)
 #' }
-#'
-#' @seealso \code{\link{surv_extract_task}}, \code{\link{surv_get_learner}}
-#' @export
 surv_train_and_tune <- function(object,
                            learner_id,
                            search_space = NULL,
@@ -432,7 +424,7 @@ surv_train_and_tune <- function(object,
   terminator <- trm("evals", n_evals = tuning_budget)
   
   # 4. Create Tuning Instance
-  instance <- TuningInstanceSingleCrit$new(
+  instance <- mlr3tuning::TuningInstanceSingleCrit$new(
     task = task,
     learner = learner,
     resampling = resampling,
@@ -628,7 +620,7 @@ surv_benchmark_learners <- function(object,
                                     tuning_budget = 50) {
   task <- surv_extract_task(object)
   
-  # Default resampling: 5‑fold CV
+  # Default resampling: 5-fold CV
   if (is.null(resampling)) {
     resampling <- rsmp("cv", folds = 5)
   }
@@ -680,13 +672,13 @@ surv_benchmark_learners <- function(object,
         performance = train_perf
       )
     }, error = function(e) {
-      message(sprintf("✗ [%s] Failed: %s", learner_id, e$message))
+      message(sprintf("[X] [%s] Failed: %s", learner_id, e$message))
       NULL
     })
     
     if (!is.null(learner_result)) {
       results[[learner_id]] <- learner_result
-      message(sprintf("✓ [%s] Completed successfully (CV C‑index = %.4f)", 
+      message(sprintf("[OK] [%s] Completed successfully (CV C-index = %.4f)", 
                       learner_id, learner_result$cv_performance))
     }
   }
@@ -735,11 +727,11 @@ surv_summarize_benchmark <- function(benchmark_results) {
   perf_list <- lapply(names(benchmark_results), function(learner_id) {
     res <- benchmark_results[[learner_id]]
     if (!is.null(res)) {
-      # Extract cv_score (if missing, use training C‑index as fallback)
+      # Extract cv_score (if missing, use training C-index as fallback)
       cv_score <- if (!is.null(res$cv_performance) && !is.na(res$cv_performance)) {
         res$cv_performance
       } else if (!is.null(res$performance$surv.cindex)) {
-        warning(sprintf("No CV score for %s, using training C‑index as fallback.", learner_id))
+        warning(sprintf("No CV score for %s, using training C-index as fallback.", learner_id))
         res$performance$surv.cindex
       } else {
         NA_real_
@@ -801,8 +793,8 @@ surv_list_available_learners <- function() {
 #'   risk group cutoffs. Must be one of \code{"median"}, \code{"tertile"},
 #'   \code{"quartile"}, \code{"p_optimize"}, or \code{"custom"}.
 #' @param custom_cutoffs A numeric vector of custom cutoffs (required when
-#'   \code{cutoff_method = "custom"}). Length 1 → binary split, length 2 → three
-#'   groups, length 3 → four groups, etc.
+#'   \code{cutoff_method = "custom"}). Length 1 -> binary split, length 2 -> three
+#'   groups, length 3 -> four groups, etc.
 #' @param n_boot An integer specifying the number of bootstrap samples for
 #'   \code{p_optimize} method. Default is \code{10}.
 #' @param fraction A numeric value specifying the subsample fraction for
@@ -1135,7 +1127,7 @@ surv_generate_nomogram <- function(object, selected_features = NULL, time_points
   return(nom)
 }
 
-#' SurvSHAP(t) Explanations for Survival Models — Production Version
+#' SurvSHAP(t) Explanations for Survival Models -- Production Version
 #'
 #' Computes time-dependent SurvSHAP(t) explanations for survival predictions.
 #' Supports both local (individual patient) and global (population-level)
@@ -1289,7 +1281,7 @@ surv_explain_shap <- function(
                          length.out = as.integer(n_timepoints))
     eval_times_use <- eval_times_full[idx_subsample]
     if (verbose) {
-      cat(sprintf("[SurvSHAP] Subsampling times: %d → %d points (%.1fx speedup)\n",
+      cat(sprintf("[SurvSHAP] Subsampling times: %d -> %d points (%.1fx speedup)\n",
                   length(eval_times_full), length(eval_times_use),
                   length(eval_times_full) / length(eval_times_use)))
     }
@@ -1342,7 +1334,7 @@ surv_explain_shap <- function(
                                 learner$id, type)
   
   if (verbose) {
-    cat(sprintf("[SurvSHAP] Complete. %d observations × %d features × %d times.\n",
+    cat(sprintf("[SurvSHAP] Complete. %d observations x %d features x %d times.\n",
                 length(unique(shap_long$observation)),
                 length(unique(shap_long$feature)),
                 length(unique(shap_long$time[!is.na(shap_long$time)]))))
@@ -1610,7 +1602,7 @@ surv_plot_shap_beeswarm <- function(shap_result,
 #' \enumerate{
 #'   \item Extracts the task and data from the input object.
 #'   \item For each subgroup variable, fits a Cox model with risk score as predictor.
-#'   \item Computes hazard ratios and 95% confidence intervals.
+#'   \item Computes hazard ratios and 95\% confidence intervals.
 #'   \item Creates a forest plot with subgroups ordered by HR magnitude.
 #' }
 #'
@@ -1712,7 +1704,7 @@ surv_plot_subgroup_forest <- function(learner, object, subgroup_vars, prog = NUL
     data <- as.data.frame(task$backend$data(rows = row_filter, cols = valid_cols))
   }
   
-  # Mount prediction risk scores (Crank) — physical row order corresponds strictly 1:1
+  # Mount prediction risk scores (Crank) -- physical row order corresponds strictly 1:1
   if (!is.null(task)) {
     predictions <- learner$predict(task)
     data$risk_score <- predictions$crank
@@ -2053,7 +2045,7 @@ surv_analyze_feature_stability <- function(object,
   }
   
   if (verbose) {
-    message(sprintf("  ✓ Stability index (Jaccard): %.3f", stab_index))
+    message(sprintf("  [OK] Stability index (Jaccard): %.3f", stab_index))
   }
   
   list(
@@ -2201,7 +2193,7 @@ surv_analyze_model_sensitivity <- function(object, learner_id, analysis_type = c
     ggplot2::scale_y_continuous(limits = c(0.45, 1)) +
     ggplot2::labs(
       x = x_label, 
-      y = "Cross-Validated C-Index (± SE)", 
+      y = "Cross-Validated C-Index (+/- SE)", 
       title = "Model Sensitivity Analysis",
       subtitle = sprintf("Model: %s | Perturbation: %s", learner_id, analysis_type)
     ) +
@@ -2211,7 +2203,7 @@ surv_analyze_model_sensitivity <- function(object, learner_id, analysis_type = c
     )
   
   print(p)
-  message("  ✓ Sensitivity analysis complete.")
+  message("  [OK] Sensitivity analysis complete.")
   
   list(results = results, plot = p)
 }
@@ -2326,7 +2318,7 @@ surv_analyze_feature_ablation <- function(object, learner_id, features_to_test =
     ggprism::theme_prism()
   
   print(p)
-  message("  ✓ Feature ablation analysis complete.")
+  message("  [OK] Feature ablation analysis complete.")
   
   return(list(results = res_df, plot = p, baseline = baseline_cindex))
 }
@@ -2523,7 +2515,8 @@ surv_plot_comparison_calibration <- function(learner, train_task, val_task,
 
 #' Plot Continuous Time-dependent AUC (Dynamic AUC)
 #' @param learner Trained mlr3 learner
-#' @param task TaskSurv object
+#' @param object A \code{TaskSurv} or \code{PrognosiX} object. The function
+#'   extracts the task using \code{surv_extract_task()}.
 #' @return ggplot object
 #' @export
 surv_plot_time_dependent_auc <- function(learner, object) {
@@ -2580,7 +2573,8 @@ surv_plot_time_dependent_auc <- function(learner, object) {
 }
 
 #' Feature Selection Pipeline: Univariate to Lasso
-#' @param task TaskSurv object
+#' @param object A \code{TaskSurv} or \code{PrognosiX} object. The function
+#'   extracts the task using \code{surv_extract_task()}.
 #' @param p_threshold P-value threshold for univariate filtering (default 0.05)
 #' @return A list containing the filtered task and the univariate results table
 #' @export
@@ -2619,7 +2613,7 @@ surv_filter_features_clinical <- function(object, p_threshold = 0.05) {
   # Filter significant features
   significant_feats <- unv_df$Feature[unv_df$P_Value < p_threshold]
   
-  message(sprintf("  [✓] Univariate filter complete: %d -> %d features", length(features), length(significant_feats)))
+  message(sprintf("  [[OK]] Univariate filter complete: %d -> %d features", length(features), length(significant_feats)))
   
   # Return a task with only significant features
   new_task <- task$clone()$select(significant_feats)
@@ -2660,7 +2654,7 @@ surv_filter_features_clinical <- function(object, p_threshold = 0.05) {
 #'
 #' @return A list with three components:
 #'   \describe{
-#'     \item{bmr}{A \code{\link[mlr3benchmark]{BenchmarkResult}} object
+#'     \item{bmr}{A \code{\link[mlr3]{BenchmarkResult}} object
 #'       containing all benchmark results.}
 #'     \item{table}{A data frame of aggregated performance metrics (C-index)
 #'       for each learner.}
@@ -2828,7 +2822,7 @@ check_data_quality <- function(data, time_col, event_col) {
     warning(sprintf("Very high event rate (%.1f%%). Check data coding.", event_rate * 100))
   }
   
-  message(sprintf("[✓] Data quality check passed. N=%d, Events=%.1f%%", 
+  message(sprintf("[[OK]] Data quality check passed. N=%d, Events=%.1f%%", 
                   nrow(data), event_rate * 100))
   invisible(NULL)
 }
@@ -2845,7 +2839,7 @@ create_step_dir <- function(base_dir, step_num, step_name) {
   if (!dir.exists(full_path)) {
     dir.create(full_path, recursive = TRUE, showWarnings = FALSE)
   }
-  message(sprintf("  → Step %d: %s", step_num, step_name))
+  message(sprintf("  -> Step %d: %s", step_num, step_name))
   return(full_path)
 }
 
@@ -2919,7 +2913,7 @@ surv_plot_comparison_auc <- function(learner, train_task, val_task) {
   return(p)
 }
 
-#' Multi‑strategy feature selection for survival analysis
+#' Multi-strategy feature selection for survival analysis
 #'
 #' Applies multiple feature selection methods to a survival task and returns a
 #' consensus set of features. Supports 12+ algorithms including univariate Cox,
@@ -2938,17 +2932,17 @@ surv_plot_comparison_auc <- function(learner, train_task, val_task) {
 #'     \item{\code{"xgb_imp"}}{XGBoost gain importance; keeps top \code{top_ratio}.}
 #'     \item{\code{"vimp"}}{VIMP variable importance from \code{randomForestSRC::vimp} (recommended).}
 #'     \item{\code{"boruta"}}{Boruta wrapper algorithm (requires \code{Boruta} package; disabled by default).}
-#'     \item{\code{"stepwise"}}{Stepwise Cox regression (both directions, AIC). Only for low‑dimensional data (p < 30).}
+#'     \item{\code{"stepwise"}}{Stepwise Cox regression (both directions, AIC). Only for low-dimensional data (p < 30).}
 #'     \item{\code{"stab_sel"}}{Stability selection using \code{c060::stabpath} with Lasso.}
 #'     \item{\code{"mrmr"}}{Minimum Redundancy Maximum Relevance using Cox risk score as proxy (approximate).}
 #'   }
-#' @param p_threshold Numeric. P‑value threshold for univariate Cox (default 0.05).
-#' @param top_ratio Numeric. For importance‑based methods (RF, XGBoost, VIMP), keep this proportion of top features (default 0.5).
+#' @param p_threshold Numeric. P-value threshold for univariate Cox (default 0.05).
+#' @param top_ratio Numeric. For importance-based methods (RF, XGBoost, VIMP), keep this proportion of top features (default 0.5).
 #' @param combine Character. How to combine results from different methods:
 #'   \itemize{
-#'     \item \code{"union"} – take union of all selected feature sets.
-#'     \item \code{"intersection"} – take intersection (common features).
-#'     \item \code{"freq"} – keep features selected by at least \code{freq_cutoff} methods.
+#'     \item \code{"union"} - take union of all selected feature sets.
+#'     \item \code{"intersection"} - take intersection (common features).
+#'     \item \code{"freq"} - keep features selected by at least \code{freq_cutoff} methods.
 #'   }
 #' @param freq_cutoff Integer. Minimum number of methods that must select a feature when \code{combine = "freq"} (default 2).
 #' @param verbose Logical. Print progress messages (default TRUE).
@@ -2961,7 +2955,7 @@ surv_plot_comparison_auc <- function(learner, train_task, val_task) {
 #'     \item{\code{method_results}}{List of raw outputs from each method (e.g., fitted models, importance vectors) for further inspection.}
 #'   }
 #'
-#' @importFrom stats coef as.formula
+#' @importFrom stats as.formula
 #' @importFrom utils head
 #' @importFrom survival Surv coxph
 #' @importFrom MASS stepAIC
@@ -3019,7 +3013,7 @@ surv_feature_selection_multi <- function(object,
   status_var <- task$target_names[2]
   all_features <- task$feature_names
   
-  if (verbose) cat("\n[Multi‑Feature Selection] Methods:", paste(methods, collapse=", "), "\n")
+  if (verbose) cat("\n[Multi-Feature Selection] Methods:", paste(methods, collapse=", "), "\n")
   
   # Helper: keep top proportion of features based on importance vector
   keep_top <- function(imp_vec, ratio) {
@@ -3144,7 +3138,7 @@ surv_feature_selection_multi <- function(object,
   }
   
   # ----------------------------------------------------------------------------
-  # 8. VIMP (Variable Importance) from randomForestSRC — Standalone algorithm
+  # 8. VIMP (Variable Importance) from randomForestSRC -- Standalone algorithm
   # ----------------------------------------------------------------------------
   if ("vimp" %in% methods) {
     if (verbose) cat("  - Running VIMP variable importance...\n")
@@ -3573,9 +3567,9 @@ list_surv_feature_methods <- function(verbose = TRUE) {
       "XGBoost gain importance, keep top ratio",
       "VIMP variable importance from randomForestSRC (robust, recommended)",
       "Boruta wrapper algorithm (default OFF, may fail on survival data)",
-      "Stepwise Cox regression (both directions, AIC) – low-dimensional only",
+      "Stepwise Cox regression (both directions, AIC) - low-dimensional only",
       "Stability selection with Lasso via c060::stabpath",
-      "Minimum Redundancy Maximum Relevance (Cox risk proxy) – approximate"
+      "Minimum Redundancy Maximum Relevance (Cox risk proxy) - approximate"
     ),
     RequiredPackages = c(
       "survival (built-in)",
@@ -3592,18 +3586,18 @@ list_surv_feature_methods <- function(verbose = TRUE) {
       "praznik"
     ),
     Recommendation = c(
-      "★ ★ ★ ★ ★ (must-have)",
-      "★ ★ ★ ★ ★ (top choice)",
-      "★ ★ ★ ★ ☆ (high collinearity)",
-      "★ ★ ★ ★ ★ (often best glmnet)",
-      "★ ★ ★ ★ ☆ (nonlinear effects)",
-      "★ ★ ★ ★ ☆ (survival-specialized)",
-      "★ ★ ★ ★ ☆ (handles missing data)",
-      "★ ★ ★ ★ ★ (stable, official RF method)",
-      "★ ★ ☆ ☆ ☆ (use with caution, OFF by default)",
-      "★ ★ ☆ ☆ ☆ (only for low dimension, p < 30)",
-      "★ ★ ★ ★ ☆ (robust for high-dim)",
-      "★ ★ ★ ☆ ☆ (approximate, informative only)"
+      "* * * * * (must-have)",
+      "* * * * * (top choice)",
+      "* * * * * (high collinearity)",
+      "* * * * * (often best glmnet)",
+      "* * * * * (nonlinear effects)",
+      "* * * * * (survival-specialized)",
+      "* * * * * (handles missing data)",
+      "* * * * * (stable, official RF method)",
+      "* * * * * (use with caution, OFF by default)",
+      "* * * * * (only for low dimension, p < 30)",
+      "* * * * * (robust for high-dim)",
+      "* * * * * (approximate, informative only)"
     ),
     stringsAsFactors = FALSE
   )

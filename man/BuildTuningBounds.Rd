@@ -7,7 +7,7 @@
 BuildTuningBounds(...)
 }
 \arguments{
-\item{...}{Named arguments, each a numeric vector of length 2
+\item{...}{Named arguments, each a numeric vector of length 2 
 \code{c(lower, upper)}.}
 }
 \value{

@@ -11,7 +11,7 @@
 #' Generate NMF rank-evaluation plots
 #'
 #' Produces four panels: Cophenetic Correlation, Reconstruction Residual,
-#' Dispersion, and RSS – saved as PDF + PNG.
+#' Dispersion, and RSS - saved as PDF + PNG.
 #'
 #' @param estimate  NMF.rank object (from \code{NMF::nmf(..., rank = k1:k2)}).
 #' @param save_dir  Output directory.
@@ -106,12 +106,12 @@ Sub_nmf_estimate <- function(object,
   data <- .extract_data(object, scaled = TRUE)
 
   if (any(data < 0)) {
-    warning("Negative values detected – replaced with 0 for NMF.")
+    warning("Negative values detected - replaced with 0 for NMF.")
     data[data < 0] <- 0
   }
 
   cat("Starting NMF rank estimation (ranks:", paste(rank_range, collapse = "\u2013"), ")...\n")
-  # NMF requires features × samples; .extract_data returns samples × features → transpose
+  # NMF requires features x samples; .extract_data returns samples x features -> transpose
   estimate <- NMF::nmf(t(as.matrix(data)),
                        rank   = rank_range,
                        method = method,
@@ -233,7 +233,7 @@ nmf_basis_heatmap <- function(fit,
   top_idx_list <- lapply(seq_len(n_comp), function(j) {
     order(W[, j], decreasing = TRUE)[seq_len(min(top_n, nrow(W)))]
   })
-  # Keep assignment: each feature → dominant component (for row gap lines)
+  # Keep assignment: each feature -> dominant component (for row gap lines)
   feature_comp <- unlist(lapply(seq_len(n_comp), function(j) rep(j, length(top_idx_list[[j]]))))
   top_idx      <- unlist(top_idx_list)
   # Remove duplicates, keep first occurrence (dominant assignment wins)
@@ -298,7 +298,6 @@ nmf_basis_heatmap <- function(fit,
 #' @param width         PDF width.
 #' @param height        PDF height.
 #' @param k             Rank.
-#' @importFrom NMF coef
 #' @importFrom pheatmap pheatmap
 #' @examples
 #' \dontrun{
@@ -326,7 +325,7 @@ nmf_coef_heatmap <- function(fit,
   groups <- tryCatch(as.integer(predict(fit)), error = function(e) NULL)
 
   if (!is.null(groups)) {
-    # Sort samples by subtype → within subtype by dominant component value
+    # Sort samples by subtype -> within subtype by dominant component value
     ord      <- order(groups, -H_norm[cbind(groups, seq_along(groups))])
     H_norm   <- H_norm[, ord, drop = FALSE]
     groups   <- groups[ord]
@@ -495,7 +494,7 @@ Sub_nmf_best_rank <- function(object,
   cat("Best rank (max cophenetic):", best_k, "\n")
 
   cat("Re-running NMF at K =", best_k, "for final model...\n")
-  # NMF requires features × samples → transpose
+  # NMF requires features x samples -> transpose
   fit <- NMF::nmf(t(as.matrix(data)), rank = best_k,
                   method = method, nrun = nrun, seed = seed)
 
@@ -597,7 +596,7 @@ Sub_nmf_train_model <- function(object,
 
   if (!inherits(object, "Subtyping")) stop("Input must be a 'Subtyping' object.")
 
-  train_data <- t(as.matrix(.extract_data(object, scaled = TRUE)))   # features × samples
+  train_data <- t(as.matrix(.extract_data(object, scaled = TRUE)))   # features x samples
   if (any(train_data < 0)) train_data[train_data < 0] <- 0
 
   cat("Training final NMF model (K =", best_k, ", nrun =", nrun, ")...\n")
@@ -668,7 +667,7 @@ Sub_nmf_train_model <- function(object,
 #' as EcoTyper's recovery step).
 #'
 #' @param model_path Path to .rds model saved by \code{Sub_nmf_train_model}.
-#' @param new_data   New data matrix: samples × features (rows = samples).
+#' @param new_data   New data matrix: samples x features (rows = samples).
 #' @return Data frame with predicted subtypes and membership probabilities.
 #' @importFrom nnls nnls
 #' @examples
@@ -690,7 +689,7 @@ Sub_nmf_predict <- function(model_path, new_data) {
 
   if (length(common_features) < length(feature_names))
     warning(length(feature_names) - length(common_features),
-            " model features missing in new_data – filled with 0.")
+            " model features missing in new_data - filled with 0.")
 
   input_mat <- matrix(0,
                       nrow = nrow(new_data),
@@ -828,12 +827,32 @@ Sub_nmf_plot_eval <- function(object,
            error = function(e) message("NMF rank plot screen error: ", e$message))
 }
 
-#' Plot NMF consensus maps for all ranks
+#' Plot NMF Consensus Maps for All Ranks
 #'
-#' @param object   Subtyping object.
-#' @param save_dir Output directory.
+#' Generates consensus heatmaps for each rank evaluated in the NMF estimate
+#' using \code{NMF::consensusmap}. All maps are saved as a multi-page PDF file
+#' and also printed to the screen.
+#'
+#' @param object   A \code{Subtyping} S4 object containing NMF estimation results
+#'   in \code{object@cluster.results$nmf.result$estimate}.
+#' @param save_dir Output directory where the PDF will be saved. If \code{NULL},
+#'   the current working directory is used. The function creates the directory
+#'   if it does not exist.
+#' @param width    Width of the PDF page in inches. Default: \code{12}.
+#' @param height   Height of the PDF page in inches. Default: \code{10}.
+#'
+#' @return Invisibly returns \code{NULL}. The function is called for its
+#'   side effects: generating and saving consensus maps.
+#'
 #' @importFrom NMF consensusmap
+#' @importFrom grDevices pdf dev.off
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Assuming 'sub_obj' has nmf.result$estimate
+#' Sub_nmf_plot_consensus_all(sub_obj, save_dir = "./nmf_output", width = 10, height = 8)
+#' }
 Sub_nmf_plot_consensus_all <- function(object,
                                        save_dir = NULL,
                                        width    = 12,
@@ -872,7 +891,7 @@ Sub_nmf_plot_consensus_all <- function(object,
 
   cat("- All consensus maps saved to:", pdf_path, "\n")
 
-  # Print to screen (separate device – no outer pdf open)
+  # Print to screen (separate device - no outer pdf open)
   tryCatch(NMF::consensusmap(estimate),
            error = function(e) message("Consensus map screen print error: ", e$message))
 }

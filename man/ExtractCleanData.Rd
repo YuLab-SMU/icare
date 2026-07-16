@@ -12,11 +12,11 @@ ExtractCleanData(object)
 \item{object}{Stat object.}
 }
 \value{
-A \code{data.frame} containing the cleaned data from the \code{Stat} object,
-or \code{NULL} if extraction fails.
+A `data.frame` containing the cleaned data from the `Stat` object,
+or `NULL` if extraction fails.
 }
 \description{
-This function extracts the \code{clean.data} slot from an object of class \code{Stat}.
+This function extracts the `clean.data` slot from an object of class `Stat`.
 }
 \examples{
 \dontrun{

@@ -16,12 +16,12 @@ tests all features in the task. Default is \code{NULL}.}
 }
 \value{
 A list with three components:
-\describe{
-\item{results}{A data frame with columns: \code{Feature_Removed}, \code{New_CIndex},
-and \code{Performance_Drop}.}
-\item{plot}{A \code{ggplot} object showing the performance drop for each feature.}
-\item{baseline}{The baseline C-index with all features.}
-}
+  \describe{
+    \item{results}{A data frame with columns: \code{Feature_Removed}, \code{New_CIndex},
+      and \code{Performance_Drop}.}
+    \item{plot}{A \code{ggplot} object showing the performance drop for each feature.}
+    \item{baseline}{The baseline C-index with all features.}
+  }
 }
 \description{
 Evaluates the impact of removing individual features on model performance.
@@ -31,10 +31,10 @@ in C-index is recorded.
 \details{
 The function:
 \enumerate{
-\item Calculates baseline performance using all features.
-\item For each feature, creates a task without that feature and evaluates performance.
-\item Reports the drop in C-index for each feature.
-\item Creates a bar plot sorted by impact magnitude.
+  \item Calculates baseline performance using all features.
+  \item For each feature, creates a task without that feature and evaluates performance.
+  \item Reports the drop in C-index for each feature.
+  \item Creates a bar plot sorted by impact magnitude.
 }
 }
 \examples{

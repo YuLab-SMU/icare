@@ -7,9 +7,10 @@
 surv_filter_features_clinical(object, p_threshold = 0.05)
 }
 \arguments{
-\item{p_threshold}{P-value threshold for univariate filtering (default 0.05)}
+\item{object}{A \code{TaskSurv} or \code{PrognosiX} object. The function
+extracts the task using \code{surv_extract_task()}.}
 
-\item{task}{TaskSurv object}
+\item{p_threshold}{P-value threshold for univariate filtering (default 0.05)}
 }
 \value{
 A list containing the filtered task and the univariate results table

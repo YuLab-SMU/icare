@@ -16,62 +16,62 @@ surv_plot_shap_beeswarm(
 }
 \arguments{
 \item{shap_result}{A list object returned by a survival SHAP calculation function,
-typically containing \code{shap_long} (long-format SHAP values) and optionally
-\code{original_features} (original feature values for coloring).}
+typically containing `shap_long` (long-format SHAP values) and optionally
+`original_features` (original feature values for coloring).}
 
 \item{time_point}{A numeric value specifying the time point at which to aggregate
-SHAP values. If \code{NULL} or all SHAP values have missing time, SHAP values are
-averaged across all time points. Default is \code{NULL}.}
+SHAP values. If `NULL` or all SHAP values have missing time, SHAP values are
+averaged across all time points. Default is `NULL`.}
 
 \item{top_n}{An integer specifying the number of top features to display based
-on mean absolute SHAP values. Default is \code{8L}.}
+on mean absolute SHAP values. Default is `8L`.}
 
 \item{method}{A character string specifying the plot type. Must be one of
-\code{"beeswarm"} (default) or \code{"violin"}.}
+`"beeswarm"` (default) or `"violin"`.}
 
 \item{color_low}{A character string specifying the color for low feature values
-in the color gradient. Default is \code{"#2c7bb6"} (blue).}
+in the color gradient. Default is `"#2c7bb6"` (blue).}
 
 \item{color_high}{A character string specifying the color for high feature values
-in the color gradient. Default is \code{"#d7191c"} (red).}
+in the color gradient. Default is `"#d7191c"` (red).}
 
-\item{title}{A character string for the plot title. If \code{NULL}, a default title
-is generated with time point and sample size information. Default is \code{NULL}.}
+\item{title}{A character string for the plot title. If `NULL`, a default title
+is generated with time point and sample size information. Default is `NULL`.}
 }
 \value{
 A \code{ggplot} object representing the SHAP summary plot. Points are
-colored by feature values if \code{original_features} is available in \code{shap_result}.
+  colored by feature values if `original_features` is available in `shap_result`.
 }
 \description{
-This function creates a beeswarm or violin summary plot for SHAP (SHapley
-Additive exPlanations) values from survival models. It aggregates SHAP values
-across observations and optionally at a specific time point, displaying the
+This function creates a beeswarm or violin summary plot for SHAP (SHapley 
+Additive exPlanations) values from survival models. It aggregates SHAP values 
+across observations and optionally at a specific time point, displaying the 
 most important features based on mean absolute SHAP values.
 }
 \details{
 The function first aggregates SHAP values from the long-format input. If a
-\code{time_point} is specified, SHAP values are filtered to the closest available
+`time_point` is specified, SHAP values are filtered to the closest available
 evaluation time before aggregation; otherwise, values are averaged across all
 time points. Features are ranked by mean absolute SHAP value, and the top
 \code{top_n} features are displayed.
 
 Two visualization methods are supported:
 \itemize{
-\item \code{"beeswarm"}: Points are distributed along the y-axis to avoid
-overlap, with optional coloring by feature values.
-\item \code{"violin"}: Violin plots show the distribution of SHAP values,
-with quasi-random points overlaid for individual observations.
+  \item \code{"beeswarm"}: Points are distributed along the y-axis to avoid
+    overlap, with optional coloring by feature values.
+  \item \code{"violin"}: Violin plots show the distribution of SHAP values,
+    with quasi-random points overlaid for individual observations.
 }
 
-When \code{original_features} is provided in \code{shap_result}, points are colored by
+When `original_features` is provided in `shap_result`, points are colored by
 the corresponding feature values. Numeric features use a continuous color
 gradient, while categorical features use discrete colors. The function uses
 the \pkg{ggbeeswarm} package for beeswarm and quasirandom geometries.
 }
 \note{
-The \code{shap_result} object must contain a \code{shap_long} data frame with columns
-\code{observation}, \code{feature}, \code{shap_value}, and optionally \code{time}. If
-\code{original_features} is provided, it should be a data frame with observations
+The `shap_result` object must contain a `shap_long` data frame with columns
+`observation`, `feature`, `shap_value`, and optionally `time`. If
+`original_features` is provided, it should be a data frame with observations
 as row names and features as columns.
 
 This function requires the following packages: \pkg{ggplot2}, \pkg{ggbeeswarm},

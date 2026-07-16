@@ -43,7 +43,7 @@ Process Missing Values for Stat Object or Data Frame
 }
 \examples{
 \dontrun{
-#Impute missing values ​​for the Stat object and update clean.data and process.info.
+#Impute missing values for the Stat object and update clean.data and process.info.
 stat_obj_test <- stat_miss_processed(stat_obj_test, impute_method = "median_mode")
 }
 }

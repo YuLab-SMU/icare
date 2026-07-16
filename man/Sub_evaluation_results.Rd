@@ -13,7 +13,7 @@ Sub_evaluation_results(object, seed = 123)
 }
 \value{
 The updated \code{Subtyping} object (if input was Subtyping),
-or a named list of evaluation metrics.
+  or a named list of evaluation metrics.
 }
 \description{
 Sub Evaluation Results

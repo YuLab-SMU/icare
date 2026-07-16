@@ -19,8 +19,8 @@ FilterByFeature(
 
 \item{threshold}{Numeric cut-off value.}
 
-\item{direction}{\code{"above"} (default) keeps samples ≥ threshold;
-\code{"below"} keeps samples ≤ threshold; \code{"equal"} keeps exact
+\item{direction}{\code{"above"} (default) keeps samples >= threshold;
+\code{"below"} keeps samples <= threshold; \code{"equal"} keeps exact
 matches.}
 
 \item{invert}{Logical. Inverts the selection when \code{TRUE}.}

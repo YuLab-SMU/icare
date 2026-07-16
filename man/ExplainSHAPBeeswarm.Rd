@@ -19,7 +19,7 @@ ExplainSHAPBeeswarm(
 \arguments{
 \item{explainer}{A DALEX explainer.}
 
-\item{N}{Number of samples (default 100, suggest 50–200).}
+\item{N}{Number of samples (default 100, suggest 50-200).}
 
 \item{B}{SHAP permutations per sample (default 10).}
 
@@ -31,16 +31,16 @@ ExplainSHAPBeeswarm(
 
 \item{save_dir}{Output directory (default "ModelExplain").}
 
-\item{plot_width, }{plot_height  Dimensions (inches, default 9 x 6).}
+\item{plot_width, plot_height}{Dimensions (inches, default 9 x 6).}
 }
 \value{
 Invisibly returns a named list:
 \itemize{
-\item shap_matrix  — N × p matrix of SHAP values
-\item X_sample     — corresponding feature matrix
-\item shapviz_obj  — shapviz object (if available, otherwise NULL)
-\item plot         — ggplot2 object
-\item importance   — data.frame of feature importance rankings
+  \item shap_matrix  -- N x p matrix of SHAP values
+  \item X_sample     -- corresponding feature matrix
+  \item shapviz_obj  -- shapviz object (if available, otherwise NULL)
+  \item plot         -- ggplot2 object
+  \item importance   -- data.frame of feature importance rankings
 }
 }
 \description{
@@ -49,14 +49,14 @@ Computes SHAP values for N samples and generates a beeswarm plot.
 \details{
 Plot interpretation:
 \itemize{
-\item y‑axis: features, sorted by mean |SHAP| (most important at the top)
-\item x‑axis: SHAP value (positive → increases predicted probability,
-negative → decreases it)
-\item colour: feature value (red = high, blue = low)
-\item each point represents one sample
+  \item y-axis: features, sorted by mean |SHAP| (most important at the top)
+  \item x-axis: SHAP value (positive -> increases predicted probability,
+        negative -> decreases it)
+  \item colour: feature value (red = high, blue = low)
+  \item each point represents one sample
 }
 
-The function prefers the \code{shapviz} package for standard beeswarm plots;
+The function prefers the `shapviz` package for standard beeswarm plots;
 if it is not installed, it falls back to a ggplot2 + geom_jitter
 implementation (visually equivalent).
 }

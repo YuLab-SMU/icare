@@ -7,7 +7,8 @@
 #' 4. Ensures all column names are unique by appending numbers to duplicated names.
 #'
 #' @param data A data frame whose column names need to be modified.
-#'
+#' @param tolower Logical. If \code{TRUE}, column names are converted to
+#'   lowercase before other modifications. Default is \code{FALSE}.
 #' @returns A data frame with modified column names.
 #' @export
 #'
@@ -135,7 +136,8 @@ Stat <- setClass(
 #'
 #' This function creates a `Stat` object, which is used to store and manage various components
 #' of statistical analysis, such as raw data, cleaned data, additional metadata, and processing
-#' information. It performs basic checks and preparation on the input data before creating the object
+#' information. It performs basic checks and preparation on the input data before creating the object.
+#' 
 #' @import methods
 #' @param raw.data A data.frame containing the raw data for analysis. Defaults to an empty data frame.
 #' @param clean.data A data.frame containing the cleaned data for analysis. Defaults to an empty data frame.

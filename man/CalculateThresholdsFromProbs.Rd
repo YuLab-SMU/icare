@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_08_clinical_analysis.R
 \name{CalculateThresholdsFromProbs}
 \alias{CalculateThresholdsFromProbs}
-\title{Calculate Multi‑Threshold Metrics from External Probabilities}
+\title{Calculate Multi-Threshold Metrics from External Probabilities}
 \usage{
 CalculateThresholdsFromProbs(
   probs,
@@ -16,23 +16,85 @@ CalculateThresholdsFromProbs(
 )
 }
 \arguments{
-\item{probs}{Numeric vector of predicted probabilities (range 0‑1).}
+\item{probs}{Numeric vector of predicted probabilities (range 0–1).}
 
 \item{true}{Factor vector of true binary labels.}
 
 \item{positive}{Character string specifying the positive class
-(e.g., \code{"yes"}).  Must be one of the levels of \code{true}.}
+(e.g., \code{"yes"}). Must be one of the levels of \code{true}.}
 
-\item{target_se, }{target_sp, target_ppv, target_npv, target_acc
-Same as in \code{CalculateThresholds}.}
+\item{target_se}{Numeric. Target Sensitivity threshold. If specified, the
+function returns the threshold that achieves at least this Sensitivity
+(closest lower threshold). Default \code{NULL}.}
+
+\item{target_sp}{Numeric. Target Specificity threshold. If specified, returns
+the threshold that achieves at least this Specificity. Default \code{NULL}.}
+
+\item{target_ppv}{Numeric. Target Positive Predictive Value threshold.
+If specified, returns the threshold that achieves at least this PPV.
+Default \code{NULL}.}
+
+\item{target_npv}{Numeric. Target Negative Predictive Value threshold.
+If specified, returns the threshold that achieves at least this NPV.
+Default \code{NULL}.}
+
+\item{target_acc}{Logical. If \code{TRUE}, returns the threshold that
+maximises Accuracy. Default \code{TRUE}.}
 }
 \value{
-A list with the same structure as \code{CalculateThresholds},
-suitable for all downstream plotting and analysis functions.
+A list with the same structure as \code{\link{CalculateThresholds}},
+  containing:
+  \itemize{
+    \item \code{thresholds}: Named numeric vector of selected thresholds
+      (Youden, targets, MaxAcc).
+    \item \code{metrics_df}: Data frame of all metrics at each unique threshold.
+    \item \code{probabilities}: Input probabilities.
+    \item \code{true}: Input true labels.
+    \item \code{positive}: Positive class name.
+    \item \code{negative}: Negative class name.
+  }
 }
 \description{
-This function works exactly like \code{CalculateThresholds}, but accepts
-directly a vector of predicted probabilities and the corresponding true
-labels, without needing a model object.  It is useful when the prediction
-scores come from an external source (e.g., literature, another software).
+Accepts predicted probabilities and true labels directly, without requiring a
+model object. This is useful when predictions come from an external source,
+such as literature or other software. The function computes classification
+metrics at each unique threshold, including Sensitivity, Specificity,
+Accuracy, PPV, NPV, and F1, and returns selected thresholds based on
+user-defined targets.
+}
+\examples{
+\dontrun{
+library(caret)
+
+# Simulate example data
+set.seed(123)
+true_labels <- factor(sample(c("yes", "no"), 100, replace = TRUE),
+                      levels = c("no", "yes"))
+predicted_probs <- runif(100)
+
+# Basic usage with Youden and Max Accuracy thresholds
+result <- CalculateThresholdsFromProbs(
+  probs = predicted_probs,
+  true = true_labels,
+  positive = "yes"
+)
+
+# View selected thresholds
+print(result$thresholds)
+
+# View first few rows of metrics table
+head(result$metrics_df)
+
+# With target specificity and sensitivity
+result2 <- CalculateThresholdsFromProbs(
+  probs = predicted_probs,
+  true = true_labels,
+  positive = "yes",
+  target_se = 0.9,
+  target_sp = 0.8,
+  target_ppv = 0.85
+)
+
+print(result2$thresholds)
+}
 }

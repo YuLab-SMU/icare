@@ -34,7 +34,7 @@ based on the provided group columns (default is NULL).}
 \item{save_dir}{The directory to save the Word document (default is the "PrognosiX/gaze_baseline" folder).}
 }
 \value{
-A data frame or matrix with the gaze analysis results. If \code{save_word} is TRUE, the results
+A data frame or matrix with the gaze analysis results. If `save_word` is TRUE, the results
 are also saved as a Word document in the specified directory.
 }
 \description{

@@ -15,9 +15,9 @@
 }
 
 
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 # Step 1: Inspect tunable parameters for any caret model
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 
 #' Inspect Tunable Hyperparameters for a caret Model
 #'
@@ -71,9 +71,9 @@ InspectHyperParams <- function(method) {
 }
 
 
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 # Step 2: Build a user-defined bounds list from inspected parameters
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 
 #' Build Bounds List for Bayesian Optimization
 #'
@@ -111,9 +111,9 @@ BuildTuningBounds <- function(...) {
 }
 
 
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 # Step 3: Run Bayesian Optimization with user-defined bounds
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 #' Bayesian Optimization for Model Fine-Tuning
 #'
 #' @description This function performs hyperparameter tuning using Bayesian Optimization 
@@ -307,15 +307,15 @@ FineTuneModel <- function(model_obj,
   return(model_obj)
 }
 
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 # Helper: Plot tuning history
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 
 #' Plot Bayesian Optimization History
 #'
 #' Shows the best score found so far across iterations.
 #'
-#' @param model_obj A \code{Train_Model} object that has been fine‑tuned.
+#' @param model_obj A \code{Train_Model} object that has been fine-tuned.
 #' @param save_plot Logical.
 #' @param save_dir  Output directory.
 #' @return A ggplot.

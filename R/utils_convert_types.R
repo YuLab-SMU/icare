@@ -10,7 +10,8 @@
 #' @examples
 #' \dontrun{
 #' types <- diagnose_variable_type(stat_obj_test@clean.data, group_col = "SWAB")
-#' converted <- convert_variables(stat_obj_test@clean.data, types, group_col = "SWAB", save_data = FALSE)
+#' converted <- convert_variables(stat_obj_test@clean.data, types, 
+#' group_col = "SWAB", save_data = FALSE)
 #' }
 convert_variables <- function(data,
                               variable_types,

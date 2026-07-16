@@ -1,14 +1,15 @@
 #' Calinski-Harabasz Index
 #'
 #' @param clustered.data Clustered data.
+#' @param label_col label column.
 #' @return Numeric CH index value.
+#' @export
 #' @examples
 #' \dontrun{
 #'   df <- data.frame(x = rnorm(30), y = rnorm(30), group = sample(1:3, 30, replace = TRUE))
 #'   ch <- calinski_harabasz(df, label_col = "group")
 #'   cat("Calinski-Harabasz Index:", ch, "\n")
 #' }
-#' @export
 calinski_harabasz <- function(clustered.data,label_col = "group") {
   X <- clustered.data[, !names(clustered.data) %in% label_col, drop = FALSE]
   labels <- clustered.data[[label_col]]

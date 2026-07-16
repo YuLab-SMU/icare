@@ -11,7 +11,7 @@ get_output_dir(
 )
 }
 \arguments{
-\item{module}{Character string. Module name: "m1", "m2", "m3", "m4",
+\item{module}{Character string. Module name: "m1", "m2", "m3", "m4", 
 "Figures", "StatObject", "ModelData", or "Subtyping".}
 
 \item{subdir}{Character string. Optional subdirectory path within the module folder.}

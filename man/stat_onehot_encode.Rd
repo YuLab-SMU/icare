@@ -15,22 +15,47 @@ stat_onehot_encode(
 )
 }
 \arguments{
-\item{object}{An object of class \code{Stat} or a \code{data.frame}.}
+\item{object}{An object of class `Stat` or a `data.frame`.}
 
-\item{method}{Reserved for future use. Currently not used. Default is 1.}
+\item{method}{Reserved for future use. Currently not used. Default is `1`.}
 
 \item{group_col}{A string specifying the name of the grouping column. This column will be
-excluded from one-hot encoding and moved to the end of the result. Default is \code{"group"}.}
+excluded from one-hot encoding and moved to the end of the result. Default is `"group"`.}
 
 \item{max_unique_values}{The maximum number of unique values a variable can have to be
-considered for one-hot encoding. Default is 5.}
+considered for one-hot encoding. Default is `5`.}
+
+\item{save_dir}{A character string specifying the directory where the encoded data
+will be saved as a CSV file. If `NULL`, uses the default output directory
+from `get_output_dir("StatObject", "Data")`. Default is `NULL`.}
+
+\item{save_data}{Logical. If `TRUE`, saves the encoded data to a CSV file.
+Default is `TRUE`.}
+
+\item{csv_filename}{A character string specifying the name of the CSV file to
+save the encoded data. Default is `"clean_data.csv"`.}
 }
 \value{
-A \code{Stat} object with updated one-hot encoded \code{clean.data} slot, or a
-one-hot encoded \code{data.frame}.
+If the input is a `Stat` object, returns the updated `Stat` object with
+        the one-hot encoded data stored in the `clean.data` slot. If the input is
+        a data frame, returns the one-hot encoded data frame.
 }
 \description{
-This function applies one-hot encoding to categorical variables within a \code{Stat} object
-or a regular \code{data.frame}, using \code{one_hot_encode()}. If a \code{Stat} object is provided,
-the encoded result will be updated in its \code{clean.data} slot.
+This function applies one-hot encoding to categorical variables within a `Stat` object
+or a regular `data.frame`, using `one_hot_encode()`. If a `Stat` object is provided,
+the encoded result will be updated in its `clean.data` slot.
+}
+\examples{
+\dontrun{
+# One-hot encode a Stat object
+stat_encoded <- stat_onehot_encode(stat_obj_test, save_dir = "./output")
+
+# One-hot encode a data frame without saving
+df_encoded <- stat_onehot_encode(
+  object = my_data,
+  group_col = "group",
+  max_unique_values = 3,
+  save_data = FALSE
+)
+}
 }

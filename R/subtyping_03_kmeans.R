@@ -25,7 +25,7 @@ kmeans_clustering <- function(data, k, nstart = 50) {
 }
 
 # =============================================================================
-# SECTION 2: Main function – optimal K selection + full visualisation
+# SECTION 2: Main function - optimal K selection + full visualisation
 # =============================================================================
 
 #' K-means with Optimal K

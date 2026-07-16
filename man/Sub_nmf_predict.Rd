@@ -9,7 +9,7 @@ Sub_nmf_predict(model_path, new_data)
 \arguments{
 \item{model_path}{Path to .rds model saved by \code{Sub_nmf_train_model}.}
 
-\item{new_data}{New data matrix: samples × features (rows = samples).}
+\item{new_data}{New data matrix: samples x features (rows = samples).}
 }
 \value{
 Data frame with predicted subtypes and membership probabilities.

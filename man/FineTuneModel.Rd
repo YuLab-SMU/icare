@@ -51,7 +51,7 @@ FineTuneModel(
 Returns the updated \code{model_obj} with fine-tuned results.
 }
 \description{
-This function performs hyperparameter tuning using Bayesian Optimization
-via the \code{rBayesianOptimization} package and \code{caret}. It is specifically
+This function performs hyperparameter tuning using Bayesian Optimization 
+via the \code{rBayesianOptimization} package and \code{caret}. It is specifically 
 optimized for classification tasks using the ROC metric.
 }

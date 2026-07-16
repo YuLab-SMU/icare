@@ -24,7 +24,7 @@ VarFeature_ROC(
 \arguments{
 \item{object}{Stat object, or named list with $last_test_sig and $data.}
 
-\item{group_col}{Group column name. If NULL, auto‑detect from Stat object.}
+\item{group_col}{Group column name. If NULL, auto-detect from Stat object.}
 
 \item{control}{Control group label.}
 
@@ -47,10 +47,10 @@ VarFeature_ROC(
 
 \item{base_size}{Base font size.}
 
-\item{normalize_auc}{Logical, if \code{TRUE}, for any feature with AUC < 0.5,
+\item{normalize_auc}{Logical, if `TRUE`, for any feature with AUC < 0.5,
 the predictor values are negated (multiplied by -1) and the ROC curve is
 recalculated so that the new AUC becomes 1 - original AUC, ensuring all
-curves lie above the diagonal. Default is \code{TRUE}.}
+curves lie above the diagonal. Default is `TRUE`.}
 }
 \value{
 Updated Stat object or ggplot.

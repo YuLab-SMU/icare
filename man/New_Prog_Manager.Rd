@@ -7,10 +7,10 @@
 New_Prog_Manager(prog_train_obj)
 }
 \arguments{
-\item{prog_train_obj}{A \code{PrognosiX} object with a trained model}
+\item{prog_train_obj}{A `PrognosiX` object with a trained model}
 }
 \value{
-An S3 object of class \code{"Prog_Manager"}
+An S3 object of class `"Prog_Manager"`
 }
 \description{
 Create a deployment manager

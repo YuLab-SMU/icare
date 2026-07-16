@@ -7,19 +7,19 @@
 New_Sub_Manager(sub_train_obj)
 }
 \arguments{
-\item{sub_train_obj}{A trained S4 object of class \code{Subtyping}. This object
+\item{sub_train_obj}{A trained S4 object of class \code{Subtyping}. This object 
 should contain the trained models (NMF, LPA, etc.) and normalization parameters.}
 }
 \value{
 A list of class \code{Sub_Manager} containing:
 \itemize{
-\item \code{trained_obj}: The original trained S4 object.
-\item \code{sub_predict}: A scoped function for predicting subtypes on new data frames.
+  \item \code{trained_obj}: The original trained S4 object.
+  \item \code{sub_predict}: A scoped function for predicting subtypes on new data frames.
 }
 }
 \description{
-This function serves as a constructor for the \code{Sub_Manager} class. It encapsulates
-a trained \code{Subtyping} object and provides a standardized prediction interface
+This function serves as a constructor for the \code{Sub_Manager} class. It encapsulates 
+a trained \code{Subtyping} object and provides a standardized prediction interface 
 that ensures new data is normalized and processed using the training set's parameters.
 }
 \examples{

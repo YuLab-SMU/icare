@@ -21,7 +21,7 @@ PlotModelComparison(
 
 \item{top_n}{Number of top models. Default 4.}
 
-\item{metrics}{Metrics to display. Default: c("auc", "Sensitivity",
+\item{metrics}{Metrics to display. Default: c("auc", "Sensitivity", 
 "Specificity", "accuracy_score", "f1_score").}
 
 \item{palette_name}{Wesanderson palette. Default "Darjeeling1".}

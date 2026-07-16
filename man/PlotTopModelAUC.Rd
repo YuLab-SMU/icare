@@ -16,5 +16,5 @@ PlotTopModelAUC(model_obj, top_n = 6, save_plot = FALSE, save_dir = NULL)
 \item{save_dir}{Output directory.}
 }
 \description{
-Shows AUC for the top N models with 95\% CI as error bars, sorted by AUC.
+Shows AUC for the top N models with 95% CI as error bars, sorted by AUC.
 }

@@ -15,13 +15,13 @@ extracts the task using \code{surv_extract_task()}.}
 \item{measures}{A list of \code{\link[mlr3]{Measure}} objects. If \code{NULL},
 automatically selects:
 \itemize{
-\item \code{surv.cindex} (always included)
-\item \code{surv.graf} if learner supports \code{"distr"} predictions
+  \item \code{surv.cindex} (always included)
+  \item \code{surv.graf} if learner supports \code{"distr"} predictions
 }}
 }
 \value{
 A data frame with one row containing the performance metrics for each
-requested measure.
+  requested measure.
 }
 \description{
 Evaluates a trained survival learner on a given task using specified measures.

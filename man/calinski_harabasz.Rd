@@ -8,6 +8,8 @@ calinski_harabasz(clustered.data, label_col = "group")
 }
 \arguments{
 \item{clustered.data}{Clustered data.}
+
+\item{label_col}{label column.}
 }
 \value{
 Numeric CH index value.

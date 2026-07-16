@@ -37,7 +37,7 @@ CompareClassification(
 Invisible list with metrics and plots.
 }
 \description{
-Applies user‑chosen thresholds (or Youden) to two sets of predicted
+Applies user-chosen thresholds (or Youden) to two sets of predicted
 probabilities, computes confusion matrices and common metrics, and displays
-a side‑by‑side bar plot.
+a side-by-side bar plot.
 }

@@ -22,7 +22,7 @@ batch_Wilcoxon(
 
 \item{logfc_mat}{Data frame used exclusively for logFC calculation.}
 
-\item{logfc_type}{One of \code{"log2ratio"} (default) or \code{"diff"}.}
+\item{logfc_type}{One of `"log2ratio"` (default) or `"diff"`.}
 
 \item{p_threshold}{Numeric; only features with p < p_threshold are retained. Defaults to 0.05.}
 
@@ -37,8 +37,8 @@ Data frame with W, p, mean_x/y, median_x/y, sd_x/y, p.adjust, logFC, change.
 }
 \description{
 Runs pairwise Wilcoxon tests between two groups for every numeric variable.
-The test itself always operates on \code{mat} (whatever data is passed in).
-logFC is computed from \code{logfc_mat}, which is the appropriate data for ratio
+The test itself always operates on `mat` (whatever data is passed in).
+logFC is computed from `logfc_mat`, which is the appropriate data for ratio
 calculation.
 }
 \examples{

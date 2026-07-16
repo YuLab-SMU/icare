@@ -15,16 +15,16 @@ stat_var_feature(
 )
 }
 \arguments{
-\item{object}{A \code{Stat} object or a plain data frame.}
+\item{object}{A `Stat` object or a plain data frame.}
 
 \item{group_col}{Group column name (auto-read from Stat slot when object is Stat).}
 
-\item{data_type}{\code{"auto"} (default): prefer clean, fall back to scale.
-\code{"clean"}: force use of clean.data for both test and logFC.
-\code{"scale"}: force use of scale.data for the test; logFC source
+\item{data_type}{`"auto"` (default): prefer clean, fall back to scale.
+`"clean"`: force use of clean.data for both test and logFC.
+`"scale"`: force use of scale.data for the test; logFC source
 is determined by the scale method.}
 
-\item{p_threshold}{Passed through to \code{batch_Wilcoxon}; features with p >= p_threshold
+\item{p_threshold}{Passed through to `batch_Wilcoxon`; features with p >= p_threshold
 are excluded. Defaults to 0.05.}
 
 \item{save_dir}{Output directory.}
@@ -34,28 +34,24 @@ are excluded. Defaults to 0.05.}
 \item{csv_filename}{Output filename.}
 }
 \value{
-Updated \code{Stat} object (if input is Stat) or a data frame of DEG results.
+Updated `Stat` object (if input is Stat) or a data frame of DEG results.
 }
 \description{
 Entry point for DEG analysis. Applies the following priority logic:
 }
 \details{
-\strong{Wilcoxon test data} (for ranking/p-value):
-\itemize{
-\item Always uses \code{clean.data} if available (original untransformed values
-give the most interpretable Wilcoxon statistics).
-\item Falls back to \code{scale.data} if \code{clean.data} is empty or user sets
-\code{data_type = "scale"} explicitly (e.g. when the input data itself is
-already log-transformed or otherwise pre-processed before loading).
-}
+**Wilcoxon test data** (for ranking/p-value):
+  - Always uses `clean.data` if available (original untransformed values
+    give the most interpretable Wilcoxon statistics).
+  - Falls back to `scale.data` if `clean.data` is empty or user sets
+    `data_type = "scale"` explicitly (e.g. when the input data itself is
+    already log-transformed or otherwise pre-processed before loading).
 
-\strong{logFC calculation data}:
-\itemize{
-\item \code{clean.data} (raw positive values)  → \code{logfc_type = "log2ratio"} (default)
-\item \code{scale.data} with log-space method  → \code{logfc_type = "diff"} (mean difference = log ratio)
-\item \code{scale.data} with ratio-intact method (\code{scale}, \code{min_max}, \code{max_abs}) → \code{logfc_type = "log2ratio"}
-\item \code{scale.data} with centered method   → logFC still from \code{clean.data} if available
-}
+**logFC calculation data**:
+  - `clean.data` (raw positive values)  -> `logfc_type = "log2ratio"` (default)
+  - `scale.data` with log-space method  -> `logfc_type = "diff"` (mean difference = log ratio)
+  - `scale.data` with ratio-intact method (`scale`, `min_max`, `max_abs`) -> `logfc_type = "log2ratio"`
+  - `scale.data` with centered method   -> logFC still from `clean.data` if available
 }
 \examples{
 \dontrun{

@@ -55,7 +55,7 @@ ModelTrainAnalysis(
 
 \item{base_size}{Base font size for plots (default: 14)}
 
-\item{save_plots}{Logical indicating whether to save plots (default: TRUE)}
+\item{save_plots}{Logical indicating whether to save plots (default: FALSE)}
 
 \item{save_dir}{Directory path to save plots (default: here("ModelData", "best_model_result"))}
 
@@ -67,27 +67,23 @@ ModelTrainAnalysis(
 
 \item{alpha}{Transparency level for ROC curves (default: 0.8)}
 
-\item{custom_cutoff}{Optional custom probability cutoff (overrides use_youden if provided)}
-
-\item{use_youden}{Logical indicating whether to use Youden's J statistic for cutoff}
+\item{custom_cutoff}{Optional custom probability cutoff (overrides Youden if provided)}
 }
 \value{
 If input is Train_Model object, returns updated object with results in slots.
-If input is list, returns list with performance metrics and ROC data.
+        If input is list, returns list with performance metrics and ROC data.
 }
 \description{
 This function performs a complete machine learning workflow including:
-\enumerate{
-\item Data preparation and validation
-\item Model training with cross-validation
-\item Performance evaluation on training data
-\item ROC curve generation
-\item Results organization and visualization
-}
+1. Data preparation and validation
+2. Model training with cross-validation
+3. Performance evaluation on training data
+4. ROC curve generation
+5. Results organization and visualization
 }
 \examples{
 \dontrun{
-# Example with list input
-object_model <- ModelTrainAnalysis(object =train_obj_test)
+# Example with Train_Model object
+result <- ModelTrainAnalysis(object = train_obj_test)
 }
 }

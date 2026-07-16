@@ -44,6 +44,8 @@ PlotCalibration(
 
 \item{save_dir}{Directory to save the plot.}
 
+\item{se}{Logical.Whether to display standard error on the plot.}
+
 \item{width, height}{Plot dimensions in inches.}
 
 \item{format}{File format ("pdf" or "png").}

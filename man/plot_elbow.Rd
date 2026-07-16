@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_03_feature_sensitivity.R
 \name{plot_elbow}
 \alias{plot_elbow}
-\title{Plot elimination curve with optional optimal points}
+\title{Plot Elbow Curve from Feature Elimination Results}
 \usage{
 plot_elbow(
   elim_obj,
@@ -19,6 +19,71 @@ plot_elbow(
   ...
 )
 }
+\arguments{
+\item{elim_obj}{A \code{FeatureElimination} object returned by
+\code{\link{run_feature_elimination}}.}
+
+\item{best_features}{A named list of selected features per algorithm,
+typically from \code{\link{select_elbow}}. If provided, optimal points
+are highlighted on the plot. Default is \code{NULL}.}
+
+\item{facet}{Logical. If \code{TRUE}, separate panels are created for each
+algorithm. Default is \code{FALSE}.}
+
+\item{palette_name}{Character string specifying the Wes Anderson palette
+name for algorithm colors. Default is \code{"Darjeeling1"}.}
+
+\item{use_low_sat}{Logical. If \code{TRUE}, uses a low-saturation color
+palette for better print readability. Default is \code{TRUE}.}
+
+\item{ci_style}{Character string specifying the style for confidence
+intervals. Options are \code{"errorbar"}, \code{"ribbon"}, or
+\code{"none"}. Default is \code{"errorbar"}.}
+
+\item{save_plot}{Logical. If \code{TRUE}, the plot is saved to a PDF file.
+Default is \code{FALSE}.}
+
+\item{save_dir}{Character string specifying the directory to save the plot.
+If \code{NULL} and \code{save_plot = TRUE}, the plot is saved to
+\code{"./Sensitivity/"}. Default is \code{NULL}.}
+
+\item{width}{Numeric. Width of the saved plot in inches. If \code{facet = TRUE},
+defaults to \code{12}, otherwise \code{8}.}
+
+\item{height}{Numeric. Height of the saved plot in inches. Default is \code{5}.}
+
+\item{ncol}{Integer. Number of columns for faceted plots. Ignored if
+\code{facet = FALSE}. Default is \code{NULL}.}
+
+\item{...}{Additional arguments passed to \code{ggplot2::labs()}, such as
+\code{subtitle} or \code{caption}.}
+}
+\value{
+Invisibly returns the \code{ggplot} object. The plot is drawn on
+  the current graphics device and optionally saved to PDF.
+}
 \description{
-Plot elimination curve with optional optimal points
+Visualizes the performance curve (AUC) as a function of the number of
+features retained during backward elimination. The plot can display
+confidence intervals (error bars or ribbons), highlight optimal feature
+counts, and optionally facet by algorithm.
+}
+\examples{
+\dontrun{
+# Basic plot
+plot_elbow(elim_obj)
+
+# With optimal features highlighted and faceted
+best <- select_elbow(elim_obj, elbow_method = "difference")
+plot_elbow(elim_obj, best_features = best$best_features, facet = TRUE)
+
+# Custom confidence interval style and save
+plot_elbow(elim_obj,
+  ci_style = "ribbon",
+  save_plot = TRUE,
+  save_dir = "./figures",
+  width = 10,
+  height = 6
+)
+}
 }

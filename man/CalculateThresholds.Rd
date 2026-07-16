@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_08_clinical_analysis.R
 \name{CalculateThresholds}
 \alias{CalculateThresholds}
-\title{Calculate Multi‑Threshold Metrics with Custom Targets}
+\title{Calculate Multi-Threshold Metrics with Custom Targets}
 \usage{
 CalculateThresholds(
   model_obj,
@@ -30,14 +30,12 @@ CalculateThresholds(
 }
 \value{
 A list with \code{thresholds}, \code{metrics_df}, \code{probabilities},
-\code{true}, \code{positive}, \code{negative}.
+  \code{true}, \code{positive}, \code{negative}.
 }
 \description{
 Computes a full table of Accuracy, PPV, NPV across all unique thresholds,
 then finds:
-\itemize{
-\item Youden index (Se + Sp − 1)
-\item Thresholds that reach a target Sensitivity, Specificity, PPV, or NPV
-\item Threshold that maximises Accuracy (if requested)
-}
+  - Youden index (Se + Sp - 1)
+  - Thresholds that reach a target Sensitivity, Specificity, PPV, or NPV
+  - Threshold that maximises Accuracy (if requested)
 }

@@ -23,6 +23,7 @@ Checks that \code{values} length matches the number of samples.
 }
 \examples{
 \dontrun{
-stat_obj <- AddMetadata(stat_obj_test, col = "new_meta", values = sample(1:2, nrow(stat_obj_test@clean.data), replace=TRUE))
+stat_obj <- AddMetadata(stat_obj_test, col = "new_meta", values = 
+sample(1:2, nrow(stat_obj_test@clean.data), replace=TRUE))
 }
 }

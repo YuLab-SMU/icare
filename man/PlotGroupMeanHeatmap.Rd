@@ -2,7 +2,7 @@
 % Please edit documentation in R/viz_functions.R
 \name{PlotGroupMeanHeatmap}
 \alias{PlotGroupMeanHeatmap}
-\title{Plot Group Mean Heatmap (Production Version)}
+\title{Plot Group Mean Heatmap}
 \usage{
 PlotGroupMeanHeatmap(
   object,
@@ -17,6 +17,65 @@ PlotGroupMeanHeatmap(
   save_path = "./Group_Mean_Heatmap.pdf"
 )
 }
+\arguments{
+\item{object}{An S4 object (e.g., \code{Subtyping} or \code{Stat}) or a list
+containing \code{clean.data} (expression matrix) and \code{info.data}
+(metadata). The \code{clean.data} slot/data should have samples as rows and
+features as columns.}
+
+\item{deg_df}{A data frame containing differential expression analysis results.
+Must include columns: \code{id} (feature names), \code{p.adjust} (adjusted
+p-values), \code{logFC} (log fold change), and \code{target_group}
+(group labels).}
+
+\item{group_by}{Character string specifying the column name in \code{info.data}
+used for grouping samples. Default is \code{"cluster_lpa"}.}
+
+\item{top_n}{Integer. Number of top features to select per group based on
+\code{logFC}. Default is \code{5}.}
+
+\item{p_cutoff}{Numeric. Adjusted p-value threshold for feature selection.
+Default is \code{0.05}.}
+
+\item{logfc_cutoff}{Numeric. Log fold-change threshold for feature selection.
+Only features with absolute logFC > \code{logfc_cutoff} are retained.
+Default is \code{0}.}
+
+\item{custom_levels}{Character vector. Optional custom ordering of group
+levels. If \code{NULL}, groups are ordered alphabetically using
+\code{gtools::mixedsort}. Default is \code{NULL}.}
+
+\item{z_score_type}{Character string specifying whether to Z-score rows.
+Currently only \code{"row"} is supported. Default is \code{"row"}.}
+
+\item{heatmap_palette}{Character vector of length 3 specifying colors for
+the low, middle, and high values in the heatmap. Default is
+\code{c("#2166AC", "white", "#B2182B")}.}
+
+\item{save_path}{Character string specifying the file path to save the PDF.
+If \code{NULL}, the plot is not saved. Default is
+\code{"./Group_Mean_Heatmap.pdf"}.}
+}
+\value{
+A \code{ComplexHeatmap::Heatmap} object (invisibly). The heatmap
+  is also drawn on the current graphics device and saved to PDF if
+  \code{save_path} is provided.
+}
 \description{
-Optimized for flexible group-wise visualization with auto-annotation.
+Creates a heatmap of group-wise mean expression values for selected features.
+The function filters features based on differential expression results,
+computes mean expression per group, optionally Z-scores by row, and visualizes
+using ComplexHeatmap with auto-annotation.
+}
+\examples{
+\dontrun{
+# Assuming 'sub_obj' is a Subtyping object and 'deg_results' is a data frame
+PlotGroupMeanHeatmap(
+  object = sub_obj,
+  deg_df = deg_results,
+  group_by = "cluster_lpa",
+  top_n = 10,
+  p_cutoff = 0.01
+)
+}
 }

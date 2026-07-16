@@ -138,7 +138,6 @@ CreateSubtypingObject <- function(
     na.action = c("omit", "allow", "error")
 ) {
   
-  # 确保 janitor 可用
   if (!requireNamespace("janitor", quietly = TRUE)) {
     message("Installing janitor package for column name cleaning...")
     install.packages("janitor")
@@ -301,7 +300,6 @@ CreateSubtypingObject <- function(
     return(data)
   }
   
-  # ========================= 关键修改3：prepare_data 不再修改列名 =========================
   prepare_data <- function(data, data_name) {
     if (is.null(data) || nrow(data) == 0) {
       return(data.frame())
@@ -338,15 +336,11 @@ CreateSubtypingObject <- function(
       stop(paste(data_name, "is missing column names."))
     }
     
-    # 原代码中这里有 modify_column_names(data) 调用，现在注释掉
-    # data <- modify_column_names(data)
-    
     cat(paste("Data prepared for", data_name, "with", nrow(data), "rows and", ncol(data), "columns.\n"))
     
     return(data)
   }
   
-  # 应用转换
   clean.data <- ensure_numeric_data(clean.data, "clean.data", convert_factors)
   scale.data <- ensure_numeric_data(scale.data, "scale.data", convert_factors)
   clustered.data <- ensure_numeric_data(clustered.data, "clustered.data", convert_factors)
@@ -355,7 +349,6 @@ CreateSubtypingObject <- function(
   scale.data <- prepare_data(scale.data, "scale.data")
   clustered.data <- prepare_data(clustered.data, "clustered.data")
   
-  # ========================= 以下代码保持原函数不变 =========================
   # Match info.data rows with clean.data rows with safety check
   if (nrow(info.data) > 0) {
     common_rows <- intersect(rownames(clean.data), rownames(info.data))

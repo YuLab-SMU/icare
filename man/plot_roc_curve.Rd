@@ -20,50 +20,50 @@ plot_roc_curve(
 }
 \arguments{
 \item{model_list}{A named list of model objects. Each model must support
-the \code{predict()} method with \code{type = "prob"} and return a two-column
+the `predict()` method with `type = "prob"` and return a two-column
 probability matrix where the second column corresponds to the positive class.}
 
 \item{validation_data}{A data frame containing the validation dataset. Must include
-the response variable specified by \code{group_col}.}
+the response variable specified by `group_col`.}
 
 \item{group_col}{A character string specifying the name of the column in
-\code{validation_data} that contains the binary response variable. Default is \code{"group"}.}
+`validation_data` that contains the binary response variable. Default is `"group"`.}
 
 \item{palette_name}{A character string specifying the name of the Wes Anderson
-color palette to use (e.g., \code{"AsteroidCity1"}, \code{"Darjeeling1"}). If the palette
-is not available, falls back to viridis colors. Default is \code{"AsteroidCity1"}.}
+color palette to use (e.g., `"AsteroidCity1"`, `"Darjeeling1"`). If the palette
+is not available, falls back to viridis colors. Default is `"AsteroidCity1"`.}
 
 \item{base_size}{Base font size for the plot theme. Passed to
-\code{\link[ggprism:theme_prism]{ggprism::theme_prism()}}. Default is \code{14}.}
+[ggprism::theme_prism()]. Default is `14`.}
 
-\item{save_plots}{Logical. If \code{TRUE}, saves the ROC plot as a PDF file.
-Default is \code{FALSE}.}
+\item{save_plots}{Logical. If `TRUE`, saves the ROC plot as a PDF file.
+Default is `FALSE`.}
 
 \item{save_dir}{A character string specifying the directory where plots and/or
-data should be saved. If \code{NULL} and \code{save_plots} or \code{save_data} is \code{TRUE},
-an error will be thrown. Default is \code{NULL}.}
+data should be saved. If `NULL` and `save_plots` or `save_data` is `TRUE`,
+an error will be thrown. Default is `NULL`.}
 
-\item{plot_width}{Width of the saved plot in inches. Default is \code{5}.}
+\item{plot_width}{Width of the saved plot in inches. Default is `5`.}
 
-\item{plot_height}{Height of the saved plot in inches. Default is \code{5}.}
+\item{plot_height}{Height of the saved plot in inches. Default is `5`.}
 
 \item{alpha}{Transparency level for the ROC curve lines. Value between 0 and 1.
-Default is \code{1} (opaque).}
+Default is `1` (opaque).}
 
-\item{save_data}{Logical. If \code{TRUE}, saves the ROC curve data as a CSV file.
-Default is \code{FALSE}.}
+\item{save_data}{Logical. If `TRUE`, saves the ROC curve data as a CSV file.
+Default is `FALSE`.}
 }
 \value{
 A list containing three elements:
-\describe{
-\item{roc_objects}{A named list of \code{\link[pROC:roc]{roc}} objects
-for each model.}
-\item{plot_data}{A data frame containing the combined ROC curve data for
-all models, with columns \code{Specificity}, \code{Sensitivity}, and
-\code{Dataset}.}
-\item{auc_results}{A named numeric vector of AUC values for each model,
-sorted in decreasing order.}
-}
+  \describe{
+    \item{roc_objects}{A named list of \code{\link[pROC:roc]{roc}} objects 
+      for each model.}
+    \item{plot_data}{A data frame containing the combined ROC curve data for
+      all models, with columns \code{Specificity}, \code{Sensitivity}, and 
+      \code{Dataset}.}
+    \item{auc_results}{A named numeric vector of AUC values for each model,
+      sorted in decreasing order.}
+  }
 }
 \description{
 This function generates ROC curves with AUC and confidence intervals for a list of
@@ -71,17 +71,17 @@ binary classification models evaluated on validation data. It supports customiza
 color palettes, plot saving, and data export.
 }
 \details{
-The function computes ROC curves using \code{\link[pROC:roc]{pROC::roc()}} and AUC values with
-95\\% confidence intervals via \code{\link[pROC:ci.auc]{pROC::ci.auc()}}. Models are sorted by AUC
+The function computes ROC curves using [pROC::roc()] and AUC values with
+95\% confidence intervals via [pROC::ci.auc()]. Models are sorted by AUC
 in descending order in the final plot. The legend displays both AUC and
 confidence intervals for each model.
 
-The plot is generated using \link[ggplot2:ggplot2-package]{ggplot2::ggplot2} with a Prism-inspired theme from
+The plot is generated using [ggplot2] with a Prism-inspired theme from
 the \pkg{ggprism} package. The diagonal reference line represents random
 classification (AUC = 0.5).
 }
 \note{
-The response variable specified by \code{group_col} must have exactly two levels.
+The response variable specified by `group_col` must have exactly two levels.
 If more or fewer levels are found, the function stops with an error.
 
 This function requires the following packages: \pkg{pROC}, \pkg{ggplot2},

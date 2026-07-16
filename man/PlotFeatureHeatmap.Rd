@@ -41,86 +41,84 @@ PlotFeatureHeatmap(
 )
 }
 \arguments{
-\item{object}{A data frame (samples × features), numeric matrix, or a \code{Stat} object
-(which must contain a \code{clean.data} component with numeric columns).
+\item{object}{A data frame (samples x features), numeric matrix, or a `Stat` object
+(which must contain a `clean.data` component with numeric columns).  
 Rows = samples, columns = features.}
 
 \item{features}{Character vector of feature names to display.
-If \code{NULL}, the top 50 features with highest variance are selected.}
+If `NULL`, the top 50 features with highest variance are selected.}
 
-\item{group_col}{(Legacy) Character string; column name in the \code{Stat} object's
+\item{group_col}{(Legacy) Character string; column name in the `Stat` object's
 info data used for sample grouping. This will be added to the top annotation.}
 
 \item{clinical_data}{Data frame with sample annotations (rows = samples).
-Column names are variable names, row names must match sample names in \code{object}.
+Column names are variable names, row names must match sample names in `object`.
 Added as top annotation.}
 
 \item{left_annotation, right_annotation, top_annotation, bottom_annotation}{Data frames for row/column annotations.
-\itemize{
-\item Row annotations (left/right): row names must match feature names (colnames of \code{object}).
-\item Column annotations (top/bottom): row names must match sample names (rownames of \code{object}).
-}}
+- Row annotations (left/right): row names must match feature names (colnames of `object`).  
+- Column annotations (top/bottom): row names must match sample names (rownames of `object`).}
 
 \item{left_columns, right_columns, top_columns, bottom_columns}{Character vectors specifying which columns to use from the corresponding
-annotation data frames. If \code{NULL}, all columns are used.}
+annotation data frames. If `NULL`, all columns are used.}
 
 \item{marker_features}{Character vector of feature names to highlight on the left side
-using \code{anno_mark}. If \code{NULL}, no marker annotation is added.}
+using `anno_mark`. If `NULL`, no marker annotation is added.}
 
-\item{marker_cex}{Font size for marker labels. If \code{NULL}, automatically scaled
-based on the number of markers (range 0.5–1.2).}
+\item{marker_cex}{Font size for marker labels. If `NULL`, automatically scaled
+based on the number of markers (range 0.5-1.2).}
 
 \item{scale_features}{Logical. Should each feature (column) be Z-score scaled
-across samples? Default \code{TRUE}.}
+across samples? Default `TRUE`.}
 
-\item{exclude_constant}{Logical. If \code{TRUE}, features with zero variance
-(constant values) are removed before analysis. Default \code{TRUE}.}
+\item{exclude_constant}{Logical. If `TRUE`, features with zero variance
+(constant values) are removed before analysis. Default `TRUE`.}
 
-\item{cluster_rows}{Logical. Cluster rows (features). Default \code{TRUE}.}
+\item{cluster_rows}{Logical. Cluster rows (features). Default `TRUE`.}
 
-\item{cluster_cols}{Logical. Cluster columns (samples). Default \code{TRUE}.}
+\item{cluster_cols}{Logical. Cluster columns (samples). Default `TRUE`.}
 
-\item{show_rownames}{Logical. Show row (feature) names. Default \code{FALSE}
-(often hidden when using \code{marker_features}).}
+\item{show_rownames}{Logical. Show row (feature) names. Default `FALSE`
+(often hidden when using `marker_features`).}
 
-\item{show_colnames}{Logical. Show column (sample) names. Default \code{FALSE}.}
+\item{show_colnames}{Logical. Show column (sample) names. Default `FALSE`.}
 
-\item{palette_name}{RColorBrewer diverging palette name, used when \code{color_palette = NULL}.
-Default \code{"RdYlBu"}.}
+\item{palette_name}{RColorBrewer diverging palette name, used when `color_palette = NULL`.
+Default `"RdYlBu"`.}
 
 \item{color_palette}{Character vector of 4 colours:
-\code{c(NA_colour, low_colour, mid_colour, high_colour)}.
-Default: \code{c("grey90", "#7B1FA2", "#000000", "#FFEB3B")} (purple–black–yellow).}
+`c(NA_colour, low_colour, mid_colour, high_colour)`.  
+Default: `c("grey90", "#7B1FA2", "#000000", "#FFEB3B")` (purple-black-yellow).}
 
 \item{color_range}{Numeric vector of length 3 (low, mid, high) for colour mapping.
-If \code{NULL}, the 5\\% and 95\\% quantiles of the data are used, with mid = 0.}
+If `NULL`, the 5\% and 95\% quantiles of the data are used, with mid = 0.}
 
-\item{na_col}{Colour for missing values (NA). Default \code{"grey90"}.}
+\item{na_col}{Colour for missing values (NA). Default `"grey90"`.}
 
 \item{ann_colors}{Optional named list of colours for annotations.
-For discrete variables: a named vector (levels → colours).
-For continuous variables: a \code{colorRamp2} function.
-Example: \code{list(Sex = c(M = "blue", F = "red"), Age = colorRamp2(c(20,50,80), c("blue","white","red")))}.}
+For discrete variables: a named vector (levels -> colours).  
+For continuous variables: a `colorRamp2` function.  
+Example: `list(Sex = c(M = "blue", F = "red"), Age = colorRamp2(c(20,50,80), c("blue","white","red")))`.}
 
 \item{ann_continuous_palette}{Character; RColorBrewer palette for continuous annotation
-variables when \code{ann_colors} is not provided. Default \code{"RdYlBu"}.}
+variables when `ann_colors` is not provided. Default `"RdYlBu"`.}
 
 \item{base_fontsize}{Base font size for legends and annotation labels.}
 
-\item{save_plot}{Logical. Save the plot to a file? Default \code{FALSE}.}
+\item{save_plot}{Logical. Save the plot to a file? Default `FALSE`.}
 
-\item{save_dir}{Output directory. If \code{NULL} and \code{save_plot = TRUE}, files are written
-to \code{"./plots"}.}
+\item{save_dir}{Output directory. If `NULL` and `save_plot = TRUE`, files are written
+to `"./plots"`.}
 
 \item{width, height}{Dimensions of the saved plot in inches.}
 
-\item{format}{File format: \code{"pdf"} or \code{"png"}.}
+\item{format}{File format: `"pdf"` or `"png"`.}
 
-\item{...}{Additional arguments passed to \code{ComplexHeatmap::Heatmap}.}
+\item{...}{Additional arguments passed to `ComplexHeatmap::Heatmap`.}
 }
 \value{
-Invisibly, a \code{ComplexHeatmap::Heatmap} object. The heatmap is drawn
-(or saved) as a side effect.
+Invisibly, a `ComplexHeatmap::Heatmap` object. The heatmap is drawn
+  (or saved) as a side effect.
 }
 \description{
 Creates a heatmap of selected features (e.g., genes, proteins) with optional

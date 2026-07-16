@@ -26,22 +26,22 @@ violin_plots(
 \item{vars_per_plot}{Integer. The number of variables (columns) to include
 in each individual plot. Default is 1.}
 
-\item{save_dir}{String. The directory to save the plots in. Default is \code{NULL}.
-When \code{save_plots = TRUE} and this is \code{NULL}, a default figure directory is used.}
+\item{save_dir}{String. The directory to save the plots in. Default is `NULL`.
+When `save_plots = TRUE` and this is `NULL`, a default figure directory is used.}
 
-\item{palette_name}{String. The name of the color palette to use. Default \code{"Royal1"}.}
+\item{palette_name}{String. The name of the color palette to use. Default `"Royal1"`.}
 
 \item{group_col}{String. The name of the column in the data used to group
-the samples. Default is \code{"group"}.}
+the samples. Default is `"group"`.}
 
 \item{max_unique_values}{Integer. The maximum number of unique values
 allowed for categorical variables. Defaults to 5.}
 
 \item{sub_var}{Character vector. A subset of variable names (columns)
-to include in the plot. If \code{NULL}, all numeric variables will be included.}
+to include in the plot. If `NULL`, all numeric variables will be included.}
 
-\item{save_plots}{Logical. If \code{TRUE}, the plots will be saved as PDF
-files in the specified \code{save_dir}. Default is \code{TRUE}.}
+\item{save_plots}{Logical. If `TRUE`, the plots will be saved as PDF
+files in the specified `save_dir`. Default is `TRUE`.}
 
 \item{plot_width}{Numeric. The width of each saved plot (in inches). Default 5.}
 
@@ -55,14 +55,14 @@ files in the specified \code{save_dir}. Default is \code{TRUE}.}
 }
 \value{
 A list of ggplot objects containing the generated violin plots.
-If \code{save_plots} is \code{TRUE}, the plots are also saved as PDF files.
+  If `save_plots` is `TRUE`, the plots are also saved as PDF files.
 }
 \description{
 This function generates violin plots for numeric variables in the dataset,
 with boxplots and jittered points for enhanced visualization. The plots
 are grouped by a specified column and saved as PDF files, if desired.
 It handles large numbers of variables by splitting them into multiple
-plots, each containing a set of variables (defined by the \code{vars_per_plot}
+plots, each containing a set of variables (defined by the `vars_per_plot`
 argument). The function also allows for customization of plot appearance
 and save locations.
 }

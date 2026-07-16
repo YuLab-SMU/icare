@@ -37,8 +37,8 @@ It should include columns for log-fold change and adjusted p-values.}
 \item{base_size}{The base font size for the plot (default: 14).}
 }
 \value{
-A \code{ggplot} object representing the volcano plot. If the input is a 'Stat' object, it also updates the
-'Stat' object with the volcano plot.
+A `ggplot` object representing the volcano plot. If the input is a 'Stat' object, it also updates the
+         'Stat' object with the volcano plot.
 }
 \description{
 This function generates a volcano plot based on the log-fold change and adjusted p-values of variable features from

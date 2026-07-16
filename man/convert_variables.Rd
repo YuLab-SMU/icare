@@ -37,13 +37,13 @@ convert_variables(
 }
 \value{
 A data frame with the variables converted to the appropriate types
-(numeric or factor).
+  (numeric or factor).
 }
 \description{
 This function converts the variables (columns) in the input data frame to either
-numeric or factor types based on the information provided in \code{variable_types}.
+numeric or factor types based on the information provided in `variable_types`.
 Numeric variables are converted to numeric data type, and non-numeric variables
-are converted to factors. The function uses \code{variable_types} to determine which
+are converted to factors. The function uses `variable_types` to determine which
 variables should be treated as numeric and which should be treated as factors.
 }
 \examples{
@@ -55,6 +55,7 @@ converted_data <- convert_variables(data, variable_types)
 }
 \dontrun{
 types <- diagnose_variable_type(stat_obj_test@clean.data, group_col = "SWAB")
-converted <- convert_variables(stat_obj_test@clean.data, types, group_col = "SWAB", save_data = FALSE)
+converted <- convert_variables(stat_obj_test@clean.data, types, 
+group_col = "SWAB", save_data = FALSE)
 }
 }

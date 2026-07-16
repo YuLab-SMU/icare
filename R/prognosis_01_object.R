@@ -1,5 +1,9 @@
 #' PrognosiX Class
 #'
+#' An S4 class to store survival data, clinical metadata, and various results from the
+#' prognostic analysis pipeline, including univariate analysis, feature selection,
+#' survival modeling, and subgroup risk assessment.
+#' 
 #' @import methods
 #' @slot clean.data Data frame.
 #' @slot info.data Data frame.
@@ -18,6 +22,7 @@
 #' @slot best.model List.
 #' @slot subgroup.risk List.
 #' @export
+#' @exportClass PrognosiX
 #' @examples
 #' \dontrun{
 #'   # Create a PrognosiX object
@@ -140,7 +145,7 @@ PrognosiX <- setClass(
 
 `%||%` <- function(a,b) if(!is.null(a)&&length(a)>0) a else b
 
-# Helper to save plots – renamed as requested
+# Helper to save plots - renamed as requested
 save_plot_sur <- function(p, name, w=8, h=6) {
   if(inherits(p, "ggplot")) ggsave(file.path(OUT_DIR, paste0(name, ".pdf")), p, w, h)
 }
@@ -148,6 +153,11 @@ save_plot_sur <- function(p, name, w=8, h=6) {
 
 #' Create PrognosiX Object
 #'
+#' This function constructs a PrognosiX S4 object from raw data frames or by
+#' converting an existing Stat, Subtyping, or PrognosiX object. It handles
+#' time/status column extraction, row matching, and initial preparation for
+#' downstream prognostic modeling.
+#' 
 #' @param clean.data Clean data.
 #' @param info.data Info data.
 #' @param time_col Time col.
