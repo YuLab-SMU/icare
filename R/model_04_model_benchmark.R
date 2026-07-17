@@ -332,7 +332,7 @@ PreprocessingBenchmark <- function(
 #' @param remove_na Logical; remove rows with NA Mean_AUC (recommended).
 #' @param save_plot Logical; save plot to PDF.
 #' @param save_dir Directory to save plot (required if \code{save_plot = TRUE}).
-#'
+#' @importFrom dplyr pull
 #' @return Invisibly returns the \code{ggplot} object.
 #'
 #' @examples
@@ -396,7 +396,7 @@ PlotBenchmarkForest <- function(benchmark_result,
     group_by(Algorithm) %>%
     summarise(med = median(Mean_AUC, na.rm = TRUE)) %>%
     arrange(desc(med)) %>%
-    pull(Algorithm)
+    dplyr::pull(Algorithm)
   df$Algorithm <- factor(df$Algorithm, levels = algo_order)
   
   p <- ggplot2::ggplot(df, ggplot2::aes(x = Mean_AUC, y = Algorithm, color = Algorithm)) +

@@ -92,7 +92,8 @@ surv_keys <- if (requireNamespace("mlr3", quietly = TRUE)) {
 #'
 #' @seealso \code{\link{surv_get_tuning_config}} for tuning strategy
 #' @export
-#' 
+#' @importFrom paradox ps p_int p_dbl p_fct p_lgl
+#' @importFrom mlr3tuningspaces lts
 #' @examples
 #' \dontrun{
 #' data(pro_obj_test)
@@ -181,7 +182,7 @@ surv_get_search_space <- function(learner_id, object = NULL) {
 #' @param learner_id A character string specifying the learner ID (e.g., \code{"surv.coxph"}).
 #' @param tuning_budget An integer specifying the number of evaluations allowed
 #'   during tuning. Default is \code{50}.
-#'
+#' @importFrom mlr3tuning tnr trm
 #' @return A list 
 #' @details
 #' The function distinguishes between complex learners (requiring more
@@ -329,7 +330,7 @@ surv_get_learner <- function(learner_id, task) {
   
   if (unsupported_factors) {
     lrn_obj <- po("encode", method = "treatment") %>>% lrn_obj
-    lrn_obj <- as_learner(lrn_obj)
+    lrn_obj <- mlr3::as_learner(lrn_obj)
     
     if ("distr" %in% lrn_obj$predict_types) {
       lrn_obj$predict_type <- "distr"
@@ -354,7 +355,8 @@ surv_get_learner <- function(learner_id, task) {
 #' @param tuner A \code{\link[mlr3tuning]{Tuner}} object. If \code{NULL},
 #'   random search is used.
 #' @param seed Integer seed for reproducibility.
-#'
+#' @importFrom mlr3 rsmp msr
+#' @importFrom mlr3tuning tnr trm
 #' @return A list with four components:
 #' \describe{
 #' \item{learner}{The trained learner object with optimal parameters.}
@@ -417,7 +419,7 @@ surv_train_and_tune <- function(object,
   }
   
   # 3. Configure default evaluation strategies
-  if (is.null(resampling)) resampling <- rsmp("cv", folds = 5)
+  if (is.null(resampling)) resampling <- mlr3::rsmp("cv", folds = 5)
   if (is.null(measure)) measure <- msr("surv.cindex")
   if (is.null(tuner)) tuner <- tnr("random_search") 
   
@@ -534,7 +536,7 @@ surv_evaluate_model <- function(learner, object, measures = NULL) {
     if (learner$predict_type == "distr") {
       measures <- list(msr("surv.cindex"), msr("surv.graf")) # C-index & Brier Score
     } else {
-      measures <- list(msr("surv.cindex")) # Fallback to C-index only
+      measures <- list(mlr3::msr("surv.cindex")) # Fallback to C-index only
     }
   }
   
@@ -582,7 +584,7 @@ surv_evaluate_model <- function(learner, object, measures = NULL) {
 #'     \item{cv_performance}{A numeric cross-validated C-index.}
 #'     \item{performance}{A data frame of training set metrics.}
 #'   }
-#'
+#' @importFrom mlr3 rsmp msr resample 
 #' @examples
 #' \dontrun{
 #' library(mlr3proba)
@@ -622,7 +624,7 @@ surv_benchmark_learners <- function(object,
   
   # Default resampling: 5-fold CV
   if (is.null(resampling)) {
-    resampling <- rsmp("cv", folds = 5)
+    resampling <- mlr3::rsmp("cv", folds = 5)
   }
   
   # Default measure for tuning and CV
@@ -1410,7 +1412,7 @@ surv_explain_shap <- function(
 #' This function requires the following packages: \pkg{ggplot2}, \pkg{ggbeeswarm},
 #' \pkg{ggprism}, \pkg{dplyr}, and \pkg{tidyr}.
 #'
-#' @importFrom dplyr group_by summarise filter arrange desc slice rename left_join
+#' @importFrom dplyr group_by summarise arrange desc slice rename left_join
 #' @importFrom tidyr pivot_longer
 #' @importFrom ggplot2 ggplot aes geom_vline theme element_text
 #'   labs scale_color_gradient geom_violin
@@ -2080,6 +2082,7 @@ surv_analyze_feature_stability <- function(object,
 #'     \item{plot}{A \code{ggplot} object showing the sensitivity trajectory.}
 #'   }
 #'
+#' @importFrom mlr3 rsmp msr resample 
 #' @export
 #' 
 #' @examples
@@ -2154,7 +2157,7 @@ surv_analyze_model_sensitivity <- function(object, learner_id, analysis_type = c
       temp_task <- surv_create_surv_task(temp_data, task$target_names[1], task$target_names[2], id = "temp_sens")
       
       res <- tryCatch({
-        rr <- resample(temp_task, lrn(learner_id), rsmp("cv", folds = 3), store_models = FALSE)
+        rr <- resample(temp_task, lrn(learner_id), mlr3::rsmp("cv", folds = 3), store_models = FALSE)
         rr$aggregate(msr("surv.cindex"))
       }, error = function(e) NA)
       
@@ -2226,7 +2229,7 @@ surv_analyze_model_sensitivity <- function(object, learner_id, analysis_type = c
 #'     \item{plot}{A \code{ggplot} object showing the performance drop for each feature.}
 #'     \item{baseline}{The baseline C-index with all features.}
 #'   }
-#'
+#' @importFrom mlr3 rsmp msr resample 
 #' @details
 #' The function:
 #' \enumerate{
@@ -2273,7 +2276,7 @@ surv_analyze_feature_ablation <- function(object, learner_id, features_to_test =
   learner <- surv_get_learner(learner_id, task)
   
   # Use a small 3-fold CV to get a stable baseline
-  resampling <- rsmp("cv", folds = 3)
+  resampling <- mlr3::rsmp("cv", folds = 3)
   baseline_rr <- resample(task, learner, resampling, store_models = FALSE)
   baseline_cindex <- baseline_rr$aggregate(msr("surv.cindex"))
   
@@ -2683,6 +2686,7 @@ surv_filter_features_clinical <- function(object, p_threshold = 0.05) {
 #'   \item \code{surv.xgboost}: requires \code{mlr3extralearners} and \code{xgboost}
 #' }
 #'
+#' @importFrom mlr3 msr rsmp benchmark_grid benchmark 
 #' @examples
 #' \dontrun{
 #' library(mlr3proba)
@@ -2733,7 +2737,7 @@ surv_run_algorithm_benchmark <- function(object, learners_list = NULL, resamplin
     if ("distr" %in% l$predict_types) l$predict_type <- "distr"
   }
   
-  if (is.null(resampling)) resampling <- rsmp("cv", folds = 5)
+  if (is.null(resampling)) resampling <- mlr3::rsmp("cv", folds = 5)
   
   message("[*] Running Benchmark: Comparing Algorithms via 5-fold CV...")
   
@@ -2918,7 +2922,7 @@ surv_plot_comparison_auc <- function(learner, train_task, val_task) {
 #' Applies multiple feature selection methods to a survival task and returns a
 #' consensus set of features. Supports 12+ algorithms including univariate Cox,
 #' penalized Cox (LASSO, Ridge, Elastic Net), random forest importance,
-#' XGBoost importance, VIMP, stepwise, stability selection, mRMR, and Boruta.
+#' XGBoost importance, VIMP, stepwise, stability selection,  and Boruta.
 #'
 #' @param object A \code{PrognosiX} object or a \code{TaskSurv} (mlr3 survival task).
 #' @param methods Character vector of method names to apply. Available methods:
@@ -2934,7 +2938,6 @@ surv_plot_comparison_auc <- function(learner, train_task, val_task) {
 #'     \item{\code{"boruta"}}{Boruta wrapper algorithm (requires \code{Boruta} package; disabled by default).}
 #'     \item{\code{"stepwise"}}{Stepwise Cox regression (both directions, AIC). Only for low-dimensional data (p < 30).}
 #'     \item{\code{"stab_sel"}}{Stability selection using \code{c060::stabpath} with Lasso.}
-#'     \item{\code{"mrmr"}}{Minimum Redundancy Maximum Relevance using Cox risk score as proxy (approximate).}
 #'   }
 #' @param p_threshold Numeric. P-value threshold for univariate Cox (default 0.05).
 #' @param top_ratio Numeric. For importance-based methods (RF, XGBoost, VIMP), keep this proportion of top features (default 0.5).
@@ -3239,31 +3242,9 @@ surv_feature_selection_multi <- function(object,
     }
   }
   
-  # ----------------------------------------------------------------------------
-  # 12. mRMR (using Cox risk score as proxy)
-  # ----------------------------------------------------------------------------
-  if ("mrmr" %in% methods) {
-    if (verbose) cat("  - Running mRMR (praznik with Cox risk proxy)...\n")
-    selected <- character(0)
-    if (!requireNamespace("praznik", quietly = TRUE)) {
-      warning("Package 'praznik' not installed. Skipping mrmr.")
-    } else {
-      tryCatch({
-        cox_lrn <- lrn("surv.coxph")$train(task)
-        risk <- cox_lrn$predict(task)$crank
-        mrmr_res <- praznik::MRMR(X = data[, all_features, drop = FALSE], 
-                                  Y = risk, k = min(20, length(all_features)))
-        selected <- mrmr_res$selection
-      }, error = function(e) {
-        warning("mRMR failed: ", e$message)
-      })
-      selection_list$mrmr <- selected
-      raw_results$mrmr <- if(exists("mrmr_res")) mrmr_res else NULL
-    }
-  }
   
   # ----------------------------------------------------------------------------
-  # 13. Combine results
+  # 12. Combine results
   # ----------------------------------------------------------------------------
   method_names <- names(selection_list)
   if (length(method_names) == 0) {
@@ -3421,7 +3402,7 @@ plot_dca_survival <- function(learners,
     
     if (is.null(colors)) {
       hues <- seq(15, 375, length.out = length(model_names) + 1)
-      mod_cols <- hcl(hues[1:length(model_names)], l = 55, c = 90)
+      mod_cols <- grDevices::hcl(hues[1:length(model_names)], l = 55, c = 90)
       names(mod_cols) <- model_names
       colors <- c(mod_cols, default_ref_colors)
     } else if (is.character(colors) && length(colors) == 1) {
@@ -3440,7 +3421,7 @@ plot_dca_survival <- function(learners,
         colors <- c(mod_cols, "TreatAll" = "#B24745FF", "TreatNone" = "#79AF97FF")
       } else {
         hues <- seq(15, 375, length.out = length(model_names) + 1)
-        mod_cols <- hcl(hues[1:length(model_names)], l = 55, c = 90)
+        mod_cols <- grDevices::hcl(hues[1:length(model_names)], l = 55, c = 90)
         names(mod_cols) <- model_names
         colors <- c(mod_cols, default_ref_colors)
       }
@@ -3550,12 +3531,14 @@ plot_dca_survival <- function(learners,
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' list_surv_feature_methods()
+#' }
 list_surv_feature_methods <- function(verbose = TRUE) {
   methods_df <- data.frame(
     Method = c(
       "uni_cox", "lasso", "ridge", "enet", "rf_imp", "rfsrc_imp",
-      "xgb_imp", "vimp", "boruta", "stepwise", "stab_sel", "mrmr"
+      "xgb_imp", "vimp", "boruta", "stepwise", "stab_sel"
     ),
     Description = c(
       "Univariate Cox regression (p < threshold)",
@@ -3568,8 +3551,7 @@ list_surv_feature_methods <- function(verbose = TRUE) {
       "VIMP variable importance from randomForestSRC (robust, recommended)",
       "Boruta wrapper algorithm (default OFF, may fail on survival data)",
       "Stepwise Cox regression (both directions, AIC) - low-dimensional only",
-      "Stability selection with Lasso via c060::stabpath",
-      "Minimum Redundancy Maximum Relevance (Cox risk proxy) - approximate"
+      "Stability selection with Lasso via c060::stabpath"
     ),
     RequiredPackages = c(
       "survival (built-in)",
@@ -3582,8 +3564,7 @@ list_surv_feature_methods <- function(verbose = TRUE) {
       "randomForestSRC",
       "Boruta, randomForest (optional)",
       "MASS",
-      "c060",
-      "praznik"
+      "c060"
     ),
     Recommendation = c(
       "* * * * * (must-have)",
@@ -3596,8 +3577,7 @@ list_surv_feature_methods <- function(verbose = TRUE) {
       "* * * * * (stable, official RF method)",
       "* * * * * (use with caution, OFF by default)",
       "* * * * * (only for low dimension, p < 30)",
-      "* * * * * (robust for high-dim)",
-      "* * * * * (approximate, informative only)"
+      "* * * * * (robust for high-dim)"
     ),
     stringsAsFactors = FALSE
   )

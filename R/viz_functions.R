@@ -424,7 +424,7 @@ PlotCorrelationHeatmap <- function(object,
                                               ".", format))
       
       # Close any open devices
-      if (!is.null(dev.list())) {
+      if (!is.null(grDevices::dev.list())) {
         try(grDevices::dev.off(), silent = TRUE)
       }
       
@@ -440,7 +440,7 @@ PlotCorrelationHeatmap <- function(object,
       }
       
       on.exit({
-        if (!is.null(dev.list())) {
+        if (!is.null(grDevices::dev.list())) {
           try(grDevices::dev.off(), silent = TRUE)
         }
       }, add = TRUE)

@@ -31,7 +31,6 @@ surv_feature_selection_multi(
   \item{\code{"boruta"}}{Boruta wrapper algorithm (requires \code{Boruta} package; disabled by default).}
   \item{\code{"stepwise"}}{Stepwise Cox regression (both directions, AIC). Only for low-dimensional data (p < 30).}
   \item{\code{"stab_sel"}}{Stability selection using \code{c060::stabpath} with Lasso.}
-  \item{\code{"mrmr"}}{Minimum Redundancy Maximum Relevance using Cox risk score as proxy (approximate).}
 }}
 
 \item{p_threshold}{Numeric. P-value threshold for univariate Cox (default 0.05).}
@@ -63,7 +62,7 @@ A list with three components:
 Applies multiple feature selection methods to a survival task and returns a
 consensus set of features. Supports 12+ algorithms including univariate Cox,
 penalized Cox (LASSO, Ridge, Elastic Net), random forest importance,
-XGBoost importance, VIMP, stepwise, stability selection, mRMR, and Boruta.
+XGBoost importance, VIMP, stepwise, stability selection,  and Boruta.
 }
 \examples{
 \dontrun{

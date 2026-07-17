@@ -378,7 +378,7 @@ run_prognosis_pipeline <- function(
     pdf(file.path(d4, paste0("KM_", cutoff_method, ".pdf")), width = 8, height = 7)
     print(p); dev.off(); p
   }, error = function(e) {
-    if (dev.cur() > 1) dev.off()
+    if (grDevices::dev.cur() > 1) dev.off()
     message("  [!] KM skipped: ", e$message); NULL
   })
   
@@ -405,7 +405,7 @@ run_prognosis_pipeline <- function(
                              time_points = time_points)
       dev.off(); message("  [OK] Nomogram saved.")
     }, error = function(e) {
-      if (dev.cur() > 1) dev.off()
+      if (grDevices::dev.cur() > 1) dev.off()
       message("  [!] Nomogram failed: ", e$message)
     })
   }

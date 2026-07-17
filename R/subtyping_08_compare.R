@@ -33,7 +33,7 @@ compare_clusterings <- function(object,
   rownames(ari_mat) <- colnames(ari_mat) <- present
   for (i in 1:(n_methods-1)) {
     for (j in (i+1):n_methods) {
-      ari <- adjustedRandIndex(group_df[[i]], group_df[[j]])
+      ari <- mclust::adjustedRandIndex(group_df[[i]], group_df[[j]])
       ari_mat[i, j] <- ari_mat[j, i] <- ari
     }
   }

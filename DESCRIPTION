@@ -93,15 +93,15 @@ Imports:
     utils,
     viridis,
     viridisLite,
+    mlr3tuningspaces,
+    paradox,
     wesanderson
 Suggests:
     mlr3learners,
     mlr3extralearners,
     Boruta,
-    paradox,
     tidyverse,
     mlbench,
-    praznik,
     testthat (>= 3.0.0)
 Remotes:
     mdbrown/rmda,

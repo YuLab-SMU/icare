@@ -4,13 +4,14 @@
 #' Internal helper. Given a data frame and group column, returns log2 of per-group
 #' means with pseudocount added only when zero means exist.
 #'
+#' @importFrom dplyr across all_of 
 #' @param mat   Data frame containing numeric columns and group column.
 #' @param group_col  Name of the grouping column.
 #' @return A tibble: n_groups rows, columns = numeric features, values = log2(mean).
 #' @keywords internal
 .compute_log2_means <- function(mat, group_col) {
   means <- mat %>%
-    group_by(across(all_of(group_col))) %>%
+    group_by(dplyr::across(dplyr::all_of(group_col))) %>%
     dplyr::summarise_all(mean) %>%
     dplyr::select(-dplyr::all_of(group_col))
   
@@ -41,7 +42,7 @@
 #' @param save_dir   Directory to save results.
 #' @param save_data  Logical; whether to write CSV output.
 #' @param csv_filename  Output filename.
-#'
+#' @importFrom dplyr across all_of 
 #' @returns Data frame with W, p, mean_x/y, median_x/y, sd_x/y, p.adjust, logFC, change.
 #' @export
 #'
@@ -97,7 +98,7 @@ batch_Wilcoxon <- function(mat,
   
   # -- 2. SD (from test mat) -------------------------------------------------
   sd_file <- mat_num %>%
-    group_by(across(all_of(group_col))) %>%
+    group_by(dplyr::across(dplyr::all_of(group_col))) %>%
     dplyr::summarise_all(sd) %>%
     t()
   colnames(sd_file)   <- sd_file[1, ]
@@ -126,7 +127,7 @@ batch_Wilcoxon <- function(mat,
     logFC  <- log2_means[2, shared, drop = FALSE] - log2_means[1, shared, drop = FALSE]
   } else {
     raw_means <- ref_mat %>%
-      group_by(across(all_of(group_col))) %>%
+      group_by(dplyr::across(dplyr::all_of(group_col))) %>%
       dplyr::summarise_all(mean) %>%
       dplyr::select(-dplyr::all_of(group_col))
     shared <- intersect(rownames(test_sig), colnames(raw_means))
@@ -173,7 +174,7 @@ batch_Wilcoxon <- function(mat,
 #' @param group_col Name of the grouping column (must have exactly 2 levels).
 #' @param logfc_mat Optional data frame for logFC calculation.
 #' @param logfc_type One of "log2ratio" or "diff".
-#'
+#' @importFrom dplyr across all_of 
 #' @return Data frame with test statistics and logFC.
 #' @keywords internal
 .wilcoxon_two_groups <- function(mat, 
@@ -241,7 +242,7 @@ batch_Wilcoxon <- function(mat,
     logFC  <- log2_means[2, shared, drop = FALSE] - log2_means[1, shared, drop = FALSE]
   } else {
     raw_means <- ref_mat %>%
-      group_by(across(all_of(group_col))) %>%
+      group_by(dplyr::across(dplyr::all_of(group_col))) %>%
       dplyr::summarise_all(mean) %>%
       dplyr::select(-dplyr::all_of(group_col))
     shared <- intersect(rownames(tests), colnames(raw_means))
@@ -923,7 +924,7 @@ plot_deg_radarchart <- function(df,
     )
   
   df_long <- df %>%
-    pivot_longer(cols = all_of(y_cols), names_to = "var", values_to = "value")
+    tidyr::pivot_longer(cols = dplyr::all_of(y_cols), names_to = "var", values_to = "value")
   
   plot <- ggplot(df_long, aes(x = get(x_col), y = value, fill = group)) +
     geom_bar(stat = "identity", position = "stack", alpha = 0.7) +
@@ -1203,7 +1204,7 @@ VarFeature_volcano <- function(object,
 #' @importFrom dplyr summarise left_join
 #' @importFrom tidyr pivot_longer
 #'
-#' @import stats
+#' @importFrom stats wilcox.test
 #' @param last_test_sig A data frame containing the results of differential expression analysis with columns
 #'                      such as 'change' (e.g., 'Stable', 'Upregulated', 'Downregulated') and 'logFC' (log-fold change).
 #' @param data A data frame containing the expression data with rows as samples and columns as features.
@@ -1283,7 +1284,7 @@ plot_deg_boxplot <- function(last_test_sig,
   }
   
   box_test <- data[, selected_columns]
-  box_test <- pivot_longer(box_test, cols = all_of(selected_ids), values_to = 'value', names_to = 'id')
+  box_test <- tidyr::pivot_longer(box_test, cols = dplyr::all_of(selected_ids), values_to = 'value', names_to = 'id')
   box_test[[group_col]] <- as.factor(box_test[[group_col]])
   
   cat("Calculating significance differences...\n")

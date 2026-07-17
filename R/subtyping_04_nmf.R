@@ -580,7 +580,7 @@ Sub_nmf_assign_subtypes <- function(object) {
 #' @param method     NMF algorithm.
 #' @param model_name File stem for the saved model (.rds).
 #' @param save_dir   Output directory.
-#' @importFrom NMF nmf basis consensus coef
+#' @importFrom NMF nmf basis consensus 
 #' @examples
 #' \dontrun{
 #'   # Assuming 'obj' is a Subtyping object with best_k already determined

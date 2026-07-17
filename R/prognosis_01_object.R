@@ -22,6 +22,8 @@
 #' @slot best.model List.
 #' @slot subgroup.risk List.
 #' @export
+#' @aliases PrognosiX-class
+#' @aliases PrognosiX
 #' @exportClass PrognosiX
 #' @examples
 #' \dontrun{
