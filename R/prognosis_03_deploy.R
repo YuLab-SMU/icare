@@ -3,11 +3,11 @@
 # PrognosiX Deployment Module
 #
 # Provides:
-#   1. Stat_to_PrognosiX()      — robust Stat -> PrognosiX conversion
-#   2. run_prognosis_pipeline() — end-to-end survival analysis pipeline
-#   3. Prog_deploy_dispatcher() — risk prediction for new samples
-#   4. New_Prog_Manager()       — lightweight deployment manager object
-#   5. launch_prog_deploy_app() — interactive Shiny prediction terminal
+#   1. Stat_to_PrognosiX()      -- robust Stat -> PrognosiX conversion
+#   2. run_prognosis_pipeline() -- end-to-end survival analysis pipeline
+#   3. Prog_deploy_dispatcher() -- risk prediction for new samples
+#   4. New_Prog_Manager()       -- lightweight deployment manager object
+#   5. launch_prog_deploy_app() -- interactive Shiny prediction terminal
 # ==============================================================================
 
 if (!exists("%||%")) `%||%` <- function(a, b) if (!is.null(a) && length(a) > 0) a else b
@@ -52,6 +52,7 @@ if (!exists("%||%")) `%||%` <- function(a, b) if (!is.null(a) && length(a) > 0) 
 #'
 #' @return A \code{PrognosiX} S4 object ready for \code{run_prognosis_pipeline()}.
 #'
+#' @export
 #' @examples
 #' \dontrun{
 #' library(survival)
@@ -66,7 +67,6 @@ if (!exists("%||%")) `%||%` <- function(a, b) if (!is.null(a) && length(a) > 0) 
 #'                                time_col   = "time",
 #'                                status_col = "status")
 #' }
-#' @export
 Stat_to_PrognosiX <- function(stat_obj,
                               time_col,
                               status_col,
@@ -77,7 +77,7 @@ Stat_to_PrognosiX <- function(stat_obj,
   na_action <- match.arg(na_action)
   .log <- function(fmt, ...) if (verbose) message(sprintf(fmt, ...))
   
-  # 1. Validate and extract ───────────────────────────────────────────────────
+  # 1. Validate and extract ---------------------------------------------------
   if (!inherits(stat_obj, "Stat"))
     stop("[Stat_to_PrognosiX] 'stat_obj' must be a 'Stat' S4 object.")
   
@@ -106,7 +106,7 @@ Stat_to_PrognosiX <- function(stat_obj,
     if (col %in% colnames(info_data) && !(col %in% colnames(core_data)))
       core_data[[col]] <- info_data[[col]]
   
-  # 2. Verify required columns ────────────────────────────────────────────────
+  # 2. Verify required columns ------------------------------------------------
   .log("[2/6] Verifying time / status columns...")
   miss <- setdiff(c(time_col, status_col), colnames(core_data))
   if (length(miss) > 0)
@@ -114,7 +114,7 @@ Stat_to_PrognosiX <- function(stat_obj,
                  paste(miss, collapse = ", "),
                  paste(colnames(core_data), collapse = ", ")))
   
-  # 3. Type coercion ─────────────────────────────────────────────────────────
+  # 3. Type coercion ---------------------------------------------------------
   .log("[3/6] Coercing column types...")
   # Strip ">", "<", spaces etc. then force numeric
   core_data[[time_col]]   <- suppressWarnings(
@@ -146,7 +146,7 @@ Stat_to_PrognosiX <- function(stat_obj,
     }
   }
   
-  # 4. Missing values ─────────────────────────────────────────────────────────
+  # 4. Missing values ---------------------------------------------------------
   .log("[4/6] Missing values (strategy: %s)...", na_action)
   if (na_action == "omit") {
     n_before  <- nrow(core_data)
@@ -170,7 +170,7 @@ Stat_to_PrognosiX <- function(stat_obj,
     }
   }
   
-  # 5. Event count ────────────────────────────────────────────────────────────
+  # 5. Event count ------------------------------------------------------------
   .log("[5/6] Checking event count...")
   n_ev <- sum(core_data[[status_col]] == 1)
   n_to <- nrow(core_data)
@@ -180,7 +180,7 @@ Stat_to_PrognosiX <- function(stat_obj,
     warning(sprintf("[Stat_to_PrognosiX] Only %d events (< min_events=%d). Results may be unstable.",
                     n_ev, min_events))
   
-  # 6. Build PrognosiX ────────────────────────────────────────────────────────
+  # 6. Build PrognosiX --------------------------------------------------------
   .log("[6/6] Building PrognosiX object...")
   new_info  <- core_data[, c(time_col, status_col), drop = FALSE]
   new_clean <- core_data[, feat_cols, drop = FALSE]
@@ -204,14 +204,14 @@ Stat_to_PrognosiX <- function(stat_obj,
 #'
 #' Chains all prognosis analysis steps into a single call:
 #' \enumerate{
-#'   \item \strong{Feature filtering}  — univariate Cox (\code{surv_filter_features_clinical})
-#'   \item \strong{Algorithm benchmark} — multi-model CV (\code{surv_run_algorithm_benchmark})
-#'   \item \strong{Tuning + training}   — best algorithm tuned and fitted (\code{surv_train_and_tune})
-#'   \item \strong{KM risk curves}      — stratified survival plots (\code{surv_plot_risk_km})
-#'   \item \strong{Time-dependent AUC}  — dynamic accuracy (\code{surv_plot_time_dependent_auc})
-#'   \item \strong{Nomogram}            — clinical scoring chart (requires \pkg{rms})
-#'   \item \strong{SHAP}                — feature explanation (requires \pkg{survex})
-#'   \item \strong{Save}               — all artefacts written to \code{output_dir}
+#'   \item \strong{Feature filtering}  -- univariate Cox (\code{surv_filter_features_clinical})
+#'   \item \strong{Algorithm benchmark} -- multi-model CV (\code{surv_run_algorithm_benchmark})
+#'   \item \strong{Tuning + training}   -- best algorithm tuned and fitted (\code{surv_train_and_tune})
+#'   \item \strong{KM risk curves}      -- stratified survival plots (\code{surv_plot_risk_km})
+#'   \item \strong{Time-dependent AUC}  -- dynamic accuracy (\code{surv_plot_time_dependent_auc})
+#'   \item \strong{Nomogram}            -- clinical scoring chart (requires \pkg{rms})
+#'   \item \strong{SHAP}                -- feature explanation (requires \pkg{survex})
+#'   \item \strong{Save}               -- all artefacts written to \code{output_dir}
 #' }
 #'
 #' @param object         \code{PrognosiX} or \code{Stat} S4 object.
@@ -222,7 +222,7 @@ Stat_to_PrognosiX <- function(stat_obj,
 #'   Default: \code{c("surv.coxph", "surv.cv_glmnet", "surv.ranger")}.
 #' @param p_threshold    Univariate Cox p-value cut-off (default \code{0.05}).
 #' @param tuning_budget  Number of hyperparameter evaluations per model
-#'   (default \code{30}).  Use \code{50}–\code{100} for publication results.
+#'   (default \code{30}).  Use \code{50}-\code{100} for publication results.
 #' @param cutoff_method  Risk stratification cut-point:
 #'   \code{"median"}, \code{"tertile"}, \code{"quartile"}, or \code{"p_optimize"}.
 #' @param time_points    Nomogram prediction horizons (default \code{c(1,3,5)}).
@@ -236,7 +236,7 @@ Stat_to_PrognosiX <- function(stat_obj,
 #' @return Invisible named list:
 #'   \code{prog_obj}, \code{best_learner}, \code{filter_result},
 #'   \code{benchmark_table}, \code{km_plot}, \code{auc_data}, \code{output_dir}.
-#'
+#' @export
 #' @examples
 #' \dontrun{
 #' # --- Minimal call (PrognosiX object) ---
@@ -252,7 +252,6 @@ Stat_to_PrognosiX <- function(stat_obj,
 #'   cutoff_method = "tertile"
 #' )
 #' }
-#' @export
 run_prognosis_pipeline <- function(
     object,
     time_col      = NULL,
@@ -294,7 +293,7 @@ run_prognosis_pipeline <- function(
           "  |  output: ", output_dir)
   message(strrep("=", 65))
   
-  # Step 0: object conversion ─────────────────────────────────────────────────
+  # Step 0: object conversion -------------------------------------------------
   if (inherits(object, "Stat")) {
     if (is.null(time_col) || is.null(status_col))
       stop("[run_prognosis_pipeline] time_col and status_col required for Stat input.")
@@ -307,7 +306,7 @@ run_prognosis_pipeline <- function(
   }
   saveRDS(prog_obj, file.path(output_dir, "prog_obj_initial.rds"))
   
-  # Step 1: univariate Cox feature filtering ──────────────────────────────────
+  # Step 1: univariate Cox feature filtering ----------------------------------
   d1 <- .sdir(1, "Feature_Selection")
   message("\n[Step 1] Univariate Cox feature filtering (p < ", p_threshold, ")...")
   filter_result <- surv_filter_features_clinical(prog_obj, p_threshold = p_threshold)
@@ -321,7 +320,7 @@ run_prognosis_pipeline <- function(
                   length(selected_feats), paste(selected_feats, collapse = ", ")))
   
   if (length(selected_feats) == 0) {
-    message("  [!] 0 features at p<", p_threshold, " — relaxing to p<0.2 ...")
+    message("  [!] 0 features at p<", p_threshold, " -- relaxing to p<0.2 ...")
     filter_result  <- surv_filter_features_clinical(prog_obj, p_threshold = 0.2)
     task_filtered  <- filter_result$task
     selected_feats <- task_filtered$feature_names
@@ -331,7 +330,7 @@ run_prognosis_pipeline <- function(
   prog_obj@univariate.analysis <- filter_result
   prog_obj@survival.var        <- list(selected = selected_feats)
   
-  # Step 2: multi-algorithm benchmark ────────────────────────────────────────
+  # Step 2: multi-algorithm benchmark ----------------------------------------
   d2 <- .sdir(2, "Algorithm_Benchmark")
   message("\n[Step 2] Algorithm benchmark (", paste(learner_ids, collapse = ", "), ")...")
   
@@ -353,7 +352,7 @@ run_prognosis_pipeline <- function(
   message(sprintf("  [OK] Winner: %s  (C-index = %.4f)",
                   best_id, perf_tab[perf_tab$learner_id == best_id, "surv.cindex"]))
   
-  # Step 3: hyperparameter tuning ─────────────────────────────────────────────
+  # Step 3: hyperparameter tuning ---------------------------------------------
   d3 <- .sdir(3, "Final_Model")
   message("\n[Step 3] Tuning ", best_id, " (budget=", tuning_budget, " evals)...")
   tune_res     <- surv_train_and_tune(task_filtered, best_id,
@@ -370,7 +369,7 @@ run_prognosis_pipeline <- function(
     file.path(d3, "Best_Model_Summary.csv"), row.names = FALSE)
   message(sprintf("  [OK] CV C-index = %.4f", tune_res$cv_performance))
   
-  # Step 4: KM risk stratification ────────────────────────────────────────────
+  # Step 4: KM risk stratification --------------------------------------------
   d4 <- .sdir(4, "Risk_KM")
   message("\n[Step 4] KM risk stratification (", cutoff_method, ")...")
   km_plot <- tryCatch({
@@ -383,7 +382,7 @@ run_prognosis_pipeline <- function(
     message("  [!] KM skipped: ", e$message); NULL
   })
   
-  # Step 5: time-dependent AUC ────────────────────────────────────────────────
+  # Step 5: time-dependent AUC ------------------------------------------------
   d5 <- .sdir(5, "Time_AUC")
   message("\n[Step 5] Time-dependent AUC...")
   auc_data <- tryCatch({
@@ -395,7 +394,7 @@ run_prognosis_pipeline <- function(
     message("  [!] AUC skipped (need risksetROC): ", e$message); NULL
   })
   
-  # Step 6: nomogram (optional) ───────────────────────────────────────────────
+  # Step 6: nomogram (optional) -----------------------------------------------
   if (run_nomogram && requireNamespace("rms", quietly = TRUE)) {
     d6 <- .sdir(6, "Nomogram")
     message("\n[Step 6] Nomogram...")
@@ -411,19 +410,19 @@ run_prognosis_pipeline <- function(
     })
   }
   
-  # Step 7: SHAP (optional) ───────────────────────────────────────────────────
+  # Step 7: SHAP (optional) ---------------------------------------------------
   if (run_shap) {
     d7 <- .sdir(7, "SHAP")
     message("\n[Step 7] SHAP explanation...")
     tryCatch({
-      sr <- surv_explain_model_shap(best_learner, task_filtered, sample_size = 30)
+      sr <- surv_explain_shap(best_learner, task_filtered)
       .sp(sr$plot, file.path(d7, "SHAP_Importance.pdf"))
       message("  [OK] SHAP saved.")
     }, error = function(e)
       message("  [!] SHAP skipped (need survex): ", e$message))
   }
   
-  # Step 8: write back and save ───────────────────────────────────────────────
+  # Step 8: write back and save -----------------------------------------------
   message("\n[Step 8] Saving results to PrognosiX object...")
   prog_obj@best.model <- list(
     learner_id  = best_id,
@@ -453,8 +452,8 @@ run_prognosis_pipeline <- function(
 # PrognosiX Deployment Module
 # ==============================================================================
 # Functions for deploying trained PrognosiX models via Shiny app,
-# with support for custom thresholds (binary, tertile, multi‑group),
-# full UI text and color theming, and a production‑ready manager.
+# with support for custom thresholds (binary, tertile, multi-group),
+# full UI text and color theming, and a production-ready manager.
 # ---- 1. Theme customization ----
 #' Set custom theme for the Prognosis Terminal
 #' @param primary_color Main accent color (borders, buttons, headers)
@@ -474,6 +473,11 @@ run_prognosis_pipeline <- function(
 #' @param font_size_base Base font size in px
 #' @return Invisibly stores the theme in options("prog_app_theme_css")
 #' @export
+#' 
+#' @examples
+#' \dontrun{
+#' set_prog_app_theme(primary_color = "#2c7fb8", background_color = "#f8f9fa")
+#' }
 set_prog_app_theme <- function(
     primary_color = "#2c7fb8",
     background_color = "#f8f9fa",
@@ -538,6 +542,10 @@ set_prog_app_theme <- function(
 }
 
 #' Predefined theme: advanced grey (light background, dark text)
+#' @examples
+#' \dontrun{
+#' use_app_theme_grey()
+#' }
 #' @export
 use_app_theme_grey <- function() {
   set_prog_app_theme()
@@ -545,6 +553,10 @@ use_app_theme_grey <- function() {
 
 #' Predefined theme: dark (original dark background)
 #' @export
+#' @examples
+#' \dontrun{
+#' use_app_theme_dark()
+#' }
 use_app_theme_dark <- function() {
   set_prog_app_theme(
     primary_color = "#58a6ff",
@@ -566,6 +578,10 @@ use_app_theme_dark <- function() {
 }
 
 #' Predefined theme: light (clean white, blue accents)
+#' @examples
+#' \dontrun{
+#' use_app_theme_light()
+#' }
 #' @export
 use_app_theme_light <- function() {
   set_prog_app_theme(
@@ -590,6 +606,10 @@ use_app_theme_light <- function() {
 # ---- 2. Text customization ----
 #' Set custom text for the Prognosis Terminal
 #' @param ... Named arguments for text keys (see default list)
+#' @examples
+#' \dontrun{
+#' set_prog_app_text(title = "My Prognosis App", prediction_portal = "Risk Calculator")
+#' }
 #' @export
 set_prog_app_text <- function(...) {
   default_text <- list(
@@ -601,11 +621,11 @@ set_prog_app_text <- function(...) {
     abstract = "Abstract",
     reference = "Reference",
     abstract_text = "Prognostic risk stratification from a validated survival model.",
-    citation_text = "Icare R package – PrognosiX framework",
+    citation_text = "Icare R package - PrognosiX framework",
     input_box_title = "1. Input Samples",
     risk_strat_label = "Risk Stratification",
-    median_choice = "Median — High/Low (2 groups)",
-    tertile_choice = "Tertile — Low/Med/High (3 groups)",
+    median_choice = "Median -- High/Low (2 groups)",
+    tertile_choice = "Tertile -- Low/Med/High (3 groups)",
     custom_choice = "Custom thresholds (e.g., 30, 60)",
     custom_thresholds_label = "Thresholds (comma-separated)",
     show_scores_check = "Show raw risk scores",
@@ -637,7 +657,22 @@ set_prog_app_text <- function(...) {
   invisible(final_text)
 }
 
-#' Get custom text (internal)
+#' Get Custom Application Text
+#'
+#' Retrieves a specific text string from the global application text options.
+#' This is an internal helper used by the PrognosiX deployment Shiny app to
+#' fetch user-customized labels and messages.
+#'
+#' @param key Character string specifying the text key to retrieve
+#'   (e.g., `"title"`, `"calculate_button"`). If `NULL`, the entire
+#'   text list is returned.
+#'
+#' @return If `key` is provided, returns the corresponding text string,
+#'   or an empty string if the key does not exist. If `key` is `NULL`,
+#'   returns the full named list of all application texts.
+#'
+#' @keywords internal
+#' @noRd
 get_prog_app_text <- function(key = NULL) {
   txt <- getOption("prog_app_text", list())
   if (is.null(key)) return(txt)
@@ -647,10 +682,7 @@ get_prog_app_text <- function(key = NULL) {
 # ---- 3. Core prediction functions ----
 #' Robust Prediction for PrognosiX Objects with Imputation
 #'
-#' This enhanced version of \code{predict_prognosix} avoids the common "different column info"
-#' error by aligning new data with the exact feature types stored in the training task.
-#' It also retains the original imputation functionality using the reference data
-#' (\code{prog_obj@clean.data}).
+#' Predict prognostic risk scores while automatically handling data type mismatches and missing values.
 #'
 #' @param prog_obj A \code{PrognosiX} object containing a trained survival model.
 #' @param newdata A data frame (or data.table) with the same features as used for training.
@@ -774,6 +806,11 @@ predict_prognosix <- function(prog_obj, newdata, impute = TRUE) {
 #' @param custom_cutoffs Numeric vector (length >=1). For length >2, labels become "Low Risk", "Medium Risk 1", ..., "High Risk"
 #' @param return_scores Logical, include raw risk scores
 #' @return Data frame with SampleID, risk_group, and optionally risk_score
+#' @examples
+#' \dontrun{
+#' # Requires a trained PrognosiX object
+#' # risk_df <- predict_risk_groups(prog_obj, new_data, cutoff_method = "median")
+#' }
 #' @export
 predict_risk_groups <- function(prog_obj, newdata, 
                                 cutoff_method = c("median", "tertile", "custom"),
@@ -814,6 +851,11 @@ predict_risk_groups <- function(prog_obj, newdata,
 #' @param cutoff_method One of `"median"`, `"tertile"`, `"custom"`
 #' @param custom_cutoffs Numeric vector for custom thresholds
 #' @param return_scores Logical
+#' @examples
+#' \dontrun{
+#' # Legacy compatibility wrapper
+#' # result <- Prog_deploy_dispatcher(prog_obj, new_data, cutoff_method = "tertile")
+#' }
 #' @export
 Prog_deploy_dispatcher <- function(prog_train_obj,
                                    newdata,
@@ -827,6 +869,12 @@ Prog_deploy_dispatcher <- function(prog_train_obj,
 #' Create a deployment manager
 #' @param prog_train_obj A `PrognosiX` object with a trained model
 #' @return An S3 object of class `"Prog_Manager"`
+#' @examples
+#' \dontrun{
+#' # Requires a trained PrognosiX object
+#' # mgr <- New_Prog_Manager(prog_obj)
+#' # result <- mgr$prog_predict(new_data)
+#' }
 #' @export
 New_Prog_Manager <- function(prog_train_obj) {
   if (!inherits(prog_train_obj, "PrognosiX"))
@@ -855,14 +903,14 @@ New_Prog_Manager <- function(prog_train_obj) {
     }
   )
   class(mgr) <- "Prog_Manager"
-  cat("\n── PrognosiX Manager ─────────────────────────────────\n")
+  cat("\n-- PrognosiX Manager ---------------------------------\n")
   cat(sprintf("  Algorithm  : %s\n",   info$algorithm))
   cat(sprintf("  CV C-index : %.4f\n", info$cv_cindex %||% NA))
   cat(sprintf("  Features   : %d  (%s%s)\n", info$n_features,
               paste(head(info$features, 4), collapse = ", "),
               if (info$n_features > 4) ", ..." else ""))
   cat(sprintf("  Training N : %d (events: %d)\n", info$n_train, info$n_events))
-  cat("──────────────────────────────────────────────────────\n\n")
+  cat("------------------------------------------------------\n\n")
   return(mgr)
 }
 
@@ -873,6 +921,12 @@ New_Prog_Manager <- function(prog_train_obj) {
 #' @param var_dict Data frame with columns Feature, Description, Units
 #' @param project_info List with elements `abstract` and `citation`
 #' @return Runs the Shiny app
+#' @examples
+#' \dontrun{
+#' # Requires a Prog_Manager object
+#' # mgr <- New_Prog_Manager(prog_obj)
+#' # launch_prog_deploy_app(mgr)
+#' }
 #' @export
 launch_prog_deploy_app <- function(prog_manager,
                                    title = NULL,
@@ -883,8 +937,6 @@ launch_prog_deploy_app <- function(prog_manager,
   for (pkg in c("shiny", "shinydashboard", "DT"))
     if (!requireNamespace(pkg, quietly = TRUE))
       stop(sprintf("'%s' required: install.packages('%s')", pkg, pkg))
-  library(shiny); library(shinydashboard); library(DT)
-  
   # Apply default theme if none set
   if (is.null(getOption("prog_app_theme_css"))) use_app_theme_grey()
   
@@ -914,14 +966,14 @@ launch_prog_deploy_app <- function(prog_manager,
                              column(8, h4(.get_text("abstract", "Abstract")),
                                     p(project_info$abstract %||% .get_text("abstract_text", "Prognostic risk stratification from a validated survival model."))),
                              column(4, h4(.get_text("reference", "Reference")),
-                                    p(project_info$citation %||% .get_text("citation_text", "Icare R package – PrognosiX framework")))
+                                    p(project_info$citation %||% .get_text("citation_text", "Icare R package - PrognosiX framework")))
                 )),
                 fluidRow(box(title = .get_text("input_box_title", "1. Input Samples"), width = 12,
                              column(3,
                                     selectInput("cutoff_m", .get_text("risk_strat_label", "Risk Stratification"),
                                                 choices = {
-                                                  lbl_med <- .get_text("median_choice", "Median — High/Low (2 groups)")
-                                                  lbl_ter <- .get_text("tertile_choice", "Tertile — Low/Med/High (3 groups)")
+                                                  lbl_med <- .get_text("median_choice", "Median -- High/Low (2 groups)")
+                                                  lbl_ter <- .get_text("tertile_choice", "Tertile -- Low/Med/High (3 groups)")
                                                   lbl_cus <- .get_text("custom_choice", "Custom thresholds (e.g., 0.3, 0.6)")
                                                   setNames(c("median", "tertile", "custom"), c(lbl_med, lbl_ter, lbl_cus))
                                                 }),
@@ -1041,7 +1093,7 @@ launch_prog_deploy_app <- function(prog_manager,
                     rownames = FALSE, options = list(dom = "t", pageLength = 30)))
     output$doc_tbl <- DT::renderDataTable({
       df <- var_dict %||% data.frame(Feature = req_vars,
-                                     Description = paste("Predictor:", req_vars), Units = "—", stringsAsFactors = FALSE)
+                                     Description = paste("Predictor:", req_vars), Units = "--", stringsAsFactors = FALSE)
       colnames(df) <- c(.get_text("feature_col", "Feature"),
                         .get_text("description_col", "Description"),
                         .get_text("units_col", "Units"))

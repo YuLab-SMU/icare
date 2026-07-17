@@ -11,6 +11,11 @@
 #' @param save_data Logical.
 #' @return A processed data frame.
 #' @export
+#' @examples
+#' \dontrun{
+#' new_raw <- stat_obj_test@raw.data
+#' processed <- process_new_data(stat_obj_test, new_raw,save_data = FALSE)
+#' }
 process_new_data <- function(stat_object,
                              new_data,
                              group_col = "group",

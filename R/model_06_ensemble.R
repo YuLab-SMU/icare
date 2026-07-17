@@ -1,6 +1,6 @@
 # =============================================================================
 # model_final_ensemble.R
-# Final Modeling Module: Ensemble ·Publication Visualizations
+# Final Modeling Module: Ensemble -Publication Visualizations
 # =============================================================================
 
 # 0. Package Check -----------------------------------------------------------
@@ -16,7 +16,7 @@
   invisible(TRUE)
 }
 
-# ── Internal helpers (shared with viz_functions) ───────────────────────────
+# -- Internal helpers (shared with viz_functions) ---------------------------
 .pub_theme <- function(base_size = 13) {
   ggprism::theme_prism(base_size = base_size) +
     ggplot2::theme(
@@ -45,9 +45,9 @@
 }
 
 
-# ═════════════════════════════════════════════════════════════════════════════
-# Part 1: No‑Hyperparameter Comparison Visualizations
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
+# Part 1: No-Hyperparameter Comparison Visualizations
+# =============================================================================
 
 #' Top N Model Performance Dot Plot
 #'
@@ -419,34 +419,34 @@ PlotProbStrip <- function(model_obj, data = NULL,
 
 
 
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 # Part 2: caretEnsemble Integration
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 
-#' Multi‑Strategy Model Ensemble
+#' Multi-Strategy Model Ensemble
 #'
 #' Combines multiple trained \code{caret} models stored in a
 #' \code{Train_Model} object using one of four strategies: stacking
-#' (with a user‑chosen meta‑learner), simple average, weighted average
+#' (with a user-chosen meta-learner), simple average, weighted average
 #' (by AUC or custom weights), or majority voting.  The function does
 #' not depend on \code{caretEnsemble}; all logic is implemented directly
 #' on top of the existing \code{@train.models} slot.
 #'
-#' For stacking, the meta‑learner is trained on out‑of‑fold predictions
-#' obtained by re‑fitting each base model on every CV fold.  Models that
-#' cannot be successfully re‑fitted on all folds are automatically
+#' For stacking, the meta-learner is trained on out-of-fold predictions
+#' obtained by re-fitting each base model on every CV fold.  Models that
+#' cannot be successfully re-fitted on all folds are automatically
 #' excluded from the ensemble to avoid imputation or data leakage.
 #'
 #' @param model_obj   A trained \code{Train_Model} object.
 #' @param strategy    Ensemble strategy: \code{"stacking"},
 #'   \code{"average"}, \code{"weighted"}, or \code{"voting"}.
-#' @param meta_method Meta‑learner method for stacking (default
+#' @param meta_method Meta-learner method for stacking (default
 #'   \code{"glm"}).  Any caret classification method name is allowed
 #'   (e.g., \code{"rf"}, \code{"gbm"}).  Ignored for other strategies.
 #' @param top_n       Number of top models (ranked by AUC) to include.
 #'   \code{NULL} (default) uses all available models.
-#' @param cv_folds    Number of cross‑validation folds used to generate
-#'   out‑of‑fold meta‑features for stacking (default 5).
+#' @param cv_folds    Number of cross-validation folds used to generate
+#'   out-of-fold meta-features for stacking (default 5).
 #' @param weights     Named numeric vector of weights for the
 #'   \code{"weighted"} strategy.  If \code{NULL}, weights are
 #'   automatically set proportional to the training AUC of each model.
@@ -460,7 +460,7 @@ PlotProbStrip <- function(model_obj, data = NULL,
 #'
 #' @examples
 #' \dontrun{
-#' # Stacking with glm meta‑learner, top 4 models
+#' # Stacking with glm meta-learner, top 4 models
 #' model_obj <- TrainEnsemble(model_obj, strategy = "stacking",
 #'                            meta_method = "glm", top_n = 4)
 #'
@@ -507,7 +507,7 @@ TrainEnsemble <- function(model_obj,
   
   ensemble <- switch(strategy,
                      
-                     # ── Stacking ──────────────────────────────────────────────────
+                     # -- Stacking --------------------------------------------------
                      stacking = {
                        train_data <- model_obj@filtered.set$training
                        if (is.null(train_data)) stop("filtered.set$training is empty.")
@@ -553,7 +553,7 @@ TrainEnsemble <- function(model_obj,
                        
                        cat("Reliable models for stacking:", paste(reliable_models, collapse = ", "), "\n")
                        
-                       # Generate meta‑features with reliable models
+                       # Generate meta-features with reliable models
                        meta_train <- matrix(NA, nrow = nrow(train_data), ncol = length(reliable_models))
                        colnames(meta_train) <- reliable_models
                        
@@ -602,7 +602,7 @@ TrainEnsemble <- function(model_obj,
                        )
                      },
                      
-                     # ── Simple Average ─────────────────────────────────────────────
+                     # -- Simple Average ---------------------------------------------
                      average = {
                        list(
                          predict_fn = function(newdata) {
@@ -616,7 +616,7 @@ TrainEnsemble <- function(model_obj,
                        )
                      },
                      
-                     # ── Weighted Average ──────────────────────────────────────────
+                     # -- Weighted Average ------------------------------------------
                      weighted = {
                        aucs <- sapply(names(model_list), function(nm) {
                          model_obj@all.results$auc[model_obj@all.results$Model == nm]
@@ -641,7 +641,7 @@ TrainEnsemble <- function(model_obj,
                        )
                      },
                      
-                     # ── Majority Voting ────────────────────────────────────────────
+                     # -- Majority Voting --------------------------------------------
                      voting = {
                        list(
                          predict_fn = function(newdata) {
@@ -693,13 +693,3 @@ PredictEnsemble <- function(model_obj, newdata) {
   ens$predict_fn(newdata)
 }
 
-
-
-# ── Load message ────────────────────────────────────────────────────────────
-cat("\n================================================\n")
-cat("  model_final_ensemble.R loaded\n")
-cat("  Functions available:\n")
-cat("    PlotTopModelAUC, PlotModelRadar, PlotProbDensity, PlotProbStrip,\n")
-cat("    PlotModelDashboard\n")
-cat("    TrainEnsemble, PredictEnsemble\n")
-cat("================================================\n")

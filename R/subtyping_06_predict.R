@@ -1,5 +1,5 @@
 # =============================================================================
-# Module 3 – Validation Set Subtype Prediction
+# Module 3 - Validation Set Subtype Prediction
 # =============================================================================
 # Functions:
 #   Sub_extract_norm_params  Extract per-variable normalisation params from
@@ -34,6 +34,12 @@
 #'   \code{"normalization_info"} attribute is absent (default \code{"min_max"}).
 #' @param verbose  Print a summary (default \code{TRUE}).
 #' @return Named list of per-variable normalisation parameters.
+#' @examples
+#' \dontrun{
+#'   # Assuming 'obj' is a trained Subtyping object with scale.data
+#'   norm_params <- Sub_extract_norm_params(obj, verbose = TRUE)
+#'   print(norm_params[[1]])
+#' }
 #' @export
 Sub_extract_norm_params <- function(object,
                                     normalize_method = "min_max",
@@ -108,7 +114,7 @@ Sub_extract_norm_params <- function(object,
   if (verbose) {
     method_tbl <- table(vapply(params, `[[`, character(1), "method"))
     cat("Sub_extract_norm_params: extracted parameters for", length(params), "variables.\n")
-    cat("  Methods used:", paste(names(method_tbl), method_tbl, sep = "×", collapse = ", "), "\n")
+    cat("  Methods used:", paste(names(method_tbl), method_tbl, sep = "x", collapse = ", "), "\n")
   }
 
   params
@@ -136,6 +142,11 @@ Sub_extract_norm_params <- function(object,
 #'   the legacy \code{list(var = list(min=, max=))} format.
 #' @param verbose     Print progress messages (default \code{TRUE}).
 #' @return The updated \code{Subtyping} object with \code{scale.data} filled.
+#' @examples
+#' \dontrun{
+#'   # Assuming 'val_obj' is a validation Subtyping object and 'norm_params' from training
+#'   val_obj <- Sub_apply_norm_params(val_obj, norm_params = norm_params)
+#' }
 #' @export
 Sub_apply_norm_params <- function(object,
                                   norm_params,
@@ -208,7 +219,7 @@ Sub_apply_norm_params <- function(object,
       },
 
       {
-        # Unknown method – leave unchanged
+        # Unknown method - leave unchanged
         warning(sprintf("Unknown method '%s' for column '%s'; left unchanged.", method, col),
                 call. = FALSE)
         x
@@ -241,7 +252,7 @@ Sub_apply_norm_params <- function(object,
 #'   \item{\code{"lpa"}}{Uses \code{mclust::predict.Mclust} to classify
 #'     samples under the fitted Gaussian-mixture model.}
 #'   \item{\code{"nmf"}}{Projects samples via NNLS onto the training W matrix
-#'     (features × components); assignment is the component with the highest
+#'     (features x components); assignment is the component with the highest
 #'     coefficient.}
 #' }
 #'
@@ -258,6 +269,13 @@ Sub_apply_norm_params <- function(object,
 #' @param verbose      Print progress (default \code{TRUE}).
 #' @return The updated validation \code{Subtyping} object.
 #' @importFrom stats dist
+#' @examples
+#' \dontrun{
+#'   # Assuming 'val_obj' is a validation Subtyping object and 'train_obj' is trained
+#'   val_obj <- Sub_predict_subtypes(val_obj, train_obj, method = "kmeans")
+#'   val_obj <- Sub_predict_subtypes(val_obj, train_obj, method = "lpa")
+#'   val_obj <- Sub_predict_subtypes(val_obj, train_obj, method = "nmf")
+#' }
 #' @export
 Sub_predict_subtypes <- function(object,
                                  train_object,
@@ -281,18 +299,18 @@ Sub_predict_subtypes <- function(object,
 
   col_name <- paste0("cluster_", method)
 
-  # ──────────────────────────── K-means ────────────────────────────────────
+  # ---------------------------- K-means ------------------------------------
   if (method == "kmeans") {
 
     km_res <- train_object@cluster.results[["kmeans.result"]]
     if (is.null(km_res))
       stop("No kmeans.result found in train_object. Run Sub_kmeans_with_optimal_k first.")
 
-    centers <- km_res$model$centers   # K × features matrix
+    centers <- km_res$model$centers   # K x features matrix
     common  <- intersect(colnames(val_scaled), colnames(centers))
     if (length(common) == 0) stop("No overlapping features between val data and kmeans centroids.")
     if (length(common) < ncol(centers) && verbose)
-      warning(ncol(centers) - length(common), " centroid features absent in val data – using common features only.")
+      warning(ncol(centers) - length(common), " centroid features absent in val data - using common features only.")
 
     val_mat <- as.matrix(val_scaled[, common, drop = FALSE])
     ctr_mat <- centers[, common, drop = FALSE]
@@ -300,7 +318,7 @@ Sub_predict_subtypes <- function(object,
     # Assign each sample to the nearest centroid
     dist_mat <- apply(val_mat, 1, function(x) {
       sqrt(rowSums(sweep(ctr_mat, 2, x)^2))
-    })                                       # K × n_val
+    })                                       # K x n_val
     nearest  <- apply(dist_mat, 2, which.min)
     labels   <- factor(nearest)
 
@@ -312,7 +330,7 @@ Sub_predict_subtypes <- function(object,
                                                   names(nearest))]
   }
 
-  # ──────────────────────────── LPA (mclust) ───────────────────────────────
+  # ---------------------------- LPA (mclust) -------------------------------
   else if (method == "lpa") {
 
     lpa_res <- train_object@cluster.results[["lpa.result"]]
@@ -326,7 +344,7 @@ Sub_predict_subtypes <- function(object,
     # align features
     train_vars <- names(mclust_obj$parameters$mean)  # works for univariate too
     if (is.null(train_vars)) {
-      # multivariate: mean is a matrix (features × components)
+      # multivariate: mean is a matrix (features x components)
       train_vars <- rownames(mclust_obj$parameters$mean)
     }
     if (is.null(train_vars)) train_vars <- colnames(mclust_obj$data)
@@ -347,14 +365,14 @@ Sub_predict_subtypes <- function(object,
                                                   rownames(val_sub))]
   }
 
-  # ──────────────────────────── NMF (NNLS projection) ──────────────────────
+  # ---------------------------- NMF (NNLS projection) ----------------------
   else if (method == "nmf") {
 
     fit <- train_object@cluster.results[["nmf.result"]][["best_estimate"]]
     if (is.null(fit))
       stop("No nmf best_estimate found in train_object. Run Sub_nmf_best_rank first.")
 
-    W <- NMF::basis(fit)             # features × K  (NMF convention)
+    W <- NMF::basis(fit)             # features x K  (NMF convention)
     feature_names <- rownames(W)
 
     common <- intersect(feature_names, colnames(val_scaled))
@@ -362,9 +380,9 @@ Sub_predict_subtypes <- function(object,
       stop("No overlapping features between val data and NMF W matrix.")
     if (length(common) < nrow(W) && verbose)
       warning(nrow(W) - length(common),
-              " NMF features absent in val data – filled with 0.")
+              " NMF features absent in val data - filled with 0.")
 
-    # Build input matrix: features × samples (fill missing features with 0)
+    # Build input matrix: features x samples (fill missing features with 0)
     val_mat <- matrix(0,
                       nrow = nrow(W),
                       ncol = nrow(val_scaled),
@@ -372,8 +390,8 @@ Sub_predict_subtypes <- function(object,
     val_mat[common, ] <- t(as.matrix(val_scaled[, common, drop = FALSE]))
     val_mat[val_mat < 0] <- 0   # NMF requires non-negative input
 
-    # NNLS per sample: solve  W * h ≈ v,  h ≥ 0
-    val_H <- apply(val_mat, 2, function(v) nnls::nnls(W, v)$x)  # K × n_val
+    # NNLS per sample: solve  W * h ~ v,  h >= 0
+    val_H <- apply(val_mat, 2, function(v) nnls::nnls(W, v)$x)  # K x n_val
     group_idx   <- apply(val_H, 2, which.max)
     labels      <- factor(paste0(prefix, group_idx))
     names(labels) <- colnames(val_mat)
@@ -399,14 +417,14 @@ Sub_predict_subtypes <- function(object,
 #'
 #' Convenience wrapper that chains:
 #' \enumerate{
-#'   \item \code{CreateSubtypingObject} — wraps raw validation data.
-#'   \item \code{Sub_apply_norm_params} — applies training min-max parameters.
-#'   \item \code{Sub_predict_subtypes}  — predicts subtypes for each requested
+#'   \item \code{CreateSubtypingObject} -- wraps raw validation data.
+#'   \item \code{Sub_apply_norm_params} -- applies training min-max parameters.
+#'   \item \code{Sub_predict_subtypes}  -- predicts subtypes for each requested
 #'     method.
 #' }
 #'
 #' @param clean.data  Data frame of raw validation features
-#'                    (samples × variables).
+#'                    (samples x variables).
 #' @param info.data   Data frame of clinical/meta variables for the validation
 #'                    set (optional; same row order as \code{clean.data}).
 #' @param norm_params Named list produced by \code{Sub_extract_norm_params},
@@ -419,6 +437,17 @@ Sub_predict_subtypes <- function(object,
 #' @param prefix      Subtype label prefix for NMF (default \code{"S"}).
 #' @param verbose     Print progress (default \code{TRUE}).
 #' @return A fully populated validation \code{Subtyping} object.
+#' @examples
+#' \dontrun{
+#'   # Assuming 'train_obj' is a trained Subtyping object and 'norm_params' extracted
+#'   val_obj <- Sub_create_val_object(
+#'     clean.data = val_clean,
+#'     info.data = val_info,
+#'     norm_params = norm_params,
+#'     train_object = train_obj,
+#'     methods = c("kmeans", "lpa", "nmf")
+#'   )
+#' }
 #' @export
 Sub_create_val_object <- function(clean.data,
                                   info.data    = data.frame(),
@@ -433,14 +462,14 @@ Sub_create_val_object <- function(clean.data,
     stop("'train_object' must be a 'Subtyping' object.")
 
   # ---- 1. Create Subtyping object ----
-  if (verbose) cat("── Step 1: Creating validation Subtyping object...\n")
+  if (verbose) cat("-- Step 1: Creating validation Subtyping object...\n")
   val_obj <- CreateSubtypingObject(
     clean.data = clean.data,
     info.data  = if (nrow(info.data) > 0) info.data else data.frame()
   )
 
   # ---- 2. Apply training normalisation parameters ----
-  if (verbose) cat("── Step 2: Applying training min-max parameters...\n")
+  if (verbose) cat("-- Step 2: Applying training min-max parameters...\n")
   val_obj <- Sub_apply_norm_params(val_obj, norm_params = norm_params,
                                    verbose = verbose)
 
@@ -453,14 +482,14 @@ Sub_create_val_object <- function(clean.data,
 
   for (m in methods) {
     if (!m %in% c("nmf", "kmeans", "lpa")) {
-      warning("Unknown method '", m, "' – skipped."); next
+      warning("Unknown method '", m, "' - skipped."); next
     }
     if (!available[[m]]) {
       if (verbose)
-        cat(sprintf("── Step 3 [%s]: No fitted model found in train_object – skipped.\n", m))
+        cat(sprintf("-- Step 3 [%s]: No fitted model found in train_object - skipped.\n", m))
       next
     }
-    if (verbose) cat(sprintf("── Step 3 [%s]: Predicting subtypes...\n", m))
+    if (verbose) cat(sprintf("-- Step 3 [%s]: Predicting subtypes...\n", m))
     val_obj <- Sub_predict_subtypes(val_obj, train_object,
                                     method  = m,
                                     prefix  = prefix,

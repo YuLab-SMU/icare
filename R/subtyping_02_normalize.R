@@ -4,7 +4,20 @@
 #' @param normalize_method Normalization method.
 #' @param group_col Group column.
 #' @param max_unique_values Max unique values.
+#' @return If input is a Subtyping object, returns the modified object with
+#'   normalized data stored in the 'scale.data' slot. If input is a data frame,
+#'   returns the normalized data frame.
 #' @export
+#' @examples
+#' \dontrun{
+#'   # Example with data frame
+#'   df <- data.frame(gene1 = c(1, 2, 3), gene2 = c(4, 5, 6))
+#'   result <- Sub_normalize_process(df, normalize_method = "min_max_scale")
+#'
+#'   # Example with Subtyping object
+#'   obj <- CreateSubtypingObject(clean.data = df)
+#'   obj <- Sub_normalize_process(obj, normalize_method = "min_max_scale")
+#' }
 Sub_normalize_process <- function(object,
                                    normalize_method = "min_max_scale",
                                    group_col = "group",

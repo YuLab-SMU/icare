@@ -2,7 +2,7 @@
 # model_feature_selection.R
 # Comprehensive Feature Selection Module for Train_Model objects
 # Integrates RFE, GA, SA, and SBF methods from caret with automated 
-# cross‑validation and visualization.
+# cross-validation and visualization.
 # =============================================================================
 
 # 0. Package check ------------------------------------------------------------
@@ -17,7 +17,7 @@
   invisible(TRUE)
 }
 
-# ── Internal helpers ─────────────────────────────────────────────────────────
+# -- Internal helpers ---------------------------------------------------------
 .get_output_dir <- function(...) {
   get_output_dir(...)
 }
@@ -43,7 +43,7 @@
   list(x = x, y = y, group_col = gc)
 }
 
-# ── 1. RFE: Recursive Feature Elimination ────────────────────────────────────
+# -- 1. RFE: Recursive Feature Elimination ------------------------------------
 
 #' Recursive Feature Elimination (RFE) for Train_Model objects
 #'
@@ -109,7 +109,7 @@ FeatureSelectRFE <- function(object,
   # Build plot
   p <- ggplot2::ggplot(rfe_res, metric = metric) + 
     ggplot2::theme_bw() +
-    ggplot2::labs(title = "RFE – Recursive Feature Elimination",
+    ggplot2::labs(title = "RFE - Recursive Feature Elimination",
                   subtitle = paste0("Optimal: ", length(opt_vars), " variables"))
   print(p)
   
@@ -123,7 +123,7 @@ FeatureSelectRFE <- function(object,
 }
 
 
-# ── 2. GA: Genetic Algorithm Feature Selection ───────────────────────────────
+# -- 2. GA: Genetic Algorithm Feature Selection -------------------------------
 
 #' Genetic Algorithm Feature Selection for Train_Model objects
 #'
@@ -188,7 +188,7 @@ FeatureSelectGA <- function(object,
   cat(sprintf("GA selected: %d features\n", length(opt_vars)))
   
   p <- plot(ga_res) + ggplot2::theme_bw() +
-    ggplot2::labs(title = "GA – Genetic Algorithm Feature Selection")
+    ggplot2::labs(title = "GA - Genetic Algorithm Feature Selection")
   print(p)
   
   if (save_plot) {
@@ -201,7 +201,7 @@ FeatureSelectGA <- function(object,
 }
 
 
-# ── 3. SA: Simulated Annealing Feature Selection ─────────────────────────────
+# -- 3. SA: Simulated Annealing Feature Selection -----------------------------
 
 #' Simulated Annealing Feature Selection for Train_Model objects
 #'
@@ -264,7 +264,7 @@ FeatureSelectSA <- function(object,
   cat(sprintf("SA selected: %d features\n", length(opt_vars)))
   
   p <- plot(sa_res) + ggplot2::theme_bw() +
-    ggplot2::labs(title = "SA – Simulated Annealing Feature Selection")
+    ggplot2::labs(title = "SA - Simulated Annealing Feature Selection")
   print(p)
   
   if (save_plot) {
@@ -277,7 +277,7 @@ FeatureSelectSA <- function(object,
 }
 
 
-# ── 4. SBF: Selection By Univariate Filter ───────────────────────────────────
+# -- 4. SBF: Selection By Univariate Filter -----------------------------------
 
 #' Univariate Filter Feature Selection for Train_Model objects
 #'
@@ -333,7 +333,7 @@ FeatureSelectSBF <- function(object,
   cat(sprintf("SBF selected: %d features\n", length(opt_vars)))
   
   p <- plot(sbf_res) + ggplot2::theme_bw() +
-    ggplot2::labs(title = "SBF – Univariate Filter Feature Selection")
+    ggplot2::labs(title = "SBF - Univariate Filter Feature Selection")
   print(p)
   
   if (save_plot) {
@@ -346,7 +346,7 @@ FeatureSelectSBF <- function(object,
 }
 
 
-# ── 5. Built‑In Importance (from any caret train object) ─────────────────────
+# -- 5. Built-In Importance (from any caret train object) ---------------------
 #' Explain Model Performance (ROC, Lift, Boxplot)
 #'
 #' @param explainer DALEX explainer object.
@@ -364,7 +364,6 @@ ExplainModelPerformance <- function(explainer,
                                     plot_width  = 6,
                                     plot_height = 5,
                                     ...) {
-  # 检查必要包
   if (!requireNamespace("DALEX", quietly = TRUE))
     stop("Package 'DALEX' is required.")
   if (!requireNamespace("pROC", quietly = TRUE))
@@ -409,11 +408,9 @@ ExplainModelPerformance <- function(explainer,
     print(p)
     
     if (save_plots) {
-      # 安全处理 save_dir
       if (is.null(save_dir) || length(save_dir) == 0 || !nzchar(save_dir)) {
         save_dir <- "ModelExplain"
       }
-      # 标准化路径并创建目录
       save_dir <- normalizePath(save_dir, mustWork = FALSE)
       if (!dir.exists(save_dir)) {
         dir.create(save_dir, recursive = TRUE, showWarnings = FALSE)
@@ -451,17 +448,16 @@ ExplainModelPerformance <- function(explainer,
 }
 
 
-# ── 6. Unified Wrapper: run all methods and benchmark ────────────────────────
-
+# -- 6. Unified Wrapper: run all methods and benchmark ------------------------
 #' Comprehensive Feature Selection with Method Benchmarking
 #'
-#' Runs up to four caret‑based selection methods on the same `Train_Model`
+#' Runs up to four caret-based selection methods on the same `Train_Model`
 #' object, returns the union or intersection of selected features, and
 #' generates a comparative Upset plot.
 #'
 #' @param object   A Train_Model or Stat S4 object.
 #' @param methods  Character vector: "rfe","ga","sa","sbf" (default all four).
-#'                Can also pass a named list of pre‑run selection results.
+#'                Can also pass a named list of pre-run selection results.
 #' @param combine  How to combine across methods: "union", "intersect", or "none".
 #' @param rfe_args List of extra args passed to \code{FeatureSelectRFE}.
 #' @param ga_args  List of extra args passed to \code{FeatureSelectGA}.
@@ -473,10 +469,12 @@ ExplainModelPerformance <- function(explainer,
 #' @param seed       Random seed.
 #'
 #' @return An invisible list with:
+#'   \describe{
 #'   \item{results}{Named list of selection results per method.}
 #'   \item{selected_features}{Character vector of final features.}
 #'   \item{feature_matrix}{Binary matrix used for Upset.}
 #'   \item{upset_plot}{ggplot (if \code{upset_plot = TRUE}).}
+#'   }
 #' @export
 #'
 #' @examples
@@ -565,7 +563,7 @@ FeatureSelectionPipeline <- function(object,
       }
     } else {
       cat("Install 'UpSetR' for the Upset plot.\n")
-      # Fallback: simple venn‑style barplot
+      # Fallback: simple venn-style barplot
       all_vars <- unique(unlist(feature_lists))
       bin_mat <- sapply(feature_lists, function(v) as.integer(all_vars %in% v))
       rownames(bin_mat) <- all_vars
@@ -582,8 +580,71 @@ FeatureSelectionPipeline <- function(object,
 }
 
 
-# ── 7. Quick train‑and‑select: built‑in importance from multiple models ──────
-
+# -- 7. Quick train-and-select: built-in importance from multiple models ------
+#' Built-in Feature Selection Using Model Importance
+#'
+#' Trains one or more classification models (e.g., Random Forest, GBM) with
+#' cross-validation and extracts built-in variable importance scores. Features
+#' are ranked by importance, and a final set is selected as the union or
+#' intersection of the top \code{top_n} features from each model.
+#'
+#' @param object An object containing the training data. Must be compatible with
+#'   the internal extractor \code{.extract_xy()} (e.g., a fitted model object or
+#'   a data container with predictors \code{x} and response \code{y}).
+#' @param models Character vector of caret model names that support built-in
+#'   variable importance (e.g., \code{"rf"}, \code{"gbm"}). Only those with
+#'   available importance will be used. Default: \code{c("rf", "gbm")}.
+#' @param method Resampling method passed to \code{\link[caret]{trainControl}}.
+#'   Default: \code{"repeatedcv"}.
+#' @param number Number of folds or resampling iterations. Default: \code{5}.
+#' @param top_n Integer specifying the number of top important features to
+#'   retain from each model. Default: \code{15}.
+#' @param combine Character string; either \code{"union"} (take the union of all
+#'   selected features) or \code{"intersect"} (take the intersection). Default:
+#'   \code{"union"}.
+#' @param seed Random seed for reproducibility. Default: \code{825}.
+#'
+#' @return An invisible list with the following components:
+#' \describe{
+#'   \item{importance_table}{A data frame with one row per feature. The first
+#'     column \code{Feature} gives the feature name (row names are identical).
+#'     For each model used, there is a column with the model name, containing
+#'     \code{"Yes"} if the feature was among the top \code{top_n} features for
+#'     that model, or \code{"-"} otherwise. A final column \code{Selected} marks
+#'     the final selected features with \code{"[OK]"}.}
+#'   \item{selected_features}{A character vector of the feature names selected
+#'     in the final set (union or intersection).}
+#'   \item{per_model}{A named list, where each element corresponds to a model
+#'     and contains a character vector of the top \code{top_n} feature names
+#'     selected by that model.}
+#' }
+#'
+#' @details
+#' The function first checks which requested models actually provide built-in
+#' importance (via \code{caret::varImp}). Models without support are skipped
+#' with a message. For each supported model, it is trained using the specified
+#' resampling scheme, and variable importance is extracted. The top
+#' \code{top_n} features are retained. Finally, either the union or
+#' intersection of these per-model selections is returned.
+#'
+#' @note
+#' This function requires the \pkg{caret} package and the respective modelling
+#' packages (e.g., \pkg{randomForest}, \pkg{gbm}) to be installed.
+#'
+#' @seealso \code{\link[caret]{varImp}}, \code{\link[caret]{train}}
+#'
+#' @examples
+#' \dontrun{
+#' # Assuming 'my_model' is a pre-processed data container with x and y
+#' result <- FeatureSelectBuiltin(my_model,
+#'                                models = c("rf", "gbm"),
+#'                                top_n = 10,
+#'                                combine = "intersect")
+#' print(result$importance_table)
+#' selected <- result$selected_features
+#' }
+#'
+#' @export
 FeatureSelectBuiltin <- function(object,
                                  models  = c("rf", "gbm"),
                                  method  = "repeatedcv",
@@ -598,7 +659,6 @@ FeatureSelectBuiltin <- function(object,
   levels(xy$y) <- make.names(levels(xy$y))
   df <- cbind(xy$x, group = xy$y)
   
-  # 预先检查哪些模型不支持 varImp
   support_df <- check_varImp_availability(models)
   unsupported <- support_df$Model[!support_df$Has_BuiltIn]
   if (length(unsupported) > 0) {
@@ -610,7 +670,6 @@ FeatureSelectBuiltin <- function(object,
   for (m in models) {
     if (m %in% unsupported) next
     
-    # 检查包依赖
     model_info <- caret::getModelInfo(m, regex = FALSE)[[1]]
     needed_pkgs <- unique(c(model_info$library))
     missing_pkg <- needed_pkgs[!sapply(needed_pkgs, requireNamespace, quietly = TRUE)]
@@ -655,18 +714,18 @@ FeatureSelectBuiltin <- function(object,
   all_feats <- unique(unlist(imp_list))
   comb_imp <- data.frame(Feature = all_feats, row.names = all_feats)
   for (m in names(imp_list)) {
-    comb_imp[[m]] <- ifelse(all_feats %in% imp_list[[m]], "Yes", "–")
+    comb_imp[[m]] <- ifelse(all_feats %in% imp_list[[m]], "Yes", "-")
   }
-  comb_imp$Selected <- ifelse(all_feats %in% selected, "✓", "")
+  comb_imp$Selected <- ifelse(all_feats %in% selected, "[OK]", "")
   comb_imp <- comb_imp[order(-rowSums(comb_imp[, names(imp_list)] == "Yes")), ]
   
-  cat(sprintf("Built‑in (%s): %d features\n", combine, length(selected)))
+  cat(sprintf("Built-in (%s): %d features\n", combine, length(selected)))
   invisible(list(importance_table = comb_imp, selected_features = selected,
                  per_model = imp_list))
 }
 
 
-# ── 8. Helper: Update Train_Model with selected features ─────────────────────
+# -- 8. Helper: Update Train_Model with selected features ---------------------
 
 #' Apply Selected Features to a Train_Model Object
 #'

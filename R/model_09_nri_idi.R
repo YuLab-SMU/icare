@@ -1,6 +1,6 @@
 # =============================================================================
 # model_nri_idi.R
-# NRI & IDI Analysis Module — Independent from clinical_analysis.R
+# NRI & IDI Analysis Module -- Independent from clinical_analysis.R
 # =============================================================================
 # Adapted from: Leong, L.T. (2021) "Area Under the Curve and Beyond"
 # https://medium.com/data-science/area-under-the-curve-and-beyond-f87a8ec6937b
@@ -21,7 +21,7 @@
   invisible(TRUE)
 }
 
-# ── Internal helpers ───────────────────────────────────────────────────────
+# -- Internal helpers -------------------------------------------------------
 .pub_theme <- function(base_size = 13) {
   ggprism::theme_prism(base_size = base_size) +
     ggplot2::theme(
@@ -49,7 +49,7 @@
   invisible(path)
 }
 
-# ── Unified probability extractor ─────────────────────────────────────────
+# -- Unified probability extractor -----------------------------------------
 .extract_probs_and_truth <- function(model_obj, newdata = NULL, model_name = NULL) {
   if (inherits(model_obj, "Train_Model")) {
     if (is.null(newdata)) newdata <- model_obj@filtered.set$testing
@@ -76,10 +76,10 @@
   list(truth = truth, probs = probs, positive = levels(truth)[2], negative = levels(truth)[1])
 }
 
-# ── 1. Category-based NRI ─────────────────────────────────────────────────
-#' Category-Based Net Reclassification Index (with Per‑Model Thresholds)
+# -- 1. Category-based NRI -------------------------------------------------
+#' Category-Based Net Reclassification Index (with Per-Model Thresholds)
 #'
-#' Calculates NRI events, NRI non‑events, and total NRI using possibly
+#' Calculates NRI events, NRI non-events, and total NRI using possibly
 #' different risk category thresholds for the reference and new model.
 #'
 #' @param truth           Binary outcome (factor or 0/1 vector).
@@ -137,7 +137,7 @@ CalculateCategoryNRI <- function(truth,
        new_thresholds = new_thresholds)
 }
 
-# ── 2. Bootstrap AUC & ROC ─────────────────────────────────────────────────
+# -- 2. Bootstrap AUC & ROC -------------------------------------------------
 #' Bootstrap AUC Confidence Interval
 #'
 #' Returns mean AUC, 95% CI, and bootstrapped TPR/FPR at uniform thresholds.
@@ -179,7 +179,7 @@ BootstrapROC <- function(truth, prob, n_boot = 500) {
        auc_sd     = sd(aucs))
 }
 
-# ── 3. ROC curve comparison ───────────────────────────────────────────────
+# -- 3. ROC curve comparison -----------------------------------------------
 #' ROC Curve Comparison with Bootstrap CI
 #'
 #' Plots two ROC curves with optional 95% confidence ribbons, styled with
@@ -235,7 +235,7 @@ PlotROCCompare <- function(truth,
     ggplot2::scale_color_manual(values = cols) +
     ggplot2::scale_fill_manual(values = cols) +
     ggplot2::labs(title = "ROC Curve Comparison with 95% CI",
-                  x = "1 – Specificity (FPR)", y = "Sensitivity (TPR)") +
+                  x = "1 - Specificity (FPR)", y = "Sensitivity (TPR)") +
     ggplot2::coord_equal() +
     .pub_theme(13) +
     ggplot2::theme(legend.position = c(0.68, 0.18),
@@ -246,7 +246,7 @@ PlotROCCompare <- function(truth,
   invisible(p)
 }
 
-# ── 4. IDI curve ──────────────────────────────────────────────────────────
+# -- 4. IDI curve ----------------------------------------------------------
 #' Plot Integrated Discrimination Improvement (IDI) Curve
 #'
 #' @description
@@ -277,6 +277,7 @@ PlotROCCompare <- function(truth,
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # 1. Generate synthetic data
 #' set.seed(123)
 #' labels <- factor(sample(c("Health", "Sick"), 200, replace = TRUE))
@@ -284,8 +285,9 @@ PlotROCCompare <- function(truth,
 #' p_new  <- pmin(p_ref + rnorm(200, 0.05, 0.03), 1) # Improved model
 #' 
 #' # 2. Run function (Assuming BootstrapROC is available in your environment)
-#' # res <- PlotIDICurve(truth = labels, ref_prob = p_ref, new_prob = p_new, positive = "Sick")
-#' # plot(res$plot)
+#' res <- PlotIDICurve(truth = labels, ref_prob = p_ref, new_prob = p_new, positive = "Sick")
+#' plot(res$plot)
+#' }
 PlotIDICurve <- function(truth,
                          ref_prob,
                          new_prob,
@@ -382,18 +384,18 @@ PlotIDICurve <- function(truth,
   return(list(plot = p, is = is_val, ip = ip_val, idi = idi_val))
 }
 
-# ── 5. NRI reclassification heatmap ───────────────────────────────────────
-#' NRI Reclassification Heatmap (Per‑Model Labels, Auto‑Match)
+# -- 5. NRI reclassification heatmap ---------------------------------------
+#' NRI Reclassification Heatmap (Per-Model Labels, Auto-Match)
 #'
-#' Faceted heatmap showing reclassification counts for events and non‑events.
+#' Faceted heatmap showing reclassification counts for events and non-events.
 #' Axis labels for risk categories can be customized independently. If the
 #' provided labels do not match the number of categories, a warning is issued
 #' and default labels are used.
 #'
 #' @param nri_result           Output of \code{CalculateCategoryNRI}.
 #' @param ref_category_labels  Character vector of risk category names for
-#'   the reference model (y‑axis).
-#' @param new_category_labels  Character vector for the new model (x‑axis).
+#'   the reference model (y-axis).
+#' @param new_category_labels  Character vector for the new model (x-axis).
 #' @param save_plot            Logical.
 #' @param save_dir             Output directory.
 #' @return A ggplot object.
@@ -410,11 +412,11 @@ PlotNRIHeatmap <- function(nri_result,
   
   nev_df <- as.data.frame(nri_result$nonevent_table)
   colnames(nev_df) <- c("Ref", "New", "Count")
-  nev_df$Type <- "Non‑Events (Control)"
+  nev_df$Type <- "Non-Events (Control)"
   
   combined <- rbind(ev_df, nev_df)
   
-  # Auto‑match labels to the actual number of categories
+  # Auto-match labels to the actual number of categories
   ref_ncat <- length(unique(combined$Ref))
   new_ncat <- length(unique(combined$New))
   
@@ -445,7 +447,7 @@ PlotNRIHeatmap <- function(nri_result,
     ggplot2::scale_fill_viridis_c(option = "C", begin = 0.2, end = 0.9) +
     ggplot2::labs(
       title = "NRI Reclassification Heatmap",
-      subtitle = sprintf("NRI Events = %.3f | NRI Non‑Events = %.3f | Total NRI = %.3f",
+      subtitle = sprintf("NRI Events = %.3f | NRI Non-Events = %.3f | Total NRI = %.3f",
                          nri_result$nri_events, nri_result$nri_nonevents, nri_result$nri_total),
       x = "New Model Risk Category", y = "Reference Model Risk Category", fill = "Count"
     ) +
@@ -457,7 +459,7 @@ PlotNRIHeatmap <- function(nri_result,
   invisible(p)
 }
 
-# ── 6. NRI bar plot ───────────────────────────────────────────────────────
+# -- 6. NRI bar plot -------------------------------------------------------
 #' NRI Reclassification Bar Plot
 #'
 #' Shows the number of patients reclassified correctly (green) or
@@ -471,15 +473,15 @@ PlotNRIHeatmap <- function(nri_result,
 PlotNRIBars <- function(nri_result, save_plot = FALSE, save_dir = NULL) {
   .check_nri_pkgs()
   df <- data.frame(
-    Category  = c("Events Up", "Events Down", "Non‑Events Up", "Non‑Events Down"),
+    Category  = c("Events Up", "Events Down", "Non-Events Up", "Non-Events Down"),
     Count     = c(nri_result$events_up, nri_result$events_down,
                   nri_result$nonevents_up, nri_result$nonevents_down),
-    Type      = rep(c("Events", "Non‑Events"), each = 2),
+    Type      = rep(c("Events", "Non-Events"), each = 2),
     Direction = rep(c("Upward", "Downward"), 2)
   )
   df$Fill <- ifelse(df$Direction == "Upward" & df$Type == "Events", "#06D6A0",
                     ifelse(df$Direction == "Downward" & df$Type == "Events", "#EF476F",
-                           ifelse(df$Direction == "Upward" & df$Type == "Non‑Events", "#EF476F", "#06D6A0")))
+                           ifelse(df$Direction == "Upward" & df$Type == "Non-Events", "#EF476F", "#06D6A0")))
   
   p <- ggplot2::ggplot(df, ggplot2::aes(x = Category, y = Count, fill = Fill)) +
     ggplot2::geom_col(width = 0.7) +
@@ -497,7 +499,7 @@ PlotNRIBars <- function(nri_result, save_plot = FALSE, save_dir = NULL) {
   invisible(p)
 }
 
-# ── 7. Prediction probability distribution ─────────────────────────────────
+# -- 7. Prediction probability distribution ---------------------------------
 #' Prediction Probability Distribution by Outcome
 #'
 #' Violin + boxplot comparing predicted probabilities for reference and new
@@ -545,7 +547,7 @@ PlotPredDist <- function(truth,
   invisible(p)
 }
 
-# ── 8. Threshold‑specific NRI curve ───────────────────────────────────────
+# -- 8. Threshold-specific NRI curve ---------------------------------------
 #' NRI as a Function of Risk Threshold
 #'
 #' Sweeps a single threshold from 0.01 to 0.99 and plots NRI components.
@@ -568,11 +570,11 @@ PlotThresholdNRI <- function(truth, ref_prob, new_prob,
   df <- data.frame(
     threshold    = rep(thresholds, 3),
     nri_value    = c(sapply(res, `[`, 1), sapply(res, `[`, 2), sapply(res, `[`, 3)),
-    nri_type     = factor(rep(c("NRI Events", "NRI Non‑Events", "Total NRI"), each = length(thresholds)),
-                          levels = c("NRI Events", "NRI Non‑Events", "Total NRI"))
+    nri_type     = factor(rep(c("NRI Events", "NRI Non-Events", "Total NRI"), each = length(thresholds)),
+                          levels = c("NRI Events", "NRI Non-Events", "Total NRI"))
   )
   
-  cols <- c("NRI Events" = "#06D6A0", "NRI Non‑Events" = "#E63946", "Total NRI" = "#4A4E69")
+  cols <- c("NRI Events" = "#06D6A0", "NRI Non-Events" = "#E63946", "Total NRI" = "#4A4E69")
   
   p <- ggplot2::ggplot(df, ggplot2::aes(x = threshold, y = nri_value, colour = nri_type)) +
     ggplot2::geom_line(linewidth = 1.2) +
@@ -588,11 +590,11 @@ PlotThresholdNRI <- function(truth, ref_prob, new_prob,
   invisible(p)
 }
 
-# ── 9. Master NRI/IDI Analysis Pipeline ───────────────────────────────────
+# -- 9. Master NRI/IDI Analysis Pipeline -----------------------------------
 #' Complete NRI/IDI Analysis Pipeline
 #'
 #' Runs the full suite of NRI/IDI analyses (ROC, IDI curve, NRI heatmap,
-#' NRI bar plot, prediction distribution, threshold‑NRI curve) for two
+#' NRI bar plot, prediction distribution, threshold-NRI curve) for two
 #' models.  Accepts Train_Model objects or raw probability vectors.
 #'
 #' @param model_obj_ref   Reference model (Train_Model, caret, or NULL).
@@ -672,7 +674,7 @@ NRI_IDI_Analysis <- function(model_obj_ref = NULL,
                                   risk_thresholds = risk_thresholds,
                                   ref_thresholds  = ref_thresholds,
                                   new_thresholds  = new_thresholds)
-  cat(sprintf("  NRI Events = %.4f | NRI Non‑Events = %.4f | Total NRI = %.4f\n",
+  cat(sprintf("  NRI Events = %.4f | NRI Non-Events = %.4f | Total NRI = %.4f\n",
               nri_res$nri_events, nri_res$nri_nonevents, nri_res$nri_total))
   
   # 4. NRI heatmap
@@ -691,12 +693,3 @@ NRI_IDI_Analysis <- function(model_obj_ref = NULL,
   
   invisible(list(nri = nri_res, idi = idi_res))
 }
-
-# ── Load message ───────────────────────────────────────────────────────────
-cat("\n================================================\n")
-cat("  model_nri_idi.R loaded\n")
-cat("  Functions: CalculateCategoryNRI, BootstrapROC,\n")
-cat("    PlotROCCompare, PlotIDICurve, PlotNRIHeatmap,\n")
-cat("    PlotNRIBars, PlotPredDist, PlotThresholdNRI,\n")
-cat("    NRI_IDI_Analysis\n")
-cat("================================================\n")

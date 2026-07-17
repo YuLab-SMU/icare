@@ -5,6 +5,12 @@
 #' @param dims Dims.
 #' @param iterations Iterations.
 #' @importFrom Rtsne Rtsne
+#' @examples
+#' \dontrun{
+#'   df <- data.frame(x = rnorm(50), y = rnorm(50), z = rnorm(50))
+#'   result <- perform_tsne(df, perplexity = 10, dims = 2)
+#'   plot(result$tsne_df)
+#' }
 #' @export
 perform_tsne <- function(data,
                          perplexity = 30,
@@ -60,6 +66,11 @@ perform_tsne <- function(data,
 #' @param dims Dims.
 #' @param iterations Iterations.
 #' @param use_scaled_data Logical.
+#' @examples
+#' \dontrun{
+#'   # Assuming 'obj' is a Subtyping object
+#'   obj <- Sub_tsne_analyse(obj, perplexity = 20, dims = 2)
+#' }
 #' @export
 Sub_tsne_analyse <- function(object,
                              perplexity = 30,
@@ -119,6 +130,11 @@ Sub_tsne_analyse <- function(object,
 #' @param plot_height Height.
 #' @param base_size Base size.
 #' @param seed Seed.
+#' @examples
+#' \dontrun{
+#'   # Assuming 'obj' is a Subtyping object with tsne results
+#'   obj <- Sub_plot_tsne(obj, palette_name = "AsteroidCity1", save_plots = FALSE)
+#' }
 #' @export
 Sub_plot_tsne <- function(object,
                           palette_name = "AsteroidCity1",
@@ -144,7 +160,6 @@ Sub_plot_tsne <- function(object,
     stop("No valid t-SNE data found in the input.")
   }
 
-  # 优先用 clustered.data$group；若行名不匹配则从 info.data 取聚类标签
   if (!is.null(clustered.data) && nrow(clustered.data) > 0) {
     common_rows <- intersect(rownames(tsne_df), rownames(clustered.data))
   } else {
@@ -152,7 +167,6 @@ Sub_plot_tsne <- function(object,
   }
 
   if (length(common_rows) == 0 && inherits(object, "Subtyping")) {
-    # 回退：从 info.data 中找第一个 cluster_* 列
     info <- object@info.data
     cl_cols <- grep("^cluster_", colnames(info), value = TRUE)
     if (length(cl_cols) > 0) {

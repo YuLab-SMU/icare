@@ -11,8 +11,6 @@
 #' 
 #' @return A data frame containing probability estimates for each class.
 #' @import caret
-#' @export
-#' 
 #' @examples
 #' \dontrun{
 #' # Example usage:

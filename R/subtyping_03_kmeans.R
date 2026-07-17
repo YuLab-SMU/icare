@@ -14,12 +14,18 @@
 #' @param nstart Number of random starts.
 #' @return Integer vector of cluster assignments.
 #' @export
+#' @examples
+#' \dontrun{
+#'   df <- data.frame(x = rnorm(50), y = rnorm(50))
+#'   clusters <- kmeans_clustering(df, k = 3)
+#'   table(clusters)
+#' }
 kmeans_clustering <- function(data, k, nstart = 50) {
   kmeans(data, centers = k, nstart = nstart)$cluster
 }
 
 # =============================================================================
-# SECTION 2: Main function – optimal K selection + full visualisation
+# SECTION 2: Main function - optimal K selection + full visualisation
 # =============================================================================
 
 #' K-means with Optimal K
@@ -50,6 +56,12 @@ kmeans_clustering <- function(data, k, nstart = 50) {
 #' @importFrom ggplot2 ggplot aes geom_line geom_point geom_vline labs
 #'   scale_x_continuous ggsave theme element_blank element_text
 #' @export
+#' @examples
+#' \dontrun{
+#'   df <- data.frame(x = rnorm(100), y = rnorm(100))
+#'   result <- kmeans_with_optimal_k(df, palette_name = "Zissou1", save_plots = FALSE)
+#'   print(result$optimal_k)
+#' }
 kmeans_with_optimal_k <- function(data,
                                   palette_name = "Zissou1",
                                   save_plots   = TRUE,
@@ -203,6 +215,12 @@ kmeans_with_optimal_k <- function(data,
 #' @param k.max         Maximum K to search.
 #' @param seed          Random seed.
 #' @export
+#' @examples
+#' \dontrun{
+#'   obj <- new("Subtyping",clean.data = iris)
+#'   result <- Sub_kmeans_with_optimal_k(obj, use_scaled_data = F, save_plots = FALSE)
+#'   print(result@Optimal.cluster)
+#' }
 Sub_kmeans_with_optimal_k <- function(object,
                                       use_scaled_data = TRUE,
                                       palette_name    = "Zissou1",

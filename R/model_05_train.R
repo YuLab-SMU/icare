@@ -13,13 +13,14 @@
 #'   - `testing`: The filtered testing dataset (if available), otherwise NULL.
 #'
 #' @export
-#'
 #' @examples
+#' \dontrun{
 #' # Example usage of Extract_filtered.set
 #' # Assuming 'model_data' is an existing Train_Model object with a 'filtered.set' slot
 #' data_sets <- Extract_filtered.set(object = model_data)
 #' training_data <- data_sets$training
 #' testing_data <- data_sets$testing
+#' }
 Extract_filtered.set <- function(object) {
   train <- tryCatch(object@filtered.set$training,
                     error = function(e) NULL)
@@ -46,7 +47,11 @@ Extract_filtered.set <- function(object) {
 #' @param loocv_threshold Sample size threshold below which LOOCV is used (default: 100)
 #'
 #' @return A list of trained caret models, one for each method that was successfully trained
-#'
+#' @importFrom doParallel registerDoParallel
+#' @import parallel
+#' @importFrom foreach registerDoSEQ
+#' @export
+#' 
 #' @examples
 #' \dontrun{
 #' # Example usage:
@@ -67,13 +72,8 @@ Extract_filtered.set <- function(object) {
 #'   data = data,
 #'   methods = methods,
 #'   control = control,
-#'   tune_grids = tune_grids
-#' )
+#'   tune_grids = tune_grids)
 #' }
-#' @importFrom doParallel registerDoParallel
-#' @import parallel
-#' @importFrom foreach registerDoSEQ
-#' @export
 train_and_evaluate_models <- function(data,
                                       methods,
                                       control,
@@ -159,11 +159,11 @@ train_and_evaluate_models <- function(data,
 
 
 
-#' Evaluate Model Performance Metrics (Caret‑based)
+#' Evaluate Model Performance Metrics (Caret-based)
 #'
 #' Uses \code{\link[caret]{confusionMatrix}} to compute all classification
 #' metrics and \code{\link[pROC]{roc}} for AUC.  Automatically detects group
-#' levels – no hard‑coded \code{"0"} / \code{"1"}.
+#' levels - no hard-coded \code{"0"} / \code{"1"}.
 #'
 #' @param data          A data frame containing test features and the group column.
 #' @param model_result  A single \code{train} object or a named list of
@@ -248,7 +248,104 @@ evaluate_model_performance <- function(data,
   }
 }
 
-
+#' Plot ROC Curves for Multiple Models
+#'
+#' This function generates ROC curves with AUC and confidence intervals for a list of
+#' binary classification models evaluated on validation data. It supports customizable
+#' color palettes, plot saving, and data export.
+#'
+#' @param model_list A named list of model objects. Each model must support
+#'   the `predict()` method with `type = "prob"` and return a two-column
+#'   probability matrix where the second column corresponds to the positive class.
+#' @param validation_data A data frame containing the validation dataset. Must include
+#'   the response variable specified by `group_col`.
+#' @param group_col A character string specifying the name of the column in
+#'   `validation_data` that contains the binary response variable. Default is `"group"`.
+#' @param palette_name A character string specifying the name of the Wes Anderson
+#'   color palette to use (e.g., `"AsteroidCity1"`, `"Darjeeling1"`). If the palette
+#'   is not available, falls back to viridis colors. Default is `"AsteroidCity1"`.
+#' @param base_size Base font size for the plot theme. Passed to
+#'   [ggprism::theme_prism()]. Default is `14`.
+#' @param save_plots Logical. If `TRUE`, saves the ROC plot as a PDF file.
+#'   Default is `FALSE`.
+#' @param save_dir A character string specifying the directory where plots and/or
+#'   data should be saved. If `NULL` and `save_plots` or `save_data` is `TRUE`,
+#'   an error will be thrown. Default is `NULL`.
+#' @param plot_width Width of the saved plot in inches. Default is `5`.
+#' @param plot_height Height of the saved plot in inches. Default is `5`.
+#' @param alpha Transparency level for the ROC curve lines. Value between 0 and 1.
+#'   Default is `1` (opaque).
+#' @param save_data Logical. If `TRUE`, saves the ROC curve data as a CSV file.
+#'   Default is `FALSE`.
+#'
+#' @return A list containing three elements:
+#'   \describe{
+#'     \item{roc_objects}{A named list of \code{\link[pROC:roc]{roc}} objects 
+#'       for each model.}
+#'     \item{plot_data}{A data frame containing the combined ROC curve data for
+#'       all models, with columns \code{Specificity}, \code{Sensitivity}, and 
+#'       \code{Dataset}.}
+#'     \item{auc_results}{A named numeric vector of AUC values for each model,
+#'       sorted in decreasing order.}
+#'   }
+#'
+#' @details
+#' The function computes ROC curves using [pROC::roc()] and AUC values with
+#' 95\% confidence intervals via [pROC::ci.auc()]. Models are sorted by AUC
+#' in descending order in the final plot. The legend displays both AUC and
+#' confidence intervals for each model.
+#'
+#' The plot is generated using [ggplot2] with a Prism-inspired theme from
+#' the \pkg{ggprism} package. The diagonal reference line represents random
+#' classification (AUC = 0.5).
+#'
+#' @note
+#' The response variable specified by `group_col` must have exactly two levels.
+#' If more or fewer levels are found, the function stops with an error.
+#'
+#' This function requires the following packages: \pkg{pROC}, \pkg{ggplot2},
+#' \pkg{wesanderson}, \pkg{viridis}, and \pkg{ggprism}.
+#'
+#' @importFrom pROC roc auc ci.auc coords
+#' @importFrom ggplot2 ggplot geom_line geom_abline scale_color_manual
+#'   labs scale_x_continuous scale_y_continuous theme element_rect
+#'   element_text
+#' @importFrom ggprism theme_prism
+#' @importFrom wesanderson wes_palette
+#' @importFrom viridis viridis
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Load required libraries
+#' library(randomForest)
+#' 
+#' # Prepare binary classification data
+#' data(iris)
+#' iris_binary <- iris[iris$Species != "setosa", ]
+#' iris_binary$Species <- droplevels(iris_binary$Species)
+#' 
+#' # Split data
+#' set.seed(123)
+#' train_idx <- sample(1:nrow(iris_binary), 0.7 * nrow(iris_binary))
+#' train_data <- iris_binary[train_idx, ]
+#' test_data <- iris_binary[-train_idx, ]
+#' 
+#' # Train models
+#' model1 <- randomForest(Species ~ ., data = train_data, ntree = 100)
+#' model2 <- randomForest(Species ~ ., data = train_data, ntree = 200)
+#' model_list <- list(RF100 = model1, RF200 = model2)
+#' 
+#' # Basic usage
+#' results <- plot_roc_curve(
+#'   model_list = model_list,
+#'   validation_data = test_data,
+#'   group_col = "Species"
+#' )
+#' 
+#' # Print AUC results
+#' print(results$auc_results)
+#' }
 plot_roc_curve <- function(model_list,
                            validation_data,
                            group_col = "group",
@@ -277,7 +374,7 @@ plot_roc_curve <- function(model_list,
     
     roc_obj <- roc(validation_data[[group_col]], predictions,
                    levels = actual_levels,
-                   direction = "auto")   # ← FIXED
+                   direction = "auto")   # <- FIXED
     auc_value <- auc(roc_obj)
     roc_list[[model_name]] <- roc_obj
     auc_results[model_name] <- auc_value
@@ -373,15 +470,16 @@ plot_roc_curve <- function(model_list,
 #' @param data A data frame or tibble containing the dataset.
 #' @param group_col The name of the column to check, which should represent class labels.
 #'
+#' @details
+#' This function ensures that the column representing class labels (`group_col`) has at least two levels, which is essential for classification problems. If the column has fewer than two levels, the function stops and throws an error indicating that the validation data is not suitable for classification.
 #' @returns TRUE if the column contains at least two levels, otherwise stops with an error message.
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # Check if the 'group' column in the dataset 'my_data' contains at least two levels
 #' check_factor_level(data = my_data, group_col = "group")
-#'
-#' @details
-#' This function ensures that the column representing class labels (`group_col`) has at least two levels, which is essential for classification problems. If the column has fewer than two levels, the function stops and throws an error indicating that the validation data is not suitable for classification.
+#' }
 check_factor_level <- function(data, group_col) {
   levels_present <- levels(as.factor(data[[group_col]]))
 
@@ -391,7 +489,6 @@ check_factor_level <- function(data, group_col) {
 
   return(TRUE)
 }
-
 
 #' Comprehensive Model Training and Analysis Pipeline
 #'
@@ -412,28 +509,17 @@ check_factor_level <- function(data, group_col) {
 #' @param group_col Name of the target variable column (default: "group")
 #' @param palette_name Name of color palette for ROC curves (default: "AsteroidCity1")
 #' @param base_size Base font size for plots (default: 14)
-#' @param save_plots Logical indicating whether to save plots (default: TRUE)
+#' @param save_plots Logical indicating whether to save plots (default: FALSE)
 #' @param save_dir Directory path to save plots (default: here("ModelData", "best_model_result"))
 #' @param plot_width Width of saved plots in inches (default: 5)
 #' @param plot_height Height of saved plots in inches (default: 5)
 #' @param seed Random seed for reproducibility (default: 123)
 #' @param alpha Transparency level for ROC curves (default: 0.8)
-#' @param use_youden Logical indicating whether to use Youden's J statistic for cutoff
-#' @param custom_cutoff Optional custom probability cutoff (overrides use_youden if provided)
+#' @param custom_cutoff Optional custom probability cutoff (overrides Youden if provided)
 #'
 #' @return If input is Train_Model object, returns updated object with results in slots.
 #'         If input is list, returns list with performance metrics and ROC data.
 #'
-#' @examples
-#' \dontrun{
-#'
-#' # Example with list input
-#' object_model <- ModelTrainAnalysis(
-#'   object = object_model,
-#'   methods = c("gbm", "xgbTree"),
-#'   palette_name = "Royal1"
-#' )
-#' }
 #' @export
 #' @import caret
 #' @import ggplot2
@@ -444,6 +530,12 @@ check_factor_level <- function(data, group_col) {
 #' @importFrom doParallel registerDoParallel
 #' @import parallel
 #' @importFrom foreach registerDoSEQ
+#'
+#' @examples
+#' \dontrun{
+#' # Example with Train_Model object
+#' result <- ModelTrainAnalysis(object = train_obj_test)
+#' }
 ModelTrainAnalysis <- function(object,
                                methods = c("glm", "rpart", "naive_bayes", "bayesglm", "rf",
                                            "xgbTree", "svmRadial", "svmLinear", "gbm", "earth", "glmnet"),
@@ -622,7 +714,6 @@ ModelTrainAnalysis <- function(object,
 #'   save_dir = "results/roc_plots"
 #' )
 #' }
-#'
 plot_best_model_roc <- function(best_model,
                                 train_data ,
                                 test_data ,
@@ -652,7 +743,7 @@ plot_best_model_roc <- function(best_model,
       Specificity = 1 - roc_training$specificities,
       Sensitivity = roc_training$sensitivities,
       Dataset = paste0("Training Set (AUC = ", sprintf("%.3f", auc_training),
-                       " ± ", sprintf("%.3f", (auc_ci_training[3]-auc_ci_training[1])/2), ")")
+                       " +/- ", sprintf("%.3f", (auc_ci_training[3]-auc_ci_training[1])/2), ")")
     )
 
     plot_data_list$training <- training_plot_data
@@ -668,7 +759,7 @@ plot_best_model_roc <- function(best_model,
       Specificity = 1 - roc_testing$specificities,
       Sensitivity = roc_testing$sensitivities,
       Dataset = paste0("Testing Set (AUC = ", sprintf("%.3f", auc_testing),
-                       " ± ", sprintf("%.3f", (auc_ci_testing[3]-auc_ci_testing[1])/2), ")")
+                       " +/- ", sprintf("%.3f", (auc_ci_testing[3]-auc_ci_testing[1])/2), ")")
     )
 
     plot_data_list$testing <- testing_plot_data
@@ -694,7 +785,7 @@ plot_best_model_roc <- function(best_model,
       Specificity = 1 - roc_validation$specificities,
       Sensitivity = roc_validation$sensitivities,
       Dataset = paste0("Validation Set (AUC = ", sprintf("%.3f", auc_validation),
-                       " ± ", sprintf("%.3f", (auc_ci_validation[3] - auc_ci_validation[1]) / 2), ")")
+                       " +/- ", sprintf("%.3f", (auc_ci_validation[3] - auc_ci_validation[1]) / 2), ")")
     )
     plot_data_list$validation <- validation_plot_data
   }
@@ -720,7 +811,7 @@ plot_best_model_roc <- function(best_model,
       Specificity = 1 - roc_external_validation$specificities,
       Sensitivity = roc_external_validation$sensitivities,
       Dataset = paste0("External Validation Set (AUC = ", sprintf("%.3f", auc_external_validation),
-                       " ± ", sprintf("%.3f", (auc_ci_external_validation[3] - auc_ci_external_validation[1]) / 2), ")")
+                       " +/- ", sprintf("%.3f", (auc_ci_external_validation[3] - auc_ci_external_validation[1]) / 2), ")")
     )
     plot_data_list$external_validation <- external_validation_plot_data
   }
@@ -825,14 +916,14 @@ SelectBestModel <- function(object,
     best_model_type   <- custom_selection
   } else {
     
-    # ── 1. Find best metric value, ignoring NA ──────────────────
+    # -- 1. Find best metric value, ignoring NA ------------------
     primary_vals <- all.results[[metric]]
     best_val <- max(primary_vals, na.rm = TRUE)
     
     # Candidates with the best metric
     candidates <- all.results[which(primary_vals == best_val), ]
     
-    # ── 2. If tie, use f1_score (ignoring NA) ───────────────────
+    # -- 2. If tie, use f1_score (ignoring NA) -------------------
     if (nrow(candidates) > 1 && "f1_score" %in% colnames(candidates)) {
       f1_vals <- candidates$f1_score
       f1_vals[is.na(f1_vals)] <- -Inf   # treat NA as worst
@@ -840,7 +931,7 @@ SelectBestModel <- function(object,
       candidates <- candidates[which(f1_vals == best_f1), ]
     }
     
-    # ── 3. If still tie, take the first row ─────────────────────
+    # -- 3. If still tie, take the first row ---------------------
     best.model.result <- candidates[1, , drop = FALSE]
     best_model_type   <- best.model.result$Model
     
@@ -851,7 +942,7 @@ SelectBestModel <- function(object,
     }
   }
   
-  # ── 4. Look up the actual model object ────────────────────────
+  # -- 4. Look up the actual model object ------------------------
   best_model <- model_list[[best_model_type]]
   if (is.null(best_model)) {
     stop("Model '", best_model_type, "' not found in trained models")

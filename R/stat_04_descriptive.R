@@ -13,20 +13,23 @@
 #' @param max_unique_values The maximum number of unique values a variable can have to be considered categorical (default is 5).
 #'
 #' @returns A list containing the following components:
+#' \describe{
 #' \item{Group_Counts}{The counts of each group if a `group_col` is provided.}
 #' \item{Count_Results}{A list of counts for each categorical variable.}
 #' \item{Num_Results}{A list of descriptive statistics for numeric variables, including separate statistics for normal and non-normal distributions.}
 #' \item{Normality_Test}{A list of p-values and normality test results for numeric variables.}
+#' }
 #'
 #' @export
 #'
 #' @examples
+#'my_data=stat_obj_test@clean.data
+#'my_data=my_data[,-9]
 #' # Example 1: Compute descriptive statistics for a data frame
-#' result <- compute_descriptive_stats(data = my_data, count_feature = TRUE, group_col = "group")
+#'result <- compute_descriptive_stats(data = my_data, count_feature = TRUE, group_col = "SWAB")
 #'
 #' # Example 2: Compute overall descriptive statistics without considering group
-#' result <- compute_descriptive_stats(data = my_data, count_feature = FALSE)
-#'
+#'result <- compute_descriptive_stats(data = my_data, count_feature = FALSE)
 compute_descriptive_stats <- function(data,
                                       count_feature = TRUE,
                                       group_col = "group",
@@ -133,9 +136,6 @@ compute_descriptive_stats <- function(data,
   return(result)
 }
 
-
-
-
 #' Compute Descriptive Statistics for 'Stat' Object or Data Frame
 #'
 #' This function computes descriptive statistics for numeric and categorical variables in the input data. It can handle both
@@ -156,11 +156,16 @@ compute_descriptive_stats <- function(data,
 #' @export
 #'
 #' @examples
-#' # Example 1: Compute descriptive statistics for a 'Stat' object
-#' updated_stat <- stat_compute_descriptive(object = my_stat, count_feature = TRUE, group_col = "group")
-#'
-#' # Example 2: Compute descriptive statistics for a data frame
-#' result <- stat_compute_descriptive(object = my_data, count_feature = TRUE)
+#' \dontrun{
+#' data("mtcars")
+#' mtcars$cyl <- factor(mtcars$cyl)
+#' mtcars$vs  <- factor(mtcars$vs, labels = c("V-shaped", "Straight"))
+#' # Create a Stat object with "vs" as the grouping variable
+#' stat_obj <- CreateStatObject(raw.data = mtcars, group_col = "vs")
+#' #Compute descriptive statistics for a 'Stat' object
+#' updated_stat <- stat_compute_descriptive(object = stat_obj, 
+#' count_feature = TRUE, group_col = "group")
+#' }
 stat_compute_descriptive <- function(
     object,
     count_feature = TRUE,
@@ -230,6 +235,10 @@ stat_compute_descriptive <- function(
 #' @returns If object is a Stat object, the updated Stat object with
 #'   `compute.descriptive$count_plots` slot. Otherwise, a list of plots.
 #' @export
+#' @examples
+#' \dontrun{
+#' plot_categorical_descriptive(stat_obj_test, save_plots = FALSE)
+#' }
 plot_categorical_descriptive <- function(
     object,
     group_col = "group",
@@ -409,6 +418,10 @@ plot_categorical_descriptive <- function(
 #' @returns A list of ggplot objects containing the generated violin plots.
 #'   If `save_plots` is `TRUE`, the plots are also saved as PDF files.
 #' @export
+#' @examples
+#' \dontrun{
+#' vplots <- violin_plots(stat_obj_test@clean.data, group_col = "SWAB", save_plots = FALSE)
+#' }
 violin_plots <- function(data,
                          vars_per_plot = 1,
                          save_dir = NULL,
@@ -550,6 +563,10 @@ violin_plots <- function(data,
 #' @returns A list of ggplot objects containing the generated density ridge plots.
 #'   If `save_plots` is `TRUE`, the plots are also saved as PDF files.
 #' @export
+#' @examples
+#' \dontrun{
+#' rplots <- density_ridge_plots(stat_obj_test@clean.data, group_col = "SWAB", save_plots = FALSE)
+#' }
 density_ridge_plots <- function(data,
                                 vars_per_plot = 1,
                                 save_dir = NULL,
@@ -675,14 +692,15 @@ density_ridge_plots <- function(data,
 #' @export
 #'
 #' @examples
-#' plot_numeric_descriptive(object = my_stat_object,
-#'                           vars_per_plot = 4,
+#' \dontrun{
+#' plot_numeric_descriptive(object = stat_obj_test,
+#'                           vars_per_plot = 1,
 #'                           save_dir = NULL,
 #'                           palette_name = "Zissou1",
 #'                           group_col = "group",
 #'                           plot_type = "violin",
 #'                           save_plots = TRUE)
-#'
+#'}
 plot_numeric_descriptive <- function(
     object,
     vars_per_plot = 1,
@@ -812,11 +830,12 @@ plot_numeric_descriptive <- function(
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # Example of usage
 #' data <- data.frame(a = c(1, 2, 3), b = c("low", "medium", "high"))
 #' variable_types <- list(numeric_vars = c("a"))
 #' converted_data <- convert_variables(data, variable_types)
-#'
+#' }
 convert_variables <- function(data, 
                               variable_types,
                               save_dir = NULL,
@@ -847,27 +866,44 @@ convert_variables <- function(data,
 #'
 #' This function converts variables in a given object (either of class 'Stat' or a
 #' data frame) to numeric or factor types based on the information provided by
-#' `diagnose_variable_type`. If the input is a 'Stat' object, the conversion will
-#' update its `clean.data` slot. If the input is a data frame, it will directly
-#' return the converted data frame.
+#' \code{\link{diagnose_variable_type}}. If the input is a 'Stat' object, the
+#' conversion will update its \code{clean.data} slot. If the input is a data frame,
+#' it will directly return the converted data frame.
 #'
-#' @param object An object of class 'Stat' or a data frame. If a 'Stat' object is
-#'   provided, the function will update its `clean.data` slot.
+#' @param object An object of class \code{Stat} or a data frame. If a \code{Stat}
+#'   object is provided, the function will update its \code{clean.data} slot.
 #' @param group_col A string representing the column name that groups the data.
-#'   Default is "group". This column is used to determine the type of variables.
-#' @param max_unique_values The maximum number of unique values allowed for a variable
-#'   to be considered as numeric. Default is 5.
+#'   Default is \code{"group"}. This column is used to determine the type of variables.
+#' @param max_unique_values The maximum number of unique values allowed for a
+#'   variable to be considered as numeric. Default is \code{5}.
+#' @param save_dir A character string specifying the directory where the converted
+#'   data will be saved as a CSV file. If \code{NULL}, the default output directory
+#'   is used. Default is \code{NULL}.
+#' @param save_data Logical. If \code{TRUE}, saves the converted data to a CSV file.
+#'   Default is \code{TRUE}.
+#' @param csv_filename A character string specifying the name of the CSV file to
+#'   save the converted data. Default is \code{"clean_data.csv"}.
 #'
-#' @returns If the input is a 'Stat' object, it returns the updated 'Stat' object.
-#'   If the input is a data frame, it returns the converted data frame.
+#' @return If the input is a \code{Stat} object, returns the updated \code{Stat}
+#'   object with the converted data stored in the \code{clean.data} slot.
+#'   If the input is a data frame, returns the converted data frame.
+#'
+#' @seealso \code{\link{diagnose_variable_type}}, \code{\link{convert_variables}}
+#'
 #' @export
 #'
 #' @examples
-#' # Example of usage
-#' data <- data.frame(a = c(1, 2, 3), b = c("low", "medium", "high"))
-#' stat_object <- Stat$new(clean.data = data, group_col = "group")
-#' updated_stat_object <- stat_convert_variables(stat_object)
+#' \dontrun{
+#' # Convert variables in a Stat object
+#' updated_stat <- stat_convert_variables(stat_obj_test, save_dir = "./output")
 #'
+#' # Convert variables in a data frame
+#' converted_df <- stat_convert_variables(
+#'   object = my_data,
+#'   group_col = "group",
+#'   save_data = FALSE
+#' )
+#' }
 stat_convert_variables <- function(object,
                                    group_col = "group",
                                    max_unique_values = 5,
@@ -915,10 +951,6 @@ stat_convert_variables <- function(object,
   return(data)
 }
 
-
-
-
-
 #' One-Hot Encode Categorical Variables in a Data Frame
 #'
 #' This function performs one-hot encoding on categorical variables with limited unique values,
@@ -937,10 +969,9 @@ stat_convert_variables <- function(object,
 #'
 #' @examples
 #' \dontrun{
-#' one_hot_encode(iris, group_col = "Species", max_unique_values = 5)
+#' one_hot_encode(iris, group_col = "Species", max_unique_values = 2,save_dir = ".")
 #' }
 one_hot_encode <- function(data, 
-                           
                            group_col = "group",
                            max_unique_values = 5,
                            save_dir = NULL,
@@ -998,25 +1029,39 @@ one_hot_encode <- function(data,
 #' or a regular `data.frame`, using `one_hot_encode()`. If a `Stat` object is provided,
 #' the encoded result will be updated in its `clean.data` slot.
 #'
-#' @import methods
 #' @param object An object of class `Stat` or a `data.frame`.
-#' @param method Reserved for future use. Currently not used. Default is 1.
+#' @param method Reserved for future use. Currently not used. Default is `1`.
 #' @param group_col A string specifying the name of the grouping column. This column will be
 #'        excluded from one-hot encoding and moved to the end of the result. Default is `"group"`.
 #' @param max_unique_values The maximum number of unique values a variable can have to be
-#'        considered for one-hot encoding. Default is 5.
+#'        considered for one-hot encoding. Default is `5`.
+#' @param save_dir A character string specifying the directory where the encoded data
+#'        will be saved as a CSV file. If `NULL`, uses the default output directory
+#'        from `get_output_dir("StatObject", "Data")`. Default is `NULL`.
+#' @param save_data Logical. If `TRUE`, saves the encoded data to a CSV file.
+#'        Default is `TRUE`.
+#' @param csv_filename A character string specifying the name of the CSV file to
+#'        save the encoded data. Default is `"clean_data.csv"`.
 #'
-#' @returns A `Stat` object with updated one-hot encoded `clean.data` slot, or a
-#'          one-hot encoded `data.frame`.
+#' @return If the input is a `Stat` object, returns the updated `Stat` object with
+#'         the one-hot encoded data stored in the `clean.data` slot. If the input is
+#'         a data frame, returns the one-hot encoded data frame.
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' stat_onehot_encode(my_data, group_col = "status")
-#' stat_onehot_encode(my_stat_object)
-#' }
+#' # One-hot encode a Stat object
+#' stat_encoded <- stat_onehot_encode(stat_obj_test, save_dir = "./output")
 #'
+#' # One-hot encode a data frame without saving
+#' df_encoded <- stat_onehot_encode(
+#'   object = my_data,
+#'   group_col = "group",
+#'   max_unique_values = 3,
+#'   save_data = FALSE
+#' )
+#' }
 stat_onehot_encode <- function(object, 
                                method = 1, 
                                group_col = "group", 

@@ -1,7 +1,15 @@
 #' Calinski-Harabasz Index
 #'
 #' @param clustered.data Clustered data.
+#' @param label_col label column.
+#' @return Numeric CH index value.
 #' @export
+#' @examples
+#' \dontrun{
+#'   df <- data.frame(x = rnorm(30), y = rnorm(30), group = sample(1:3, 30, replace = TRUE))
+#'   ch <- calinski_harabasz(df, label_col = "group")
+#'   cat("Calinski-Harabasz Index:", ch, "\n")
+#' }
 calinski_harabasz <- function(clustered.data,label_col = "group") {
   X <- clustered.data[, !names(clustered.data) %in% label_col, drop = FALSE]
   labels <- clustered.data[[label_col]]
@@ -59,6 +67,13 @@ calinski_harabasz <- function(clustered.data,label_col = "group") {
 #' Davies-Bouldin Index
 #'
 #' @param clustered.data Clustered data.
+#' @return Numeric DB index value.
+#' @examples
+#' \dontrun{
+#'   df <- data.frame(x = rnorm(30), y = rnorm(30), group = sample(1:3, 30, replace = TRUE))
+#'   db <- davies_bouldin(df)
+#'   cat("Davies-Bouldin Index:", db, "\n")
+#' }
 #' @export
 davies_bouldin <- function(clustered.data) {
   cat("Calculating Davies-Bouldin Index...\n")
@@ -131,6 +146,13 @@ davies_bouldin <- function(clustered.data) {
 #' Silhouette Score
 #'
 #' @param clustered.data Clustered data.
+#' @return Numeric average silhouette score.
+#' @examples
+#' \dontrun{
+#'   df <- data.frame(x = rnorm(30), y = rnorm(30), group = sample(1:3, 30, replace = TRUE))
+#'   sil <- silhouette_score(df)
+#'   cat("Silhouette Score:", sil, "\n")
+#' }
 #' @export
 silhouette_score <- function(clustered.data) {
   cat("Calculating Silhouette Score...\n")
@@ -185,6 +207,14 @@ silhouette_score <- function(clustered.data) {
 #'
 #' @param object Subtyping object.
 #' @param seed Seed.
+#' @return The updated \code{Subtyping} object (if input was Subtyping),
+#'   or a named list of evaluation metrics.
+#' @examples
+#' \dontrun{
+#'   # Assuming 'obj' is a Subtyping object with clustered.data
+#'   obj <- Sub_evaluation_results(obj, seed = 123)
+#'   print(obj@evaluation_results)
+#' }
 #' @export
 Sub_evaluation_results <- function(object ,
                                    seed = 123) {

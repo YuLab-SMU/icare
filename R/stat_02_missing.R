@@ -1,49 +1,66 @@
 #' Plot Missing Data Distribution
 #'
-#' This function generates density plots to visualize the distribution of missing data in the given dataset.
-#' It provides a variable-wise and sample-wise missing data distribution plot, as well as a combined plot.
-#' The function also saves the plots as PNG files if specified and returns a summary of missing data statistics.
-#
-#' @import ggplot2
-#' @import here
-#' @import wesanderson
-#' @import stats
-#' @import here 
-#' @importFrom ggprism theme_prism
-#' @importFrom grDevices pdf
-#' @param data A data.frame containing the data to be analyzed. Missing values should be represented as `<NA>` or `NA`.
-#' @param palette_name A character string specifying the palette name for the plot colors. Default is `"Royal1"`.
-#'                   Supported palettes are from the `wesanderson` package (e.g., "Royal1", "Zissou1", "GrandBudapest1").
-#' @param alpha A numeric value between 0 and 1 specifying the transparency level of the density plots. Default is `0.9`.
-#' @param save_plots A logical value indicating whether to save the plots as PNG files. Default is `TRUE`.
-#' @param save_dir A character string specifying the directory where the plots will be saved. Default is `here("StatObject")`,
-#'                which uses the `here` package to generate the path.
-#' @param plot_width A numeric value specifying the width of the saved plots. Default is `5`.
-#' @param plot_height A numeric value specifying the height of the saved plots. Default is `5`.
-#' @param base_size A numeric value specifying the base size for text and elements in the plot. Default is `14`.
+#' Generates density plots to visualize the distribution of missing data in a dataset.
+#' Provides variable-wise and sample-wise missing data distributions, plus a combined
+#' plot. Optionally saves plots as PDF files and exports missing data summaries as CSV.
 #'
-#' @returns A list containing the following:
-#'   - `var_plot_obj`: The ggplot object for the variable-wise missing data distribution plot.
-#'   - `sample_plot_obj`: The ggplot object for the sample-wise missing data distribution plot.
-#'   - `combined_plot`: The ggplot object for the combined missing data distribution plot.
-#'   - `total_missing_values`: The total number of missing values in the data.
-#'   - `total_variables`: The total number of variables (columns) in the data.
-#'   - `total_samples`: The total number of samples (rows) in the data.
-#'   - `variables_with_missing`: The number of variables with at least one missing value.
-#'   - `samples_with_missing`: The number of samples with at least one missing value.
-#'   - `max_missing_variable`: The highest percentage of missing values in any variable (column).
-#'   - `min_missing_variable`: The lowest percentage of missing values in any variable (column).
-#'   - `max_missing_sample`: The highest percentage of missing values in any sample (row).
-#'   - `min_missing_sample`: The lowest percentage of missing values in any sample (row).
+#' @param data A data.frame containing the data to be analyzed. Missing values should
+#'   be represented as `<NA>` or `NA`.
+#' @param palette_name A character string specifying the Wes Anderson palette name
+#'   for plot colors. Default is `"Royal1"`. Supported palettes include
+#'   `"Zissou1"`, `"GrandBudapest1"`, etc.
+#' @param alpha A numeric value between 0 and 1 specifying the transparency level
+#'   of the density plots. Default is `0.9`.
+#' @param save_plots Logical. If `TRUE`, saves the density plots as PDF files.
+#'   Default is `TRUE`.
+#' @param save_dir A character string specifying the directory where plots and
+#'   CSV files will be saved. If `NULL`, uses the default output directory
+#'   from `get_output_dir("StatObject", "missing_info")`. Default is `NULL`.
+#' @param plot_width Numeric. Width of the saved plots in inches. Default is `5`.
+#' @param plot_height Numeric. Height of the saved plots in inches. Default is `5`.
+#' @param base_size Numeric. Base font size for plot text. Default is `14`.
+#' @param save_data Logical. If `TRUE`, saves the missing data summaries as CSV files.
+#'   Default is `TRUE`.
+#' @param var_filename Character string. Filename for the variable-wise missing
+#'   data CSV. Default is `"var_missing_data.csv"`.
+#' @param sample_filename Character string. Filename for the sample-wise missing
+#'   data CSV. Default is `"sample_missing_data.csv"`.
+#'
+#' @return A list containing:
+#'   \itemize{
+#'     \item \code{var_plot_obj}: ggplot object for variable-wise missing distribution.
+#'     \item \code{sample_plot_obj}: ggplot object for sample-wise missing distribution.
+#'     \item \code{combined_plot}: ggplot object combining both distributions.
+#'     \item \code{total_missing_values}: Total number of missing values in the data.
+#'     \item \code{total_variables}: Number of variables (columns).
+#'     \item \code{total_samples}: Number of samples (rows).
+#'     \item \code{variables_with_missing}: Number of variables with at least one missing value.
+#'     \item \code{samples_with_missing}: Number of samples with at least one missing value.
+#'     \item \code{max_missing_variable}: Maximum percentage of missing values in any variable.
+#'     \item \code{min_missing_variable}: Minimum percentage of missing values in any variable.
+#'     \item \code{max_missing_sample}: Maximum percentage of missing values in any sample.
+#'     \item \code{min_missing_sample}: Minimum percentage of missing values in any sample.
+#'   }
 #'
 #' @export
 #'
 #' @examples
-#' # Generate missing data plots for the mtcars dataset
-#' missing_info <- plot_missing_data(data = mtcars, save_plots = TRUE)
+#' \dontrun{
+#' data("stat_obj_test")
+#' missing_info <- plot_missing_data(data = stat_obj_test@raw.data, save_plots = FALSE)
 #'
-#' # Generate missing data plots with customized parameters
-#' missing_info <- plot_missing_data(data = mtcars, palette_name = "Zissou1", alpha = 0.7, plot_width = 6, plot_height = 6)
+#' # Customized parameters
+#' missing_info <- plot_missing_data(
+#'   data = stat_obj_test@raw.data,
+#'   palette_name = "Zissou1",
+#'   alpha = 0.7,
+#'   plot_width = 6,
+#'   plot_height = 6,
+#'   save_data = TRUE,
+#'   var_filename = "var_missing.csv",
+#'   sample_filename = "sample_missing.csv"
+#' )
+#' }
 plot_missing_data <- function(data,
                               palette_name = 'Royal1',
                               alpha = 0.9,
@@ -145,7 +162,6 @@ plot_missing_data <- function(data,
   return(missing_info)
 }
 
-
 #' Plot Missing Data for a Stat Object or Data Frame
 #'
 #' This function generates and saves missing data plots (variable-wise and sample-wise distributions) for
@@ -168,6 +184,12 @@ plot_missing_data <- function(data,
 #' @param save_dir A character string specifying the directory where the plots will be saved. Default is `"here('StatObject', 'missing_info')"` (within the `StatObject` folder).
 #' @param plot_width A numeric value specifying the width of the saved plots. Default is `5`.
 #' @param plot_height A numeric value specifying the height of the saved plots. Default is `5`.
+#' @param save_data Logical. If `TRUE`, saves the missing data summaries as CSV files.
+#'   Default is `TRUE`.
+#' @param var_filename Character string. Filename for the variable-wise missing
+#'   data CSV. Default is `"var_missing_data.csv"`.
+#' @param sample_filename Character string. Filename for the sample-wise missing
+#'   data CSV. Default is `"sample_missing_data.csv"`.
 #'
 #' @returns If the input is a 'Stat' object, returns the updated 'Stat' object with the missing data information stored
 #'          in the `process.info` slot. If the input is a data frame, returns the missing data summary as a list.
@@ -175,11 +197,13 @@ plot_missing_data <- function(data,
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' data("stat_obj_test")
 #' # Generate missing data plots for a Stat object
-#' updated_stat <- state_plot_missing_data(stat_object, save_plots = TRUE)
-#'
+#' updated_stat <- state_plot_missing_data(stat_obj_test, save_plots = TRUE)
 #' # Generate missing data plots for a data frame
-#' missing_info <- state_plot_missing_data(data_frame, save_plots = FALSE)
+#' missing_info <- state_plot_missing_data(stat_obj_test@raw.data, save_plots = FALSE)
+#' }
 state_plot_missing_data <- function(
     object,
     palette_name = 'Royal1',
@@ -244,11 +268,11 @@ state_plot_missing_data <- function(
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' data("stat_obj_test")
 #' # Assuming 'stat_object' is a valid Stat object
-#' raw_data <- ExtractRawData(stat_object)
-#'
-#' # If the object does not have raw.data, it will return NULL
-#' missing_data <- ExtractRawData(non_stat_object)
+#' raw_data <- ExtractRawData(stat_obj_test)
+#' }
 ExtractRawData <- function(object) {
   data <- tryCatch(slot(object, "raw.data"), error = function(e) NULL)
   return(data)
@@ -277,16 +301,18 @@ ExtractRawData <- function(object) {
 #' @param encode_threshold Numeric, minimum number of unique values for a
 #'   categorical variable to be flagged for encoding. Default is 10.
 #' @param treat_low_card_numeric_as_categorical Logical, whether to treat
-#'   low‑cardinality numeric columns (e.g. 0/1, 1–5 ratings) as categorical
+#'   low-cardinality numeric columns (e.g. 0/1, 1-5 ratings) as categorical
 #'   variables. Default is `FALSE`.
 #'
 #' @return A list with three components:
+#' \describe{
 #' \item{numeric_vars}{Character vector of variable names classified as numeric.}
 #' \item{categorical_vars}{Character vector of variable names classified as
 #'   categorical (includes characters, factors, logicals, and optionally
-#'   low‑cardinality numerics).}
+#'   low-cardinality numerics).}
 #' \item{vars_to_encode}{Character vector of categorical variables that have
 #'   more than `encode_threshold` unique values and may need encoding.}
+#' }
 #'
 #' @export
 #'
@@ -296,7 +322,7 @@ ExtractRawData <- function(object) {
 #' df <- data.frame(
 #'   group = rep(1:2, each = 5),
 #'   age = c(25, 30, 35, 40, 45, 50, 55, 60, 65, 70),
-#'   rating = c(1,2,1,2,3,2,1,3,2,1),   # low‑cardinality numeric
+#'   rating = c(1,2,1,2,3,2,1,3,2,1),   # low-cardinality numeric
 #'   city = c("A","B","A","C","D","E","F","G","H","I"),
 #'   stringsAsFactors = FALSE
 #' )
@@ -305,7 +331,7 @@ ExtractRawData <- function(object) {
 #' res <- diagnose_variable_type(df, group_col = "group")
 #' print(res)
 #'
-#' # Force low‑cardinality numerics to categorical
+#' # Force low-cardinality numerics to categorical
 #' res2 <- diagnose_variable_type(df, group_col = "group",
 #'                                treat_low_card_numeric_as_categorical = TRUE)
 #' print(res2)
@@ -360,7 +386,7 @@ diagnose_variable_type <- function(data,
         numeric_vars <- c(numeric_vars, col)
       }
     } else {
-      # Non‑numeric columns (character, factor, logical, etc.) are categorical
+      # Non-numeric columns (character, factor, logical, etc.) are categorical
       categorical_vars <- c(categorical_vars, col)
       if (n_unique > encode_threshold) {
         vars_to_encode <- c(vars_to_encode, col)
@@ -395,26 +421,28 @@ diagnose_variable_type <- function(data,
 #'   Default is 5.
 #' @param encode_threshold Numeric, minimum number of unique values for a categorical
 #'   variable to be flagged for encoding. Default is 10.
-#' @param treat_low_card_numeric_as_categorical Logical, whether to treat low‑cardinality
-#'   numeric columns (e.g. 0/1, 1–5 ratings) as categorical variables. Default is `FALSE`.
+#' @param treat_low_card_numeric_as_categorical Logical, whether to treat low-cardinality
+#'   numeric columns (e.g. 0/1, 1-5 ratings) as categorical variables. Default is `FALSE`.
 #'
 #' @returns If input is a "Stat" object, the updated object with the diagnosed variable
 #'   types stored in the `variable.types` slot. If input is a data frame, a list containing:
+#'   \describe{
 #'   \item{numeric_vars}{Character vector of numeric variables.}
 #'   \item{categorical_vars}{Character vector of categorical variables.}
 #'   \item{vars_to_encode}{Character vector of categorical variables that have more than
 #'     `encode_threshold` unique values and may need encoding.}
+#'   }
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' # Example 1: Diagnose variables in a "Stat" object
-#' stat_obj <- stat_diagnose_variable_type(stat_object, group_col = "group")
+#' stat_obj <- stat_diagnose_variable_type(stat_obj_test, group_col = "group")
 #' print(stat_obj)
 #'
 #' # Example 2: Diagnose variables in a data frame
-#' result <- stat_diagnose_variable_type(data_frame,
+#' result <- stat_diagnose_variable_type(stat_obj_test@raw.data,
 #'                                       treat_low_card_numeric_as_categorical = TRUE)
 #' print(result)
 #' }
@@ -508,21 +536,16 @@ stat_diagnose_variable_type <- function(object,
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#'my_data=stat_obj_test@clean.data
 #' # Example 1: Performing gaze analysis with a formula and custom settings
-#' result <- gaze_analysis(data = my_data,
-#'                         formula = ~ group + age + gender,
-#'                         digits = 2,
-#'                         show.p = TRUE,
-#'                         gaze_method = 3,
-#'                         save_word = TRUE,
-#'                         save_dir = "path/to/save")
-#'
+#'result <- gaze_analysis(data = my_data,formula = ~ SWAB + AGE,digits = 2,show.p = TRUE,
+#'                     gaze_method = 3,save_word = TRUE, save_dir = "./")
 #' # Example 2: Using the default formula based on group columns
-#' result <- gaze_analysis(data = my_data,
-#'                         group_cols = c("group"),
-#'                         digits = 1,
-#'                         show.p = FALSE,
-#'                         gaze_method = 1)
+#'  result <- gaze_analysis(data = my_data,group_cols = c("SWAB"),
+#'                         digits = 1,show.p = FALSE,save_word = TRUE,
+#'                         save_dir = "./",gaze_method = 1)
+#' }
 gaze_analysis <- function(data,
                           formula = NULL,
                           group_cols = NULL,
@@ -596,26 +619,27 @@ gaze_analysis <- function(data,
 }
 
 #' Statistical Gaze Analysis
-#' Safe gaze analysis for Table 1 (auto‑removes problematic columns)
+#' Safe gaze analysis for Table 1 (auto-removes problematic columns)
 #'
-#' Wrapper around \code{stat_gaze_analysis} that first drops zero‑variance
-#' and all‑missing columns from \code{clean.data} to avoid errors in
+#' Wrapper around \code{stat_gaze_analysis} that first drops zero-variance
+#' and all-missing columns from \code{clean.data} to avoid errors in
 #' \code{autoReg::gaze}.
 #'
 #' @param object A \code{Stat} object or data frame.
 #' @param formula Optional formula.
 #' @param group_col Group column name.
 #' @param digits Number of digits for statistics.
-#' @param show.p Logical. Show p‑values?
-#' @param gaze_method Integer 1–5.
+#' @param show.p Logical. Show p-values?
+#' @param gaze_method Integer 1-5.
 #' @param save_word Logical. Save Word file?
 #' @param save_dir Output directory. If \code{NULL} and \code{save_word = TRUE},
 #'   uses \code{./tables/}.
-#'
 #' @return Updated \code{Stat} object or flextable.
+#' 
 #' @export
-#' #' @examples
+#' 
 #' @examples
+#' \dontrun{
 #' # --- Prepare example data ---
 #' library(autoReg)
 #' library(flextable)
@@ -658,24 +682,23 @@ gaze_analysis <- function(data,
 #'                                save_word = FALSE)
 #' 
 #' # --- Example 5: Save as Word document with custom directory ---
-#' \dontrun{
 #' stat_obj <- stat_gaze_analysis(stat_obj,
 #'                                save_word = TRUE,
 #'                                save_dir = "my_results/tables")
 #' # The file is saved as my_results/tables/gaze_analysis.docx
-#' }
 #' 
-#' # --- Example 6: Suppress p‑values (descriptive statistics only) ---
+#' # --- Example 6: Suppress p-values (descriptive statistics only) ---
 #' stat_obj <- stat_gaze_analysis(stat_obj,
 #'                                show.p = FALSE,
 #'                                save_word = FALSE)
 #' 
-#' # --- Example 7: Multi‑group comparison (>2 groups) ---
+#' # --- Example 7: Multi-group comparison (>2 groups) ---
 #' result_multi <- stat_gaze_analysis(mtcars,
 #'                                    group_col = "cyl",
 #'                                    digits = 2,
 #'                                    show.p = TRUE,
 #'                                    save_word = FALSE)
+#'}
 stat_gaze_analysis <- function(object,
                                formula = NULL,
                                group_col = "group",
@@ -708,19 +731,19 @@ stat_gaze_analysis <- function(object,
     group_col <- NULL
   
   # ---- 3. Drop problematic columns ----
-  # (a) Remove all‑NA columns
+  # (a) Remove all-NA columns
   na_cols <- sapply(data, function(x) all(is.na(x)))
   if (any(na_cols)) {
-    cat("Removing all‑NA columns:", paste(names(data)[na_cols], collapse = ", "), "\n")
+    cat("Removing all-NA columns:", paste(names(data)[na_cols], collapse = ", "), "\n")
     data <- data[, !na_cols, drop = FALSE]
   }
   
-  # (b) Remove zero‑variance numeric columns
+  # (b) Remove zero-variance numeric columns
   numeric_cols <- sapply(data, is.numeric)
   if (any(numeric_cols)) {
     zero_var <- sapply(data[, numeric_cols, drop = FALSE], var, na.rm = TRUE) == 0
     if (any(zero_var)) {
-      cat("Removing zero‑variance numeric columns:",
+      cat("Removing zero-variance numeric columns:",
           paste(names(data[, numeric_cols])[zero_var], collapse = ", "), "\n")
       data <- data[, !(colnames(data) %in% names(data[, numeric_cols])[zero_var]), drop = FALSE]
     }
@@ -735,7 +758,7 @@ stat_gaze_analysis <- function(object,
     if (!is.null(group_col) && group_col %in% names(single_level))
       single_level[group_col] <- FALSE
     if (any(single_level)) {
-      cat("Removing single‑level factor columns:",
+      cat("Removing single-level factor columns:",
           paste(names(data[, factor_cols])[single_level], collapse = ", "), "\n")
       data <- data[, !(colnames(data) %in% names(data[, factor_cols])[single_level]), drop = FALSE]
     }

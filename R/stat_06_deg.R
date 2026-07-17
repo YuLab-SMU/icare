@@ -1,6 +1,3 @@
-# ══════════════════════════════════════════════════════════════════════════════
-# DEG 核心计算层 - 增强版（支持二分类和多分类）
-# ══════════════════════════════════════════════════════════════════════════════
 
 #' Compute log2 group means for logFC calculation
 #'
@@ -13,7 +10,7 @@
 #' @keywords internal
 .compute_log2_means <- function(mat, group_col) {
   means <- mat %>%
-    group_by_at(group_col) %>%
+    group_by(across(all_of(group_col))) %>%
     dplyr::summarise_all(mean) %>%
     dplyr::select(-dplyr::all_of(group_col))
   
@@ -21,18 +18,13 @@
   if (any(raw_vals == 0, na.rm = TRUE)) {
     positive_vals <- raw_vals[raw_vals > 0]
     pseudocount   <- if (length(positive_vals) > 0) min(positive_vals, na.rm = TRUE) * 0.01 else 1e-6
-    message("Zero group means detected — adding pseudocount (", round(pseudocount, 8), ") before log2 transform.")
+    message("Zero group means detected -- adding pseudocount (", round(pseudocount, 8), ") before log2 transform.")
     means <- log2(means + pseudocount)
   } else {
     means <- log2(means)
   }
   return(means)
 }
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# 二分类 DEG 分析函数（原始功能保留）
-# ══════════════════════════════════════════════════════════════════════════════
 
 #' Perform Batch Wilcoxon Test for Multiple Variables (Binary Classification)
 #'
@@ -54,7 +46,9 @@
 #' @export
 #'
 #' @examples
-#' result <- batch_Wilcoxon(clean_data, group_col = "group")
+#' \dontrun{
+#' deg_res <- batch_Wilcoxon(stat_obj_test@clean.data, group_col = "SWAB", p_threshold = 0.05)
+#' }
 batch_Wilcoxon <- function(mat,
                            group_col    = "group",
                            logfc_mat    = NULL,
@@ -71,7 +65,7 @@ batch_Wilcoxon <- function(mat,
          "'. Found: ", paste(group_levels, collapse = ", "))
   }
   
-  # ── 1. Wilcoxon test ──────────────────────────────────────────────────────
+  # -- 1. Wilcoxon test ------------------------------------------------------
   test.fun <- function(dat, col) {
     index <- unique(dat[[group_col]])
     sigs  <- wilcox.test(
@@ -101,9 +95,9 @@ batch_Wilcoxon <- function(mat,
   test_sig$p.adjust <- p.adjust(test_sig$p, method = "bonferroni")
   test_sig          <- test_sig[order(test_sig$p), ]
   
-  # ── 2. SD (from test mat) ─────────────────────────────────────────────────
+  # -- 2. SD (from test mat) -------------------------------------------------
   sd_file <- mat_num %>%
-    group_by_at(group_col) %>%
+    group_by(across(all_of(group_col))) %>%
     dplyr::summarise_all(sd) %>%
     t()
   colnames(sd_file)   <- sd_file[1, ]
@@ -111,7 +105,7 @@ batch_Wilcoxon <- function(mat,
   sd_file$id          <- rownames(sd_file)
   colnames(sd_file)[1:2] <- paste0("sd_", colnames(sd_file)[1:2])
   
-  # ── 3. logFC ──────────────────────────────────────────────────────────────
+  # -- 3. logFC --------------------------------------------------------------
   ref_mat <- if (!is.null(logfc_mat) && nrow(logfc_mat) > 0) logfc_mat else mat_num
   
   if (is.null(logfc_mat) && logfc_type == "log2ratio") {
@@ -132,7 +126,7 @@ batch_Wilcoxon <- function(mat,
     logFC  <- log2_means[2, shared, drop = FALSE] - log2_means[1, shared, drop = FALSE]
   } else {
     raw_means <- ref_mat %>%
-      group_by_at(group_col) %>%
+      group_by(across(all_of(group_col))) %>%
       dplyr::summarise_all(mean) %>%
       dplyr::select(-dplyr::all_of(group_col))
     shared <- intersect(rownames(test_sig), colnames(raw_means))
@@ -143,7 +137,7 @@ batch_Wilcoxon <- function(mat,
   logFC$id  <- rownames(logFC)
   colnames(logFC)[1] <- "logFC"
   
-  # ── 4. Merge & annotate ───────────────────────────────────────────────────
+  # -- 4. Merge & annotate ---------------------------------------------------
   test_sig$id   <- rownames(test_sig)
   last_test_sig <- merge(test_sig, sd_file,  by = "id")
   last_test_sig <- merge(last_test_sig, logFC, by = "id")
@@ -170,9 +164,6 @@ batch_Wilcoxon <- function(mat,
 }
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 多分类 DEG 分析函数（新增功能）
-# ══════════════════════════════════════════════════════════════════════════════
 #' Internal function: Wilcoxon test for two specific groups
 #'
 #' Helper function that performs Wilcoxon test between two groups.
@@ -189,21 +180,16 @@ batch_Wilcoxon <- function(mat,
                                  group_col = "group",
                                  logfc_mat = NULL,
                                  logfc_type = "log2ratio") {
-  
-  # 保留外部设定的因子水平，若未设置则按数据出现顺序创建（不自动排序）
+
   if (!is.factor(mat[[group_col]])) {
-    # 按照数据中出现的顺序创建因子（不排序）
     mat[[group_col]] <- factor(mat[[group_col]], levels = unique(mat[[group_col]]))
   }
   
-  # 获取因子水平（已按正确顺序）
   group_levels <- levels(mat[[group_col]])
   if (length(group_levels) != 2) {
     stop("Internal .wilcoxon_two_groups requires exactly 2 groups, found: ",
          paste(group_levels, collapse = ", "))
   }
-  
-  # Wilcoxon test function (使用因子水平顺序：第一个为参考组，第二个为实验组)
   test.fun <- function(dat, col) {
     index <- levels(dat[[group_col]])
     sigs  <- wilcox.test(
@@ -221,8 +207,7 @@ batch_Wilcoxon <- function(mat,
       sd_y     = sd(dat[dat[[group_col]] == index[2], col])
     )
   }
-  
-  # 提取数值列
+
   numeric_cols <- sapply(mat, is.numeric)
   numeric_cols[group_col] <- FALSE
   mat_num <- mat[, c(names(numeric_cols)[numeric_cols], group_col)]
@@ -230,14 +215,11 @@ batch_Wilcoxon <- function(mat,
   feat_cols <- colnames(mat_num)[colnames(mat_num) != group_col]
   tests     <- do.call(rbind, lapply(feat_cols, function(x) test.fun(mat_num, x)))
   rownames(tests) <- feat_cols
-  
-  # 调整 p 值
+
   tests$p.adjust <- p.adjust(tests$p, method = "bonferroni")
-  
-  # ── logFC computation ─────────────────────────────────────────────────────
+ 
   ref_mat <- if (!is.null(logfc_mat) && nrow(logfc_mat) > 0) logfc_mat else mat_num
-  
-  # 确保 ref_mat 的分组列因子水平与 mat 一致（顺序相同）
+
   if (!is.factor(ref_mat[[group_col]])) {
     ref_mat[[group_col]] <- factor(ref_mat[[group_col]], levels = unique(ref_mat[[group_col]]))
   } else {
@@ -245,8 +227,7 @@ batch_Wilcoxon <- function(mat,
       ref_mat[[group_col]] <- factor(ref_mat[[group_col]], levels = group_levels)
     }
   }
-  
-  # 自动降级处理：若数据含负数且要求 log2ratio，则改为 diff
+
   if (logfc_type == "log2ratio") {
     raw_check <- unlist(ref_mat[, colnames(ref_mat) != group_col])
     if (any(raw_check < 0, na.rm = TRUE)) {
@@ -257,11 +238,10 @@ batch_Wilcoxon <- function(mat,
   if (logfc_type == "log2ratio") {
     log2_means <- .compute_log2_means(ref_mat, group_col)
     shared <- intersect(rownames(tests), colnames(log2_means))
-    # 第一个水平 = 参考组，第二个水平 = 实验组 => logFC = 实验组 - 参考组
     logFC  <- log2_means[2, shared, drop = FALSE] - log2_means[1, shared, drop = FALSE]
   } else {
     raw_means <- ref_mat %>%
-      group_by_at(group_col) %>%
+      group_by(across(all_of(group_col))) %>%
       dplyr::summarise_all(mean) %>%
       dplyr::select(-dplyr::all_of(group_col))
     shared <- intersect(rownames(tests), colnames(raw_means))
@@ -278,7 +258,6 @@ batch_Wilcoxon <- function(mat,
   
   return(result)
 }
-
 
 #' Find All Markers for Multi-class Classification
 #'
@@ -299,12 +278,9 @@ batch_Wilcoxon <- function(mat,
 #' @export
 #'
 #' @examples
-#' # Multi-class DEG: find markers for each group against all others
-#' result <- batch_Wilcoxon_MultiClass(
-#'   mat = multi_class_data,
-#'   group_col = "cell_type",
-#'   only.pos = FALSE
-#' )
+#' \dontrun{
+#' result <- batch_Wilcoxon_MultiClass(mat = iris,group_col = "Species",only.pos = FALSE)
+#' }
 batch_Wilcoxon_MultiClass <- function(mat,
                                       group_col = "group",
                                       logfc_mat = NULL,
@@ -421,12 +397,10 @@ batch_Wilcoxon_MultiClass <- function(mat,
 #' @export
 #'
 #' @examples
-#' # Ordered multi-class DEG: stages T0 -> T1 -> T2 -> T3
-#' result <- batch_Wilcoxon_OrderedMultiClass(
-#'   mat = ordered_data,
-#'   group_col = "time_stage",
-#'   only.pos = TRUE
-#' )
+#' \dontrun{
+#' iris$Species=factor(iris$Species,levels = unique(iris$Species))
+#' result <- batch_Wilcoxon_OrderedMultiClass(mat = iris,group_col = "Species",only.pos = FALSE)
+#' }
 batch_Wilcoxon_OrderedMultiClass <- function(mat,
                                              group_col = "group",
                                              logfc_mat = NULL,
@@ -512,11 +486,6 @@ batch_Wilcoxon_OrderedMultiClass <- function(mat,
   return(all_results)
 }
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# 自动检测和路由函数（扩展性关键）
-# ══════════════════════════════════════════════════════════════════════════════
-
 #' Unified Interface for DEG Analysis (Binary and Multi-class)
 #'
 #' Automatically detects number of groups and routes to appropriate function.
@@ -542,17 +511,16 @@ batch_Wilcoxon_OrderedMultiClass <- function(mat,
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # Binary analysis (2 groups) - automatic
-#' result_binary <- batch_Wilcoxon_Unified(clean_data)
-#'
+#' result_binary <- batch_Wilcoxon_Unified(mtcars,group_col = 'vs')
 #' # Multi-class analysis (3+ groups) - automatic
-#' result_multi <- batch_Wilcoxon_Unified(multi_class_data)
-#'
+#' result_multi <- batch_Wilcoxon_Unified(iris,group_col ="Species")
 #' # Ordered analysis (stages)
+#' iris$Species=factor(iris$Species,levels = unique(iris$Species))
 #' result_ordered <- batch_Wilcoxon_Unified(
-#'   stage_data,
-#'   analysis_type = "ordered"
-#' )
+#' iris,group_col = "Species",analysis_type = "ordered")
+#' }
 batch_Wilcoxon_Unified <- function(mat,
                                    group_col = "group",
                                    analysis_type = "auto",
@@ -649,9 +617,9 @@ batch_Wilcoxon_Unified <- function(mat,
   return(result)
 }
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ==============================================================================
 # stat_var_feature 
-# ══════════════════════════════════════════════════════════════════════════════
+# ==============================================================================
 
 #' Perform Feature Selection Using Batch Wilcoxon Test
 #'
@@ -665,10 +633,10 @@ batch_Wilcoxon_Unified <- function(mat,
 #'     already log-transformed or otherwise pre-processed before loading).
 #'
 #' **logFC calculation data**:
-#'   - `clean.data` (raw positive values)  → `logfc_type = "log2ratio"` (default)
-#'   - `scale.data` with log-space method  → `logfc_type = "diff"` (mean difference = log ratio)
-#'   - `scale.data` with ratio-intact method (`scale`, `min_max`, `max_abs`) → `logfc_type = "log2ratio"`
-#'   - `scale.data` with centered method   → logFC still from `clean.data` if available
+#'   - `clean.data` (raw positive values)  -> `logfc_type = "log2ratio"` (default)
+#'   - `scale.data` with log-space method  -> `logfc_type = "diff"` (mean difference = log ratio)
+#'   - `scale.data` with ratio-intact method (`scale`, `min_max`, `max_abs`) -> `logfc_type = "log2ratio"`
+#'   - `scale.data` with centered method   -> logFC still from `clean.data` if available
 #'
 #' @param object    A `Stat` object or a plain data frame.
 #' @param group_col Group column name (auto-read from Stat slot when object is Stat).
@@ -686,14 +654,10 @@ batch_Wilcoxon_Unified <- function(mat,
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # Recommended: let the function choose automatically
-#' stat_object <- stat_var_feature(stat_object)
-#'
-#' # Force using scale data (e.g. input was already log-normalised before loading)
-#' stat_object <- stat_var_feature(stat_object, data_type = "scale")
-#'
-#' # Plain data frame
-#' result <- stat_var_feature(my_df, group_col = "group")
+#' stat_obj <- stat_var_feature(stat_obj_test, p_threshold = 0.05)
+#' }
 stat_var_feature <- function(object,
                              group_col    = "group",
                              data_type    = "auto",
@@ -701,7 +665,7 @@ stat_var_feature <- function(object,
                              save_dir     = NULL,
                              save_data    = FALSE,
                              csv_filename = "last_test_sig.csv") {
-  # ---- Auto‑generate default save directory ----
+  # ---- Auto-generate default save directory ----
   if (save_data && is.null(save_dir)) {
     if (exists("get_output_dir")) {
       save_dir <- get_output_dir("m1", "deg_results")
@@ -711,7 +675,7 @@ stat_var_feature <- function(object,
     if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
     cat("DEG results will be saved to:", save_dir, "\n")
   }
-  # ── 1. Extract data from Stat object or data frame ───────────────────────
+  # -- 1. Extract data from Stat object or data frame -----------------------
   if (inherits(object, "Stat")) {
     
     group_col <- slot(object, "group_col")
@@ -742,11 +706,11 @@ stat_var_feature <- function(object,
       "none"
     }
     
-    # ── Decision table ───────────────────────────────────────────────────
+    # -- Decision table ---------------------------------------------------
     #
-    #  data_type = "auto"  → prefer clean for test; logFC always from clean
-    #  data_type = "clean" → same as auto but explicit
-    #  data_type = "scale" → user knows their input is already processed;
+    #  data_type = "auto"  -> prefer clean for test; logFC always from clean
+    #  data_type = "clean" -> same as auto but explicit
+    #  data_type = "scale" -> user knows their input is already processed;
     #                         test on scale data, logFC strategy from scale_method
     #
     log_space_methods    <- c("log", "box_cox", "yeo_johnson")
@@ -757,7 +721,7 @@ stat_var_feature <- function(object,
       
       if (!has_clean) {
         if (!has_scale) stop("No valid data found in clean.data or scale.data.")
-        message("clean.data is empty — falling back to scale.data for test. ",
+        message("clean.data is empty -- falling back to scale.data for test. ",
                 "If your raw data is already normalised, set data_type = 'scale'.")
         test_dat   <- scale_dat
         logfc_dat  <- scale_dat
@@ -793,7 +757,7 @@ stat_var_feature <- function(object,
           logfc_dat <- scale_dat
           lfc_type  <- "log2ratio"   # will auto-warn inside batch_Wilcoxon if negatives detected
           warning("scale_method='", scale_method, "' and clean.data unavailable. ",
-                  "logFC computed from scale.data — values may not be true log2 fold changes.")
+                  "logFC computed from scale.data -- values may not be true log2 fold changes.")
         }
         
       } else {
@@ -825,7 +789,7 @@ stat_var_feature <- function(object,
     stop("Input must be a 'Stat' object or a data frame.")
   }
   
-  # ── 2. Validate group column ──────────────────────────────────────────────
+  # -- 2. Validate group column ----------------------------------------------
   if (!group_col %in% colnames(test_dat)) {
     stop("Group column '", group_col, "' not found in the test data.")
   }
@@ -834,7 +798,7 @@ stat_var_feature <- function(object,
     stop("Group column '", group_col, "' must have at least two distinct non-missing values.")
   }
   
-  # ── 3. Run batch Wilcoxon ─────────────────────────────────────────────────
+  # -- 3. Run batch Wilcoxon -------------------------------------------------
   test_dat  <- data.frame(lapply(test_dat,  function(x) if (is.numeric(x)) as.numeric(x) else x))
   logfc_dat <- data.frame(lapply(logfc_dat, function(x) if (is.numeric(x)) as.numeric(x) else x))
   
@@ -856,7 +820,7 @@ stat_var_feature <- function(object,
     csv_filename = csv_filename
   )
   
-  # ── 4. Store result ───────────────────────────────────────────────────────
+  # -- 4. Store result -------------------------------------------------------
   if (inherits(object, "Stat")) {
     object@var.result <- list(last_test_sig = last_test_sig)
     cat("Feature selection completed. Significant features:", nrow(last_test_sig), "\n")
@@ -882,8 +846,11 @@ stat_var_feature <- function(object,
 #' @export
 #'
 #' @examples
-#' last_sig <- ExtractLastTestSig(stat_object)
+#' \dontrun{
+#' stat_obj <- stat_var_feature(stat_obj_test)
+#' last_sig <- ExtractLastTestSig(stat_obj)
 #' print(last_sig)
+#' }
 ExtractLastTestSig <- function(object) {
   last_test_sig <- tryCatch(object@var.result[["last_test_sig"]],
                             error = function(e) NULL)
@@ -920,7 +887,12 @@ ExtractLastTestSig <- function(object) {
 #' @export
 #'
 #' @examples
-#' plot_deg_radarchart(df, palette_name = "Zissou1", title = "Differential Expression Radar")
+#' \dontrun{
+#' stat_obj <- stat_var_feature(stat_obj_test)
+#' last_sig <- ExtractLastTestSig(stat_obj)
+#' print(last_sig)
+#' plot_deg_radarchart(last_sig, palette_name = "Zissou1", title = "Differential Expression Radar")
+#' }
 plot_deg_radarchart <- function(df,
                                 palette_name = "Zissou1",
                                 x_col = "id",
@@ -985,10 +957,10 @@ plot_deg_radarchart <- function(df,
   return(plot)
 }
 
-#' Generate Radar Chart for Variable Features (with auto‑save option)
+#' Generate Radar Chart for Variable Features (with auto-save option)
 #'
 #' @param object Stat object or data frame.
-#' @param group_col Group column name. If NULL, auto‑detect from Stat object.
+#' @param group_col Group column name. If NULL, auto-detect from Stat object.
 #' @param palette_name Colour palette.
 #' @param plot_width,plot_height Plot dimensions (inches).
 #' @param save_dir Output directory. If NULL and save_plots=TRUE, will use
@@ -999,6 +971,11 @@ plot_deg_radarchart <- function(df,
 #'
 #' @return Updated Stat object or ggplot.
 #' @export
+#' @examples
+#' \dontrun{
+#' stat_obj <- stat_var_feature(stat_obj_test)
+#' VarFeature_radarchart(stat_obj, palette_name = "Zissou1", title = "Differential Expression Radar")
+#' }
 VarFeature_radarchart <- function(object,
                                   group_col = NULL,
                                   palette_name = "Zissou1",
@@ -1082,8 +1059,13 @@ VarFeature_radarchart <- function(object,
 #' @export
 #'
 #' @examples
-#' plot_deg_volcano(last_test_sig = deg_results, logFC_col = "logFC", p_adjust_col = "p.adjust")
-#' plot_deg_volcano(last_test_sig = deg_results, title = "Custom Volcano Plot", palette_name = "Zissou1")
+#' \dontrun{
+#' stat_obj <- stat_var_feature(stat_obj_test)
+#' last_sig <- ExtractLastTestSig(stat_obj)
+#' print(last_sig)
+#' plot_deg_volcano(last_test_sig = last_sig, logFC_col = "logFC", p_adjust_col = "p.adjust")
+#' plot_deg_volcano(last_test_sig = last_sig, title = "Custom Volcano Plot", palette_name = "Zissou1")
+#' }
 plot_deg_volcano <- function(last_test_sig,
                              logFC_col = "logFC",
                              p_adjust_col = "p.adjust",
@@ -1159,8 +1141,11 @@ plot_deg_volcano <- function(last_test_sig,
 #' @export
 #'
 #' @examples
-#' VarFeature_volcano(object = stat_object, logFC_col = "logFC", p_adjust_col = "p.adjust")
-#' VarFeature_volcano(object = stat_object, title = "Custom Volcano Plot", palette_name = "Zissou1")
+#' \dontrun{
+#' stat_obj <- stat_var_feature(stat_obj_test)
+#' VarFeature_volcano(object = stat_obj, logFC_col = "logFC", p_adjust_col = "p.adjust")
+#' VarFeature_volcano(object = stat_obj, title = "Custom Volcano Plot", palette_name = "Zissou1")
+#' }
 VarFeature_volcano <- function(object,
                                logFC_col = "logFC",
                                p_adjust_col = "p.adjust",
@@ -1241,8 +1226,15 @@ VarFeature_volcano <- function(object,
 #' @export
 #'
 #' @examples
-#' plot_deg_boxplot(last_test_sig = sig_results, data = expression_data)
-#' plot_deg_boxlot(last_test_sig = sig_results, data = expression_data, top_n = 10)
+#' \dontrun{
+#' stat_obj <- stat_var_feature(stat_obj_test)
+#' last_sig <- ExtractLastTestSig(stat_obj)
+#' print(last_sig)
+#' plot_deg_boxplot(last_test_sig = last_sig, data = stat_obj@clean.data,
+#' group='SWAB',save_dir = "./")
+#' plot_deg_boxplot(last_test_sig = last_sig,data = stat_obj@clean.data,
+#' group='SWAB',save_dir = "./",top_n = 3)
+#' }
 plot_deg_boxplot <- function(last_test_sig,
                                 data,
                                 control = 'health',
@@ -1257,7 +1249,6 @@ plot_deg_boxplot <- function(last_test_sig,
                                 base_size = 14,
                                 title = "Violin Plot",
                                 group_col = 'group',
-                                # [FIX #3] Expose pseudocount so log10 is safe for zero/negative values
                                 pseudocount = 1) {
   
   cat("Data columns:", colnames(data), "\n")
@@ -1305,7 +1296,6 @@ plot_deg_boxplot <- function(last_test_sig,
       TRUE ~ ""
     ))
   
-  # [FIX #3] y_position also uses pseudocount-safe log10
   y_positions <- box_test %>%
     group_by(id) %>%
     summarise(y_position = max(log10(abs(value) + pseudocount)) + 0.1)
@@ -1318,7 +1308,6 @@ plot_deg_boxplot <- function(last_test_sig,
   box_test$id <- factor(box_test$id, levels = unique(index))
   
   cat("Drawing violin plot...\n")
-  # [FIX #3] Use log10(value + pseudocount) instead of bare log10(value) to avoid NaN
   p <- ggplot(data = box_test, aes(x = id, y = log10(value + pseudocount), fill = .data[[group_col]])) +
     geom_boxplot(outlier.alpha = 0) +
     geom_text(data = box_test, aes(x = id, y = y_position, label = significance),
@@ -1360,7 +1349,7 @@ plot_deg_boxplot <- function(last_test_sig,
 #' @param palette_name Colour palette.
 #' @param name_identity Analysis identifier.
 #' @param data_type "clean" or "scale".
-#' @param save_dir Output directory. If NULL, auto‑creates one under
+#' @param save_dir Output directory. If NULL, auto-creates one under
 #'   `./figures/deg_info/`.
 #' @param save_plots Logical. Save the plot? Default TRUE.
 #' @param plot_width,plot_height Plot dimensions (inches).
@@ -1370,6 +1359,11 @@ plot_deg_boxplot <- function(last_test_sig,
 #'
 #' @return Updated Stat object or ggplot.
 #' @export
+#' @examples
+#' \dontrun{
+#' stat_obj <- stat_var_feature(stat_obj_test)
+#' VarFeature_boxplot(object = stat_obj)
+#' }
 VarFeature_boxplot <- function(object,
                                   control = 'health',
                                   case = 'cancer',
@@ -1450,6 +1444,7 @@ VarFeature_boxplot <- function(object,
   return(boxplot)
 }
 
+####----here
 #' Plot ROC Curve for Differential Expression Gene Analysis
 #'
 #' This function generates a ROC curve for the top features identified in differential expression analysis.
@@ -1475,13 +1470,23 @@ VarFeature_boxplot <- function(object,
 #' @param plot_height The height of the saved plot in cm. Default is 5.
 #' @param base_size The base font size for the plot. Default is 14.
 #' @param title The title of the plot. Default is `'ROC Curve'`.
-#'
+#' @param normalize_auc Logical, if `TRUE`, for any feature with AUC < 0.5,
+#'   the predictor values are negated (multiplied by -1) and the ROC curve is
+#'   recalculated so that the new AUC becomes 1 - original AUC, ensuring all
+#'   curves lie above the diagonal. Default is `TRUE`.
 #' @returns A `ggplot` object representing the ROC curve for the top features.
 #'          If `save_plots` is `TRUE`, the plot is saved to the specified directory.
 #' @export
 #'
 #' @examples
-#' plot_deg_Roc_plot(deg_test = deg_results, mat_test = expression_data)
+#' \dontrun{
+#' data(stat_obj_test)
+#' stat_obj <- stat_var_feature(stat_obj_test)
+#' last_sig <- ExtractLastTestSig(stat_obj)
+#' print(last_sig)
+#' plot_deg_Roc_plot(deg_test = last_sig, mat_test = stat_obj@clean.data,
+#' group_col = 'SWAB',save_dir = "./")
+#' }
 plot_deg_Roc_plot <- function(deg_test,
                               mat_test,
                               group_col = 'group',
@@ -1495,10 +1500,9 @@ plot_deg_Roc_plot <- function(deg_test,
                               plot_width = 5,
                               plot_height = 5,
                               base_size = 10,
-                              title = 'ROC Curve') {
-  
+                              title = 'ROC Curve',
+                              normalize_auc = TRUE) {  
   left <- deg_test[deg_test$change != 'Stable', ]
-  
   for_label <- left %>%
     group_by(change) %>%
     arrange(desc(abs(logFC)), .by_group = TRUE) %>%
@@ -1528,8 +1532,16 @@ plot_deg_Roc_plot <- function(deg_test,
       stop(paste("Feature", id, "is not numeric."))
     }
     
-    roc_tem[[j]] <- roc(mat_test[[group_col]], mat_test[[id]])
-    auc_tem[j] <- round(roc_tem[[j]]$auc, 2)
+    pred <- mat_test[[id]]
+    roc_obj <- roc(mat_test[[group_col]], pred)
+    
+    if (normalize_auc && roc_obj$auc < 0.5) {
+      cat("  AUC < 0.5, reversing predictor for", id, "\n")
+      roc_obj <- roc(mat_test[[group_col]], -pred)
+    }
+    
+    roc_tem[[j]] <- roc_obj
+    auc_tem[j] <- round(roc_obj$auc, 2)
   }
   
   n_curves <- length(roc_tem)
@@ -1572,10 +1584,10 @@ plot_deg_Roc_plot <- function(deg_test,
 }
 
 
-#' Generate ROC Curve for Variable Features (fixed)
+#' Generate ROC Curve for Variable Features 
 #'
 #' @param object Stat object, or named list with $last_test_sig and $data.
-#' @param group_col Group column name. If NULL, auto‑detect from Stat object.
+#' @param group_col Group column name. If NULL, auto-detect from Stat object.
 #' @param control Control group label.
 #' @param case Case group label.
 #' @param top_n Number of top features to show.
@@ -1587,9 +1599,17 @@ plot_deg_Roc_plot <- function(deg_test,
 #' @param save_plots Logical. Save the plot? Default TRUE.
 #' @param plot_width,plot_height Plot dimensions (inches).
 #' @param base_size Base font size.
-#'
+#' @param normalize_auc Logical, if `TRUE`, for any feature with AUC < 0.5,
+#'   the predictor values are negated (multiplied by -1) and the ROC curve is
+#'   recalculated so that the new AUC becomes 1 - original AUC, ensuring all
+#'   curves lie above the diagonal. Default is `TRUE`.
 #' @return Updated Stat object or ggplot.
 #' @export
+#' @examples
+#' \dontrun{
+#' stat_obj <- stat_var_feature(stat_obj_test)
+#' VarFeature_ROC(stat_obj)
+#' }
 VarFeature_ROC <- function(object,
                            group_col = NULL,
                            control = 'health',
@@ -1602,7 +1622,8 @@ VarFeature_ROC <- function(object,
                            save_plots = TRUE,
                            plot_width = 5,
                            plot_height = 5,
-                           base_size = 10) {
+                           base_size = 10,
+                           normalize_auc = TRUE) {
   
   # ---- Handle default save_dir ----
   if (is.null(save_dir) && save_plots) {
@@ -1671,7 +1692,8 @@ VarFeature_ROC <- function(object,
     save_dir = save_dir,
     plot_width = plot_width,
     plot_height = plot_height,
-    base_size = base_size
+    base_size = base_size,
+    normalize_auc = normalize_auc
   )
   print(roc_plot)
   if (inherits(object, "Stat")) {

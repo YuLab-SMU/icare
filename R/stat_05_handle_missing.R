@@ -10,6 +10,12 @@
 #' @param save_data Logical.
 #' @param csv_filename Filename.
 #' @export
+#' @examples
+#' \dontrun{
+#' imp_result <- impute_missing_values(stat_obj_test@raw.data, group_col = "group",
+#' impute_method = "median_mode", return_imputation_info = TRUE)
+#' imputed_data <- imp_result$imputed_data
+#' }
 impute_missing_values <- function(data,
                                   group_col = "group",
                                   impute_method = "mice",
@@ -153,6 +159,11 @@ impute_missing_values <- function(data,
 #' @param save_data Logical.
 #' @param csv_filename Filename.
 #' @export
+#' @examples
+#' \dontrun{
+#' #Impute missing values for the Stat object and update clean.data and process.info.
+#' stat_obj_test <- stat_miss_processed(stat_obj_test, impute_method = "median_mode")
+#' }
 stat_miss_processed <- function(object,
                                 m = 5,
                                 impute_method = "mice",

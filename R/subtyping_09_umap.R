@@ -6,6 +6,12 @@
 #' @param min_dist Min dist.
 #' @param metric Metric.
 #' @importFrom umap umap
+#' @examples
+#' \dontrun{
+#'   df <- data.frame(x = rnorm(50), y = rnorm(50), z = rnorm(50))
+#'   result <- perform_umap(df, n_neighbors = 10, dims = 2)
+#'   plot(result$umap_df)
+#' }
 #' @export
 perform_umap <- function(data, 
                          dims = 2, 
@@ -63,6 +69,11 @@ perform_umap <- function(data,
 #' @param n_neighbors Neighbors.
 #' @param min_dist Min dist.
 #' @param metric Metric.
+#' @examples
+#' \dontrun{
+#'   # Assuming 'obj' is a Subtyping object
+#'   obj <- Sub_umap_analyse(obj, n_neighbors = 10, dims = 2)
+#' }
 #' @export
 Sub_umap_analyse <- function(object,
                              dims = 2,
@@ -113,6 +124,11 @@ Sub_umap_analyse <- function(object,
 #' @param plot_height Height.
 #' @param base_size Base size.
 #' @param seed Seed.
+#' @examples
+#' \dontrun{
+#'   # Assuming 'obj' is a Subtyping object with umap results
+#'   obj <- Sub_plot_umap(obj, palette_name = "AsteroidCity1", save_plots = FALSE)
+#' }
 #' @export
 Sub_plot_umap <- function(object,
                           palette_name = "AsteroidCity1",

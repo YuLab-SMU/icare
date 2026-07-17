@@ -1,5 +1,9 @@
 #' PrognosiX Class
 #'
+#' An S4 class to store survival data, clinical metadata, and various results from the
+#' prognostic analysis pipeline, including univariate analysis, feature selection,
+#' survival modeling, and subgroup risk assessment.
+#' 
 #' @import methods
 #' @slot clean.data Data frame.
 #' @slot info.data Data frame.
@@ -18,6 +22,16 @@
 #' @slot best.model List.
 #' @slot subgroup.risk List.
 #' @export
+#' @exportClass PrognosiX
+#' @examples
+#' \dontrun{
+#'   # Create a PrognosiX object
+#'   obj <- new("PrognosiX",
+#'              clean.data = data.frame(gene1 = c(1, 2, 3)),
+#'              info.data = data.frame(time = c(10, 20, 30), status = c(1, 0, 1)),
+#'              time_col = "time",
+#'              status_col = "status")
+#' }
 PrognosiX <- setClass(
   Class = 'PrognosiX',
   slots = c(
@@ -131,7 +145,7 @@ PrognosiX <- setClass(
 
 `%||%` <- function(a,b) if(!is.null(a)&&length(a)>0) a else b
 
-# Helper to save plots – renamed as requested
+# Helper to save plots - renamed as requested
 save_plot_sur <- function(p, name, w=8, h=6) {
   if(inherits(p, "ggplot")) ggsave(file.path(OUT_DIR, paste0(name, ".pdf")), p, w, h)
 }
@@ -139,6 +153,11 @@ save_plot_sur <- function(p, name, w=8, h=6) {
 
 #' Create PrognosiX Object
 #'
+#' This function constructs a PrognosiX S4 object from raw data frames or by
+#' converting an existing Stat, Subtyping, or PrognosiX object. It handles
+#' time/status column extraction, row matching, and initial preparation for
+#' downstream prognostic modeling.
+#' 
 #' @param clean.data Clean data.
 #' @param info.data Info data.
 #' @param time_col Time col.
@@ -156,7 +175,22 @@ save_plot_sur <- function(p, name, w=8, h=6) {
 #' @param best.model Best model.
 #' @param subgroup.risk Subgroup risk.
 #' @param object Input object.
+#' @return A PrognosiX S4 object.
 #' @export
+#' 
+#' @examples
+#' \dontrun{
+#'   # Create from data frames
+#'   clean <- data.frame(gene1 = c(1, 2, 3), gene2 = c(4, 5, 6),
+#'                       row.names = c("S1", "S2", "S3"))
+#'   info <- data.frame(time = c(10, 20, 30), status = c(1, 0, 1),
+#'                      row.names = c("S1", "S2", "S3"))
+#'   obj <- CreatePrognosiXObject(clean.data = clean, info.data = info,
+#'                                time_col = "time", status_col = "status")
+#'
+#'   # Create from existing Stat object
+#'   # obj <- CreatePrognosiXObject(object = stat_obj, time_col = "time", status_col = "status")
+#' }
 CreatePrognosiXObject <- function(
     clean.data = NULL,
     info.data = data.frame(),

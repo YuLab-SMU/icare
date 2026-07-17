@@ -6,6 +6,12 @@
 #' @param save_data Logical.
 #' @param csv_filename Filename.
 #' @export
+#' 
+#' @examples
+#' \dontrun{
+#' clean_list <- remove_high_missing(stat_obj_test@raw.data, miss_threshold = 25, save_data = FALSE)
+#' clean_data <- clean_list$cleaned_data
+#' }
 remove_high_missing <- function(data, 
                                 miss_threshold = 25,
                                 save_dir = NULL,
@@ -73,6 +79,11 @@ remove_high_missing <- function(data,
 #' @param save_data Logical.
 #' @param csv_filename Filename.
 #' @export
+#' 
+#' @examples
+#' \dontrun{
+#' stat_obj<- stat_miss_remove(stat_obj_test, miss_threshold = 25)
+#' }
 stat_miss_remove <- function(object, 
                              miss_threshold = 25,
                              save_dir = NULL,

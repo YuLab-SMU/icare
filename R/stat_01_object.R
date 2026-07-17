@@ -7,7 +7,8 @@
 #' 4. Ensures all column names are unique by appending numbers to duplicated names.
 #'
 #' @param data A data frame whose column names need to be modified.
-#'
+#' @param tolower Logical. If \code{TRUE}, column names are converted to
+#'   lowercase before other modifications. Default is \code{FALSE}.
 #' @returns A data frame with modified column names.
 #' @export
 #'
@@ -53,8 +54,6 @@ modify_column_names <- function(data,tolower=F) {
 #'
 #' @returns An object of class 'Stat' containing the slots mentioned above.
 #' @export
-#' @examples
-#' stat_obj <- new("Stat", raw.data = my_raw_data, clean.data = my_clean_data)
 Stat <- setClass(
   Class = "Stat",
   slots = c(
@@ -137,26 +136,29 @@ Stat <- setClass(
 #'
 #' This function creates a `Stat` object, which is used to store and manage various components
 #' of statistical analysis, such as raw data, cleaned data, additional metadata, and processing
-#' information. It performs basic checks and preparation on the input data before creating the object
+#' information. It performs basic checks and preparation on the input data before creating the object.
+#' 
 #' @import methods
 #' @param raw.data A data.frame containing the raw data for analysis. Defaults to an empty data frame.
 #' @param clean.data A data.frame containing the cleaned data for analysis. Defaults to an empty data frame.
 #' @param info.data A data.frame containing additional metadata related to the data. Defaults to an empty data frame.
 #' @param group_col A character string specifying the name of the column used for grouping. Default is `"group"`.
 #' @param ... Additional arguments passed to methods (not used in this function).
-#'
+#' @param na.action Character string specifying how to handle NA values. 
+#'   Options are "allow" (keep NA values, default), "omit" (remove rows with NA),
+#'   or "error" (stop if NA values are found).
 #' @returns An object of class `Stat`, which contains the processed data and metadata as slots.
 #' @export
 #'
 #' @examples
-#' # Creating a Stat object with example data
-#' stat_obj <- CreateStatObject(raw.data = example_raw_data, clean.data = example_clean_data)
-#'
-#' # Creating a Stat object with metadata
-#' stat_obj <- CreateStatObject(raw.data = example_raw_data, clean.data = example_clean_data, info.data = example_info_data)
-#' @param na.action Character string specifying how to handle NA values. 
-#'   Options are "allow" (keep NA values, default), "omit" (remove rows with NA),
-#'   or "error" (stop if NA values are found).
+#'raw <- data.frame(id = 1:10, value = rnorm(10), group = rep(c("A","B"), each=5))
+#'inf<-data.frame(age = 1:10, value = rnorm(10), group = rep(c("A","B"), each=5))
+#'stat_new <- CreateStatObject(raw.data = raw,  group_col = "group")
+#'print(stat_new)
+#'stat_new <- CreateStatObject(raw.data = raw, clean.data = raw, group_col = "group")
+#'print(stat_new)
+#'stat_new <- CreateStatObject(raw.data = raw, group_col = "group",info.data = inf)
+#'print(stat_new)
 CreateStatObject <- function(
     raw.data = data.frame(),
     clean.data = data.frame(),

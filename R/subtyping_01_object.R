@@ -1,7 +1,13 @@
 #' Extract Info Data
 #'
 #' @param object An object containing info.data slot.
+#' @return A data.frame containing the info.data slot, or NULL if extraction fails.
 #' @export
+#' @examples
+#' \dontrun{
+#'   # Assuming 'sub_obj_test' is a valid Subtyping object with an info.data slot
+#'   info <- ExtractInfoData(sub_obj_test)
+#' }
 ExtractInfoData <- function(object) {
   
   data <- tryCatch(
@@ -26,6 +32,13 @@ ExtractInfoData <- function(object) {
 #' @slot clustered.data Data frame.
 #' @slot evaluation_results List.
 #' @export
+#' @examples
+#' \dontrun{
+#'   obj <- new("Subtyping",
+#'              clean.data = data.frame(x = 1:3, y = 4:6),
+#'              info.data = data.frame(id = letters[1:3]),
+#'              scale.data = data.frame(x = c(0, 0.5, 1), y = c(0, 0.5, 1)))
+#' }
 Subtyping <- setClass(
   Class = 'Subtyping',
   slots = c(
@@ -99,10 +112,18 @@ Subtyping <- setClass(
 #' @param object Input object (Stat, Subtyping, PrognosiX, Model_data).
 #' @param convert_factors Logical; if TRUE, automatically convert factor/character
 #'   columns to numeric. Default TRUE.
-#' @export
 #' @param na.action Character string specifying how to handle NA values. 
 #'   Options are "omit" (remove rows with NA, default for subtyping), 
 #'   "allow" (keep NA values), or "error" (stop if NA found).
+#' @export
+#' @examples
+#' \dontrun{
+#'   # Create from data frames
+#'   clean <- data.frame(gene1 = c(1.2, 3.4, 5.6), gene2 = c(2.3, 4.5, 6.7),
+#'                       row.names = c("S1", "S2", "S3"))
+#'   info <- data.frame(age = c(25, 30, 35), row.names = c("S1", "S2", "S3"))
+#'   obj <- CreateSubtypingObject(clean.data = clean, info.data = info)
+#' }
 CreateSubtypingObject <- function(
     clean.data = NULL,
     info.data = data.frame(),
@@ -117,7 +138,6 @@ CreateSubtypingObject <- function(
     na.action = c("omit", "allow", "error")
 ) {
   
-  # 确保 janitor 可用
   if (!requireNamespace("janitor", quietly = TRUE)) {
     message("Installing janitor package for column name cleaning...")
     install.packages("janitor")
@@ -166,7 +186,7 @@ CreateSubtypingObject <- function(
     }
   }
   
-  # ========================= 关键修改1：清洗所有数据框的列名 =========================
+
   if (is.data.frame(clean.data) && ncol(clean.data) > 0) {
     colnames(clean.data) <- janitor::make_clean_names(colnames(clean.data))
   }
@@ -180,7 +200,6 @@ CreateSubtypingObject <- function(
     colnames(clustered.data) <- janitor::make_clean_names(colnames(clustered.data))
   }
   
-  # ========================= 关键修改2：修复 ensure_numeric_data 保留列名 =========================
   ensure_numeric_data <- function(data, data_name, convert_factors = TRUE) {
     if (is.null(data) || nrow(data) == 0) {
       return(data.frame())
@@ -281,7 +300,6 @@ CreateSubtypingObject <- function(
     return(data)
   }
   
-  # ========================= 关键修改3：prepare_data 不再修改列名 =========================
   prepare_data <- function(data, data_name) {
     if (is.null(data) || nrow(data) == 0) {
       return(data.frame())
@@ -318,15 +336,11 @@ CreateSubtypingObject <- function(
       stop(paste(data_name, "is missing column names."))
     }
     
-    # 原代码中这里有 modify_column_names(data) 调用，现在注释掉
-    # data <- modify_column_names(data)
-    
     cat(paste("Data prepared for", data_name, "with", nrow(data), "rows and", ncol(data), "columns.\n"))
     
     return(data)
   }
   
-  # 应用转换
   clean.data <- ensure_numeric_data(clean.data, "clean.data", convert_factors)
   scale.data <- ensure_numeric_data(scale.data, "scale.data", convert_factors)
   clustered.data <- ensure_numeric_data(clustered.data, "clustered.data", convert_factors)
@@ -335,7 +349,6 @@ CreateSubtypingObject <- function(
   scale.data <- prepare_data(scale.data, "scale.data")
   clustered.data <- prepare_data(clustered.data, "clustered.data")
   
-  # ========================= 以下代码保持原函数不变 =========================
   # Match info.data rows with clean.data rows with safety check
   if (nrow(info.data) > 0) {
     common_rows <- intersect(rownames(clean.data), rownames(info.data))
@@ -405,6 +418,13 @@ CreateSubtypingObject <- function(
 #' @param seed Random seed.
 #' @return List with $train and $test Subtyping objects.
 #' @export
+#' @examples
+#' \dontrun{
+#'   # Assuming 'subtype_obj_test' is a valid Subtyping object
+#'   split_list <- SplitSubtypingObject(subtype_obj_test, p = 0.7, seed = 123)
+#'   train_obj <- split_list$train
+#'   test_obj <- split_list$test
+#' }
 SplitSubtypingObject <- function(object, p = 0.7, stratify_by = NULL, seed = 123) {
   
   if (!inherits(object, "Subtyping"))
