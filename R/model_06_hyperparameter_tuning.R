@@ -554,7 +554,7 @@ PlotTunedConfusion <- function(tuned_model,
 #' @return A \code{ggplot} object.
 #' @export
 #'
-#' @importFrom stats predict glm binomial coef
+#' @importFrom stats predict glm binomial
 #' @importFrom dplyr group_by summarise n ungroup
 #' @importFrom ggplot2 ggplot aes geom_abline geom_point geom_smooth scale_size_continuous labs theme annotate ggsave xlim ylim
 #' @importFrom ggprism theme_prism

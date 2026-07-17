@@ -19,7 +19,7 @@ Derived from \code{stat_obj_test}, which originates from
   \url{https://zenodo.org/records/7554815}
 }
 \usage{
-subtype_obj_test
+data(subtype_obj_test)
 }
 \description{
 A \code{Subtyping} S4 object converted from \code{stat_obj_test}.

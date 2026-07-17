@@ -396,7 +396,7 @@ PlotBenchmarkForest <- function(benchmark_result,
     group_by(Algorithm) %>%
     summarise(med = median(Mean_AUC, na.rm = TRUE)) %>%
     arrange(desc(med)) %>%
-    pull(Algorithm)
+    dplyr::pull(Algorithm)
   df$Algorithm <- factor(df$Algorithm, levels = algo_order)
   
   p <- ggplot2::ggplot(df, ggplot2::aes(x = Mean_AUC, y = Algorithm, color = Algorithm)) +

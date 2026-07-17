@@ -10,7 +10,7 @@
 #' @keywords internal
 .compute_log2_means <- function(mat, group_col) {
   means <- mat %>%
-    group_by(across(all_of(group_col))) %>%
+    dplyr::group_by(dplyr::across(dplyr::all_of(group_col))) %>%
     dplyr::summarise_all(mean) %>%
     dplyr::select(-dplyr::all_of(group_col))
   
@@ -97,7 +97,7 @@ batch_Wilcoxon <- function(mat,
   
   # -- 2. SD (from test mat) -------------------------------------------------
   sd_file <- mat_num %>%
-    group_by(across(all_of(group_col))) %>%
+    dplyr::group_by(dplyr::across(dplyr::all_of(group_col))) %>%
     dplyr::summarise_all(sd) %>%
     t()
   colnames(sd_file)   <- sd_file[1, ]
@@ -126,7 +126,7 @@ batch_Wilcoxon <- function(mat,
     logFC  <- log2_means[2, shared, drop = FALSE] - log2_means[1, shared, drop = FALSE]
   } else {
     raw_means <- ref_mat %>%
-      group_by(across(all_of(group_col))) %>%
+      dplyr::group_by(dplyr::across(dplyr::all_of(group_col))) %>%
       dplyr::summarise_all(mean) %>%
       dplyr::select(-dplyr::all_of(group_col))
     shared <- intersect(rownames(test_sig), colnames(raw_means))
@@ -241,7 +241,7 @@ batch_Wilcoxon <- function(mat,
     logFC  <- log2_means[2, shared, drop = FALSE] - log2_means[1, shared, drop = FALSE]
   } else {
     raw_means <- ref_mat %>%
-      group_by(across(all_of(group_col))) %>%
+      dplyr::group_by(dplyr::across(dplyr::all_of(group_col))) %>%
       dplyr::summarise_all(mean) %>%
       dplyr::select(-dplyr::all_of(group_col))
     shared <- intersect(rownames(tests), colnames(raw_means))
@@ -923,7 +923,7 @@ plot_deg_radarchart <- function(df,
     )
   
   df_long <- df %>%
-    pivot_longer(cols = all_of(y_cols), names_to = "var", values_to = "value")
+    pivot_longer(cols = dplyr::all_of(y_cols), names_to = "var", values_to = "value")
   
   plot <- ggplot(df_long, aes(x = get(x_col), y = value, fill = group)) +
     geom_bar(stat = "identity", position = "stack", alpha = 0.7) +
@@ -1283,7 +1283,7 @@ plot_deg_boxplot <- function(last_test_sig,
   }
   
   box_test <- data[, selected_columns]
-  box_test <- pivot_longer(box_test, cols = all_of(selected_ids), values_to = 'value', names_to = 'id')
+  box_test <- pivot_longer(box_test, cols = dplyr::all_of(selected_ids), values_to = 'value', names_to = 'id')
   box_test[[group_col]] <- as.factor(box_test[[group_col]])
   
   cat("Calculating significance differences...\n")

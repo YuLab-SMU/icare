@@ -307,9 +307,7 @@ evaluate_model_performance <- function(data,
 #' \pkg{wesanderson}, \pkg{viridis}, and \pkg{ggprism}.
 #'
 #' @importFrom pROC roc auc ci.auc coords
-#' @importFrom ggplot2 ggplot geom_line geom_abline scale_color_manual
-#'   labs scale_x_continuous scale_y_continuous theme element_rect
-#'   element_text
+#' @importFrom ggplot2 ggplot geom_line geom_abline scale_color_manual labs scale_x_continuous scale_y_continuous theme element_rect element_text
 #' @importFrom ggprism theme_prism
 #' @importFrom wesanderson wes_palette
 #' @importFrom viridis viridis

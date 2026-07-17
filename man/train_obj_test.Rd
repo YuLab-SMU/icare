@@ -19,7 +19,7 @@ Derived from \code{stat_obj_test}, which originates from
   \url{https://zenodo.org/records/7554815}
 }
 \usage{
-train_obj_test
+data(train_obj_test)
 }
 \description{
 A \code{Train_Model} S4 object converted from \code{stat_obj_test}.
