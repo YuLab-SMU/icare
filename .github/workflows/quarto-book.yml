@@ -24,6 +24,13 @@ jobs:
           ref: docs
           fetch-depth: 0
 
+      - name: Checkout main branch package source
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: icare-main
+          fetch-depth: 0
+
       - name: Setup Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 
@@ -32,10 +39,13 @@ jobs:
         with:
           use-public-rspm: true
 
-      - name: Install Quarto R dependencies
-        shell: bash
+      - name: Install Quarto R dependencies and icare from main
+        shell: Rscript {0}
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          Rscript -e 'install.packages(c("knitr", "rmarkdown"), repos = "https://cloud.r-project.org")'
+          install.packages(c("remotes", "knitr", "rmarkdown"), repos = "https://cloud.r-project.org")
+          remotes::install_local("icare-main", dependencies = TRUE, upgrade = "never")
 
       - name: Publish book to gh-pages
         uses: quarto-dev/quarto-actions/publish@v2
