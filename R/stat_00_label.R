@@ -149,6 +149,17 @@
          call. = FALSE)
   }
 
+  # Duplicated row names would make the label vector ambiguous -- and assigning
+  # them aborts with R's own "duplicate 'row.names' are not allowed", which does
+  # not say WHERE the duplication came from.
+  if (anyDuplicated(rows) > 0) {
+    dups <- unique(rows[duplicated(rows)])
+    stop("Cannot align labels: the requested sample row names contain ",
+         length(dups), " duplicate(s) (e.g. ", paste(head(dups, 3), collapse = ", "),
+         "). A sample set must name each sample at most once.",
+         call. = FALSE)
+  }
+
   out <- info[rows, gc, drop = FALSE]
   rownames(out) <- rows
   out

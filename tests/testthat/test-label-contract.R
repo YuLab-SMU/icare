@@ -127,3 +127,54 @@ test_that("legacy objects that keep the label in the matrix are migrated on read
   expect_true("group" %in% colnames(migrated@info.data))
   expect_silent(validObject(migrated))
 })
+
+test_that(".stat_features() actively rejects a frame that carries the label", {
+  # The assertion never fires on a correctly-built object, because the contract
+  # keeps the label out of the matrix in the first place. Exercise it directly
+  # so a future regression that turns the assertion into a silent setdiff()
+  # cannot pass unnoticed.
+  feat <- make_feat()
+  info <- make_info(feat, rep(c("HC", "Case"), each = 15))
+  obj <- CreateStatObject(raw.data = feat, info.data = info,
+                          group_col = "group", na.action = "allow")
+  obj@clean.data <- cbind(obj@raw.data, group = info$group)   # force the violation
+
+  expect_error(.stat_features(obj, "clean"), "Internal consistency error")
+})
+
+test_that(".stat_features() on a well-formed object returns the frame untouched", {
+  feat <- make_feat()
+  info <- make_info(feat, rep(c("HC", "Case"), each = 15))
+  obj <- CreateStatObject(raw.data = feat, info.data = info,
+                          group_col = "group", na.action = "allow")
+  expect_identical(.stat_features(obj, "clean"), obj@clean.data)
+})
+
+test_that("a missing label is a hard error, never a silent NULL", {
+  # .stat_labels() is the single read path for labels; if it ever degrades to
+  # NULL the caller would silently produce an ungrouped analysis -- the exact
+  # failure mode the contract exists to remove.
+  feat <- make_feat()
+  info <- make_info(feat, rep(c("HC", "Case"), each = 15))
+
+  # group_col = NULL: an object that never had a label must not degrade to NULL.
+  obj <- CreateStatObject(raw.data = feat, info.data = info,
+                          group_col = NULL, na.action = "allow")
+  expect_error(.stat_labels(obj), "no group_col")
+
+  # A cleared slot is the same failure mode.
+  obj2 <- CreateStatObject(raw.data = feat, info.data = info,
+                           group_col = "group", na.action = "allow")
+  obj2@group_col <- NULL
+  expect_error(.stat_labels(obj2), "no group_col")
+})
+
+test_that("a label column absent from info.data is a hard error", {
+  feat <- make_feat()
+  obj <- CreateStatObject(raw.data = feat,
+                          info.data = data.frame(other = 1:nrow(feat),
+                                                 row.names = rownames(feat)),
+                          group_col = NULL, na.action = "allow")
+  obj@group_col <- "group"   # name that does not exist in info.data
+  expect_error(.stat_labels(obj), "not in info.data")
+})
