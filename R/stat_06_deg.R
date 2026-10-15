@@ -164,9 +164,21 @@ batch_Wilcoxon <- function(mat,
   logFC     <- as.data.frame(t(logFC))
   logFC$id  <- rownames(logFC)
   colnames(logFC)[1] <- "logFC"
-  
+
   # -- 4. Merge & annotate ---------------------------------------------------
   test_sig$id   <- rownames(test_sig)
+
+  # No feature passed the p threshold: return an empty, well-formed result
+  # rather than crashing in merge(). An empty test_sig makes `shared` empty,
+  # so logFC loses its `id` column and merge() would abort with an opaque
+  # "'by' must specify a uniquely valid column".
+  if (nrow(test_sig) == 0) {
+    warning("No features passed the p < ", p_threshold,
+            " threshold, so there is nothing to report.",
+            call. = FALSE)
+    return(test_sig[0, , drop = FALSE])
+  }
+
   last_test_sig <- merge(test_sig, sd_file,  by = "id")
   last_test_sig <- merge(last_test_sig, logFC, by = "id")
   last_test_sig <- last_test_sig[order(last_test_sig$p), ]

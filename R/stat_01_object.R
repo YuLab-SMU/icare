@@ -320,12 +320,23 @@ CreateStatObject <- function(
   }
 
   if (nrow(info.data) > 0) {
+    # handle_na() with na.action="omit" may already have dropped rows from the
+    # feature frames, so a mismatch here is usually caused by that -- say so,
+    # rather than leaving the user to reverse-engineer it from a bare
+    # "content mismatch".
+    omit_note <- if (na.action == "omit") {
+      paste0(" (na.action='omit' dropped rows from a feature frame because it ",
+             "contained NAs; info.data was not filtered, since it is append-only)")
+    } else ""
+
     if (nrow(raw.data) > 0 && !setequal(rownames(info.data), rownames(raw.data))) {
-      stop("Row names in 'info.data' do not match 'raw.data' (content mismatch).")
+      stop("Row names in 'info.data' do not match 'raw.data' (content mismatch)",
+           omit_note, ".", call. = FALSE)
     }
 
     if (nrow(clean.data) > 0 && !setequal(rownames(info.data), rownames(clean.data))) {
-      stop("Row names in 'info.data' do not match 'clean.data' (content mismatch).")
+      stop("Row names in 'info.data' do not match 'clean.data' (content mismatch)",
+           omit_note, ".", call. = FALSE)
     }
   }
 
