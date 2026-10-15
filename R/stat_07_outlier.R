@@ -312,6 +312,7 @@ stat_handle_outliers <- function(object,
   )
   cat("- 'clean.data' slot updated.\n")
   cat("- 'process.info' slot updated.\n")
+  .stat_validate(object)
   
   return(object)
 }

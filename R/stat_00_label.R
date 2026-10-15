@@ -228,40 +228,6 @@
 }
 
 
-#' Re-index info.data to a feature frame's row set
-#'
-#' info.data is treated as append-only: operations that drop samples from
-#' clean.data leave info.data alone, and alignment happens at read time. This
-#' helper exists for the opposite case -- a frame that has just gained rows --
-#' and to re-establish the invariant explicitly.
-#'
-#' @param object An icare object (modified in place for S4, returned otherwise).
-#' @param rows Target row names.
-#' @return The object, with `info.data` re-indexed to `rows`.
-#' @keywords internal
-.stat_sync_rows <- function(object, rows) {
-  info <- .stat_info(object)
-  if (nrow(info) == 0) return(object)
-
-  missing_rows <- setdiff(rows, rownames(info))
-  if (length(missing_rows) > 0) {
-    stop(sprintf("Cannot synchronise info.data: %d row(s) are missing from it ",
-                 length(missing_rows)),
-         sprintf("(e.g. %s). ", paste(head(missing_rows, 3), collapse = ", ")),
-         "info.data must carry a row for every sample in the feature matrix.",
-         call. = FALSE)
-  }
-
-  new_info <- info[rows, , drop = FALSE]
-  rownames(new_info) <- rows
-
-  if (methods::.hasSlot(object, "info.data")) {
-    methods::slot(object, "info.data") <- new_info
-  }
-  object
-}
-
-
 #' Migrate a pre-1.1 object that still carries the label inside its frames
 #'
 #' Objects saved before the label moved to info.data are still readable: the
@@ -287,6 +253,18 @@
     if (nrow(info) == 0) {
       info <- data.frame(row.names = rownames(d))
     } else {
+      # Coverage check, same as everywhere else in this layer: re-indexing
+      # info.data to a frame it does not fully cover either invalidates the
+      # object (validObject fails) or fabricates all-NA labels for the
+      # uncovered rows -- silently.
+      missing_rows <- setdiff(rownames(d), rownames(info))
+      if (length(missing_rows) > 0) {
+        stop("Cannot migrate the legacy label: info.data does not cover ",
+             length(missing_rows), " sample(s) present in ", slotname,
+             " (e.g. ", paste(head(missing_rows, 3), collapse = ", "), "). ",
+             "Re-create the object with CreateStatObject(info.data = ...) ",
+             "listing every sample.", call. = FALSE)
+      }
       info <- info[rownames(d), , drop = FALSE]
       rownames(info) <- rownames(d)
     }

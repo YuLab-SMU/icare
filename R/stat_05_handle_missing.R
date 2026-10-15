@@ -236,6 +236,7 @@ stat_miss_processed <- function(object,
       object@process.info[["missing_info"]] <- impute_result
       cat("- 'process.info' slot updated.\n")
     }
+    .stat_validate(object)
     return(object) 
   } else {
     return(impute_result)}

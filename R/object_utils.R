@@ -87,13 +87,17 @@
   if (nrow(info) == 0) {
     info <- data.frame(row.names = rownames(df))
   } else {
-    keep <- intersect(rownames(df), rownames(info))
-    if (length(keep) == 0) {
-      info <- data.frame(row.names = rownames(df))
-    } else {
-      info <- info[rownames(df), , drop = FALSE]
-      rownames(info) <- rownames(df)
+    missing_rows <- setdiff(rownames(df), rownames(info))
+    if (length(missing_rows) > 0) {
+      # Fabricating rows here would produce all-NA labels that no validity
+      # check catches, so this fails the way .stat_labels() does.
+      stop("Cannot split out the label '", grp, "': info.data does not cover ",
+           length(missing_rows), " sample(s) of the frame (e.g. ",
+           paste(head(missing_rows, 3), collapse = ", "), ").",
+           call. = FALSE)
     }
+    info <- info[rownames(df), , drop = FALSE]
+    rownames(info) <- rownames(df)
   }
   if (!grp %in% colnames(info)) info[[grp]] <- df[[grp]]
 
@@ -277,8 +281,10 @@ ConvertObject <- function(object,
     
     Subtyping_to_Train_Model = {
       stat_tmp <- .to_stat(object, group_col)
-      grp <- if (!is.null(group_col)) group_col else "group"
-      CreateModelObject(object = stat_tmp, group_col = grp)
+      # .to_stat() already resolved the label name (slot, or group_col arg);
+      # hardcoding "group" here discarded it and broke every label that is not
+      # literally named "group".
+      CreateModelObject(object = stat_tmp, group_col = stat_tmp@group_col)
     },
     
     ## -- PrognosiX -> * ------------------------------------------------
@@ -292,8 +298,7 @@ ConvertObject <- function(object,
     
     PrognosiX_to_Train_Model = {
       stat_tmp <- .to_stat(object, group_col)
-      grp <- if (!is.null(group_col)) group_col else "group"
-      CreateModelObject(object = stat_tmp, group_col = grp)
+      CreateModelObject(object = stat_tmp, group_col = stat_tmp@group_col)
     },
     
     ## -- Train_Model -> * ----------------------------------------------
@@ -383,6 +388,12 @@ SubsetObject <- function(object, samples = NULL, features = NULL) {
   }
   
   else if (inherits(object, "Train_Model")) {
+    # clean.df carries the outcome, which caret needs; a feature-only subset
+    # would produce an invalid object that fails later with a cryptic error.
+    if (!is.null(features)) {
+      gc <- object@group_col
+      features <- union(features, if (!is.null(gc)) as.character(gc))
+    }
     object@data.df  <- .subset_df(object@data.df,  samples, features)
     object@clean.df <- .subset_df(object@clean.df, samples, features)
     object@info.data <- .subset_df(object@info.data, samples, NULL)

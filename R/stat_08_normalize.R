@@ -446,6 +446,7 @@ stat_normalize_process <- function(object,
     object@process.info[["normalization_params"]] <- attr(normalized_data, "normalization_params")
     cat("- 'scale.data' slot updated.\n")
     cat("- 'process.info' slot updated.\n")
+    .stat_validate(object)
     return(object)
   } else {
     return(normalized_data)

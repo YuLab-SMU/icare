@@ -44,8 +44,12 @@
   } else {
     stop("Object must be Train_Model or Stat.", call. = FALSE)
   }
-  colnames(x) <- make.names(colnames(x), unique = TRUE)
-  list(x = x, y = y, group_col = if (is.null(gc)) gc else make.names(gc, unique = TRUE))
+  # Column names are returned exactly as stored. Renaming here (make.names)
+  # leaked mangled names into the feature-selection results, and
+  # ApplyFeatureSelection() -- which intersects against the ORIGINAL colnames --
+  # then dropped every feature silently, leaving an outcome-only model.
+  # Callers that need syntactic names must mangle locally and map back.
+  list(x = x, y = y, group_col = gc)
 }
 
 .validate_model <- function(algo) {
@@ -360,6 +364,17 @@ run_feature_elimination <- function(object,
   df <- cbind(xy$x, group = xy$y)
   df$group <- factor(df$group, levels = unique(df$group))
   if (length(levels(df$group)) != 2) stop("Response must be binary for metric ROC")
+
+  # Some feature names are not syntactic R names (e.g. cytobands like "1q21"),
+  # which caret chokes on. Rename locally for the modelling step and map the
+  # recorded feature sets back to the ORIGINAL names afterwards, so results
+  # stay intersectable with clean.df.
+  to_model   <- make.names(full_features, unique = TRUE)
+  name_map   <- stats::setNames(full_features, to_model)   # model-name -> original
+  if (!identical(to_model, full_features)) {
+    colnames(df)[match(full_features, colnames(df))] <- to_model
+  }
+  full_features_model <- to_model
   
   all_results <- list()
   all_step_features <- list()
@@ -372,13 +387,25 @@ run_feature_elimination <- function(object,
       next
     }
     algo_out <- .run_algorithm_sensitivity(
-      df = df, full_features = full_features, algo = algo,
+      df = df, full_features = full_features_model, algo = algo,
       metric = metric, number = number, min_features = min_features,
       verbose = verbose
     )
     if (is.null(algo_out) || nrow(algo_out$step_results) == 0) {
       if (verbose) cat(sprintf("  No valid results for %s\n", algo))
       next
+    }
+    # Map the model-side (syntactic) feature names back to the original
+    # colnames, so ApplyFeatureSelection() can intersect them.
+    algo_out$step_features <- lapply(algo_out$step_features, function(feats) {
+      unmapped <- setdiff(feats, names(name_map))
+      ifelse(feats %in% names(name_map),
+             unname(name_map[feats]),
+             feats)
+    })
+    if (length(unmapped <- setdiff(unlist(algo_out$step_features), full_features)) > 0) {
+      warning("Feature names not mappable back to the original columns: ",
+              paste(head(unmapped, 5), collapse = ", "), call. = FALSE)
     }
     algo_out$step_results <- .apply_smoothing(algo_out$step_results, smooth_span)
     algo_out$step_results$Algorithm <- algo

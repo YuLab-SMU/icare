@@ -669,12 +669,17 @@ PlotPCA <- function(object,
   
   # ---- Extract data ----
   if (inherits(object, "Stat")) {
-    mat      <- object@clean.data[, sapply(object@clean.data, is.numeric)]
+    # clean.data is empty until cleaning runs, so fall back to raw.data; a bare
+    # sapply() on the 0-column frame returns a list() and mat[, list()] aborts
+    # with "invalid subscript type 'list'".
+    frame    <- .stat_primary_frame(object)
+    mat      <- frame[, vapply(frame, is.numeric, logical(1)), drop = FALSE]
     info     <- object@info.data
-    if (is.null(color_by)) color_by <- object@group_col
+    if (is.null(color_by)) color_by <- .stat_group_col(object)
   } else {
-    mat  <- as.data.frame(object)[, sapply(as.data.frame(object), is.numeric)]
-    info <- data.frame(row.names = rownames(mat))
+    df       <- as.data.frame(object)
+    mat      <- df[, vapply(df, is.numeric, logical(1)), drop = FALSE]
+    info     <- data.frame(row.names = rownames(mat))
   }
   
   # ---- Remove zero-variance columns ----

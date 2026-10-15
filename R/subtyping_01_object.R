@@ -30,6 +30,8 @@ ExtractInfoData <- function(object) {
 #' @slot cluster.results Any.
 #' @slot visualization.results Any.
 #' @slot clustered.data Data frame.
+#' @slot group_col Grouping column name, resolved in `info.data`. Populated by
+#'   `ConvertObject()` so a round trip back to `Stat` does not lose the label.
 #' @slot evaluation_results List.
 #' @export
 #' @examples
@@ -45,6 +47,7 @@ Subtyping <- setClass(
     clean.data = 'data.frame',
     info.data = 'data.frame',
     scale.data = 'data.frame',
+    group_col = 'ANY',
     Optimal.cluster = 'ANY',
     cluster.results = 'ANY',
     visualization.results = 'ANY',
@@ -55,6 +58,7 @@ Subtyping <- setClass(
     clean.data = data.frame(),
     info.data = data.frame(),
     scale.data = data.frame(),
+    group_col = NULL,
     Optimal.cluster = NULL,
     cluster.results = NULL,
     visualization.results = NULL,
@@ -127,6 +131,7 @@ CreateSubtypingObject <- function(
     clean.data = NULL,
     info.data = data.frame(),
     scale.data = data.frame(),
+    group_col = NULL,
     Optimal.cluster = NULL,
     cluster.results = NULL,
     visualization.results = NULL,
@@ -154,10 +159,12 @@ CreateSubtypingObject <- function(
     }
     
     if (inherits(object, "Stat")) {
-      clean.data <- ExtractCleanData(object)   # Note: ExtractCleanData must be defined elsewhere
-      info.data <- ExtractInfoData(object)
+      object <- .stat_adopt_legacy(object)
+      clean.data <- .stat_features(object, "clean")
+      info.data <- .stat_info(object)
       scale.data <- object@scale.data
-      if (is.null(clean.data)) {
+      if (is.null(group_col)) group_col <- .stat_group_col(object)
+      if (is.null(clean.data) || nrow(clean.data) == 0) {
         stop("Failed to extract clean data from the provided 'Stat' object.")
       }
     }
@@ -166,6 +173,7 @@ CreateSubtypingObject <- function(
       clean.data <- object@clean.data
       info.data <- object@info.data
       scale.data <- object@scale.data
+      if (is.null(group_col)) group_col <- tryCatch(object@group_col, error=function(e) NULL)
       Optimal.cluster <- object@Optimal.cluster
       cluster.results <- object@cluster.results
       visualization.results <- object@visualization.results
@@ -176,7 +184,10 @@ CreateSubtypingObject <- function(
     else if (inherits(object, "PrognosiX")) {
       clean.data <- object@clean.data
       info.data <- object@info.data
-      scale.data <- object@scale.data
+      # PrognosiX has no scale.data slot; reading it unconditionally aborted
+      # every PrognosiX -> Subtyping conversion.
+      scale.data <- if (.hasSlot(object, "scale.data")) object@scale.data else data.frame()
+      if (is.null(group_col)) group_col <- tryCatch(object@group_col, error=function(e) NULL)
     }
     else if (inherits(object, "Model_data") || inherits(object, "Train_Model")) {
       clean.data <- object@clean.df
@@ -396,6 +407,7 @@ CreateSubtypingObject <- function(
     clean.data = clean.data,
     info.data = matched_info,   # store the matched version
     scale.data = scale.data,
+    group_col = group_col,
     Optimal.cluster = Optimal.cluster,
     cluster.results = cluster.results,
     visualization.results = visualization.results,
@@ -440,27 +452,44 @@ SplitSubtypingObject <- function(object, p = 0.7, stratify_by = NULL, seed = 123
   
   set.seed(seed)
   n <- nrow(object@clean.data)
-  
-  if (!is.null(stratify_by) && nrow(object@info.data) > 0 && stratify_by %in% colnames(object@info.data)) {
-    strat_var <- object@info.data[[stratify_by]]
-  } else {
-    strat_var <- NULL
+
+  # Align the stratification variable to clean.data BY ROW NAME. info.data and
+  # clean.data are only guaranteed to share a row SET, not an order (info.data
+  # is append-only), so positional indexing silently defeats stratification --
+  # or, when info.data holds extra rows, indexes past the end of clean.data.
+  strat_var <- NULL
+  if (!is.null(stratify_by) && nrow(object@info.data) > 0) {
+    if (!stratify_by %in% colnames(object@info.data)) {
+      warning("stratify_by '", stratify_by, "' is not a column of info.data (columns: ",
+              paste(colnames(object@info.data), collapse = ", "), "); splitting WITHOUT stratification.",
+              call. = FALSE)
+    } else {
+      missing_rows <- setdiff(rownames(object@clean.data), rownames(object@info.data))
+      if (length(missing_rows) > 0) {
+        stop("Cannot stratify: info.data does not cover ", length(missing_rows),
+             " sample(s) of clean.data (e.g. ",
+             paste(head(missing_rows, 3), collapse = ", "), ").", call. = FALSE)
+      }
+      strat_var <- object@info.data[rownames(object@clean.data), stratify_by]
+    }
   }
-  
   if (is.null(strat_var)) {
     train_idx <- caret::createDataPartition(seq_len(n), p = p, list = FALSE)[, 1]
   } else {
     train_idx <- caret::createDataPartition(strat_var, p = p, list = FALSE)[, 1]
   }
   test_idx <- setdiff(seq_len(n), train_idx)
-  
+
+  train_rows <- rownames(object@clean.data)[train_idx]
+  test_rows  <- rownames(object@clean.data)[test_idx]
+
   train_obj <- CreateSubtypingObject(
-    clean.data = object@clean.data[train_idx, , drop = FALSE],
-    info.data  = if (nrow(object@info.data) > 0) object@info.data[train_idx, , drop = FALSE] else data.frame()
+    clean.data = object@clean.data[train_rows, , drop = FALSE],
+    info.data  = if (nrow(object@info.data) > 0) object@info.data[train_rows, , drop = FALSE] else data.frame()
   )
   test_obj <- CreateSubtypingObject(
-    clean.data = object@clean.data[test_idx, , drop = FALSE],
-    info.data  = if (nrow(object@info.data) > 0) object@info.data[test_idx, , drop = FALSE] else data.frame()
+    clean.data = object@clean.data[test_rows, , drop = FALSE],
+    info.data  = if (nrow(object@info.data) > 0) object@info.data[test_rows, , drop = FALSE] else data.frame()
   )
   
   cat("Split completed: training (", length(train_idx), "), test (", length(test_idx), ")\n")

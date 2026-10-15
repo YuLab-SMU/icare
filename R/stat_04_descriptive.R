@@ -9,7 +9,9 @@
 #' @import methods
 #' @param data A data frame containing the dataset to analyze.
 #' @param count_feature A logical value indicating whether to compute counts for categorical variables (default is TRUE).
-#' @param group_col The column name representing the grouping variable (default is "group").
+#' @param group_col The column name representing the grouping variable. For a Stat
+#'   object this defaults to the stored group_col slot; for a plain data frame it
+#'   must be supplied.
 #' @param max_unique_values The maximum number of unique values a variable can have to be considered categorical (default is 5).
 #'
 #' @returns A list containing the following components:
@@ -144,7 +146,9 @@ compute_descriptive_stats <- function(data,
 #' @import methods
 #' @param object An object of class 'Stat' or a data frame containing the dataset to analyze.
 #' @param count_feature A logical value indicating whether to compute counts for categorical variables (default is TRUE).
-#' @param group_col The column name representing the grouping variable (default is "group").
+#' @param group_col The column name representing the grouping variable. For a Stat
+#'   object this defaults to the stored group_col slot; for a plain data frame it
+#'   must be supplied.
 #' @param max_unique_values The maximum number of unique values a variable can have to be considered categorical (default is 5).
 #'
 #' @returns If the input is a 'Stat' object, the function returns the updated 'Stat' object with a new slot `compute.descriptive`
@@ -764,7 +768,7 @@ plot_numeric_descriptive <- function(object,
                                      vars_per_plot = 1,
                                      save_dir = NULL,
                                      palette_name = "Zissou1",
-                                     group_col = "group",
+                                     group_col = NULL,
                                      max_unique_values = 5,
                                      plot_type = "violin",
                                      save_plots = TRUE,
@@ -1000,6 +1004,7 @@ stat_convert_variables <- function(object,
     cat("Updating 'Stat' object...\n")
     cat("The 'Stat' object has been updated with the following slots:\n")
     cat("- 'clean.data' slot updated.\n")
+    .stat_validate(object)
 
     return(object)
   }

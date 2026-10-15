@@ -121,6 +121,7 @@ stat_miss_remove <- function(object,
     object@process.info[["missing_removal"]]<-clean_drop_data
     cat("- 'clean.data' slot updated.\n")
     cat("- 'process.info' slot updated.\n")
+    .stat_validate(object)
     return(object)
   } else {
     return(clean_drop_data)
