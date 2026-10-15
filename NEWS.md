@@ -61,6 +61,36 @@ class of bug unrepresentable rather than merely discouraged.
     source are recorded on the result as `attr("logfc_type")` and
     `attr("logfc_data_src")`. `.compute_log2_means()` now names the offending
     feature/group instead of propagating NaN.
+*   **`ModelTrainAnalysis()` never recorded `preprocess_columns`.** The field
+    existed only on the `PreprocessModelData()` path, so `deploy_clinlab_app()`
+    fell through to a hardcoded column-name list that could leave the outcome
+    (and stray metadata) in the UI inputs and then in `predict(preproc, ...)`.
+    Both training branches now record the fitted preprocess columns.
+*   **`one_hot_encode()` could one-hot-encode a Train_Model outcome.** With the
+    default `group_col = "group"` and an outcome named anything else, the label
+    was treated as an ordinary categorical and encoded away, leaving an invalid
+    object. The S4 branch now resolves the outcome from `@group_col`.
+*   **`.extract_xy()` crashed with a base-R error on an outcome-less
+    Train_Model.** `group_col = NULL` is the class prototype, so this was
+    reachable; it now raises a clear error (the Stat branch keeps its legal
+    `y = NULL`).
+*   **`MergeObjects()` dropped metadata.** The Train_Model branch rebuilt via
+    `CreateModelObject(data = ...)`, losing `info.data` entirely; the PrognosiX
+    branch lost `group_col`. Both are preserved now.
+*   **`RenameFeatures()` could orphan the outcome name.** Renaming the label
+    column left `group_col` pointing at a nonexistent column; the rename now
+    propagates to `group_col` and to info.data, and a collision with an
+    existing feature is rejected.
+*   **`InspectObject()`** now reports Train_Model's `info.data` and PrognosiX's
+    `group_col`.
+*   **`one_hot_encode()` on PrognosiX** filters `sub.data` along with
+    clean.data / info.data / survival.data (it used to keep all rows).
+*   **`CreateStatObject(na.action = "omit")` silently kept samples whose LABEL
+    is NA.** Their rows survive by design (info.data is append-only), but a
+    warning now says they will drop out of every group comparison.
+*   **Roxygen examples still put the group column inside the feature matrix**,
+    which the new contract rejects. All 14 affected examples were rewritten to
+    pass the label through info.data and verified end-to-end.
 *   **`stat_convert_variables()` dropped `group_col`** when calling its worker, so
     the label was treated as an ordinary variable and coerced with
     `as.numeric()`. Character labels such as `"HC"`/`"Case"` became `NA` for

@@ -25,6 +25,9 @@ Subtyping Class
 
 \item{\code{clustered.data}}{Data frame.}
 
+\item{\code{group_col}}{Grouping column name, resolved in `info.data`. Populated by
+`ConvertObject()` so a round trip back to `Stat` does not lose the label.}
+
 \item{\code{evaluation_results}}{List.}
 }}
 

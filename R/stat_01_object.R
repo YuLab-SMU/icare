@@ -235,10 +235,21 @@ CreateStatObject <- function(
   # info.data to the feature frame. na.action="error" must still see label NAs,
   # so that case is reported here.
   if (nrow(info.data) > 0 && any(is.na(info.data))) {
+    # A NA in the LABEL column itself is worse than a NA in any other metadata
+    # column: the sample stays in the analysis (rows are only re-indexed, never
+    # dropped from info.data) and every group comparison silently loses it.
+    label_na <- if (!is.null(original_group_col) &&
+                    original_group_col %in% colnames(info.data)) {
+      sum(is.na(info.data[[original_group_col]]))
+    } else 0L
     switch(na.action,
            "allow" = message("Note: NA values found in info.data but kept (na.action='allow')"),
            "error" = stop("NA values found in info.data. Set na.action='omit' to remove or na.action='allow' to keep."),
-           "omit"  = NULL)
+           "omit"  = if (label_na > 0) {
+             warning(sprintf("%d sample(s) have NA in the label column '%s'. ", label_na, original_group_col),
+                     "Their rows are kept, but they will drop out of every group comparison.",
+                     call. = FALSE)
+           } else NULL)
   }
 
   clean_symbol_values <- function(data) {

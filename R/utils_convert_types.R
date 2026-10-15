@@ -157,11 +157,15 @@ one_hot_encode <- function(data,
         # different sample sets.
         if (any(!keep)) {
           message(sprintf(
-            "Dropping %d sample(s) with missing %s/%s from clean.data, info.data and survival.data.",
+            "Dropping %d sample(s) with missing %s/%s from clean.data, info.data, sub.data and survival.data.",
             sum(!keep), time_col, status_col))
           data@clean.data <- data@clean.data[keep, , drop = FALSE]
           data@info.data  <- data@info.data[keep, , drop = FALSE]
           encoded_data    <- encoded_data[keep, , drop = FALSE]
+          # sub.data is keyed to the same samples; leaving it unfiltered left it
+          # describing samples the other frames no longer hold.
+          if (nrow(data@sub.data) > 0)
+            data@sub.data <- data@sub.data[keep, , drop = FALSE]
         }
         data@survival.data <- surv_df[keep, , drop = FALSE]
       }

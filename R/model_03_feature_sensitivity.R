@@ -34,6 +34,10 @@
   # contract, so its outcome is read from info.data and aligned by row name.
   if (inherits(object, "Train_Model")) {
     gc <- object@group_col
+    # Root cause: cd[[NULL]] aborts with the cryptic
+    # "attempt to select less than one element in get1index"; group_col=NULL is
+    # the class prototype, so it must be rejected explicitly here.
+    if (is.null(gc) || length(gc) == 0) stop("Train_Model object has no group_col", call. = FALSE)
     cd <- object@clean.df
     x  <- cd[, setdiff(colnames(cd), gc), drop = FALSE]
     y  <- cd[[gc]]

@@ -122,7 +122,7 @@ Remotes:
     mlr-org/mlr3proba,
     mlr-org/mlr3tuningspaces
 Depends: R (>= 3.5.0)
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1
 LazyDataCompression: xz
 Collate:
   'stat_00_label.R'

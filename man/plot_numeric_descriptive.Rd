@@ -9,7 +9,7 @@ plot_numeric_descriptive(
   vars_per_plot = 1,
   save_dir = NULL,
   palette_name = "Zissou1",
-  group_col = "group",
+  group_col = NULL,
   max_unique_values = 5,
   plot_type = "violin",
   save_plots = TRUE,

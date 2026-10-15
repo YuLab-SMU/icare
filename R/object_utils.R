@@ -137,13 +137,16 @@
 #' set.seed(1)
 #' demo_df <- data.frame(
 #'   id    = paste0("S", 1:60),
-#'   group = rep(c(0, 1), each = 30),
 #'   feat1 = c(rnorm(30, 5, 1), rnorm(30, 8, 1)),
 #'   feat2 = c(rnorm(30, 2, 0.5), rnorm(30, 4, 0.5)),
 #'   feat3 = rnorm(60, 10, 2),
 #'   feat4 = c(rnorm(30, 1, 0.3), rnorm(30, 3, 0.3))
 #' )
-#' stat_obj <- CreateStatObject(raw.data = demo_df, clean.data = demo_df,
+#' rownames(demo_df) <- demo_df$id
+#' demo_info <- data.frame(group = rep(c(0, 1), each = 30),
+#'                         row.names = demo_df$id)
+#' stat_obj <- CreateStatObject(raw.data = demo_df[, -1], clean.data = demo_df[, -1],
+#'                              info.data = demo_info,
 #'                              group_col = "group", na.action = "allow")
 #' sub_obj <- ConvertObject(stat_obj, to = "Subtyping")
 #' class(sub_obj)
@@ -712,6 +715,26 @@ RenameFeatures <- function(object, old, new) {
   .check_class(object, c("Stat", "Train_Model", "Subtyping", "PrognosiX"))
   if (length(old) != length(new))
     stop("'old' and 'new' must be the same length.")
+
+  # Renaming must not silently break the group_col reference: if the label
+  # column itself is renamed the slot has to follow, and a new name that
+  # collides with an existing column would otherwise create duplicates.
+  gc <- tryCatch(object@group_col, error = function(e) NULL)
+  gc <- if (!is.null(gc) && length(gc) == 1) as.character(gc) else NULL
+  renamed_label <- old == gc & !is.na(old)
+  if (any(renamed_label)) {
+    new_label <- new[renamed_label][1]
+    object@group_col <- new_label
+  } else {
+    all_cols <- c(
+      if (.hasSlot(object, "clean.data")) colnames(object@clean.data),
+      if (.hasSlot(object, "clean.df"))   colnames(object@clean.df),
+      if (.hasSlot(object, "info.data"))  colnames(object@info.data))
+    conflict <- new[new %in% all_cols]
+    if (length(conflict) > 0)
+      stop("New feature name(s) already exist: ",
+           paste(unique(conflict), collapse = ", "), call. = FALSE)
+  }
   
   rename_cols <- function(df, old, new) {
     if (is.null(df) || nrow(df) == 0) return(df)
@@ -737,6 +760,11 @@ RenameFeatures <- function(object, old, new) {
     object@data.df  <- rename_cols(object@data.df,  old, new)
     object@clean.df <- rename_cols(object@clean.df, old, new)
   }
+  # The label lives in info.data for Stat/Subtyping/PrognosiX (and clinical
+  # metadata generally), so renames must reach it too or the group_col reference
+  # dangles after a label rename.
+  if (.hasSlot(object, "info.data"))
+    object@info.data <- rename_cols(object@info.data, old, new)
   
   cat("RenameFeatures: renamed", sum(old %in% colnames(.object_clean_data(object)) |
                                        new %in% colnames(.object_clean_data(object))),
@@ -849,9 +877,12 @@ MergeObjects <- function(x, y = NULL) {
                    },
                    
                    PrognosiX = {
+                     # group_col must ride along, or the merged object loses the
+                     # label reference entirely (gc = NULL).
                      obj <- CreatePrognosiXObject(
                        clean.data = merged_clean,
                        info.data  = merged_info,
+                       group_col  = tryCatch(obj_list[[1]]@group_col, error = function(e) NULL),
                        time_col   = obj_list[[1]]@time_col,
                        status_col = obj_list[[1]]@status_col
                      )
@@ -862,6 +893,11 @@ MergeObjects <- function(x, y = NULL) {
                    Train_Model = {
                      obj <- CreateModelObject(data      = merged_clean,
                                               group_col = obj_list[[1]]@group_col)
+                     # CreateModelObject(data=...) starts from an empty
+                     # info.data, so the merged metadata was silently dropped;
+                     # re-attach it (rownames already made unique above, matching
+                     # the clean-frame merge behaviour).
+                     obj@info.data <- merged_info[rownames(obj@clean.df), , drop = FALSE]
                      message("Train_Model merge: split / model slots reset.")
                      obj
                    }
@@ -919,6 +955,9 @@ InspectObject <- function(object) {
   else if (inherits(object, "Train_Model")) {
     cat("  data.df            :", .dim_str(object@data.df), "\n")
     cat("  clean.df           :", .dim_str(object@clean.df), "\n")
+    # info.data was added to this class together with the label-location
+    # contract; without it there is no way to see whether metadata survived.
+    cat("  info.data          :", .dim_str(object@info.data), "\n")
     cat("  group_col          :", as.character(object@group_col), "\n")
     cat("  split.data         :", .list_str(object@split.data), "\n")
     cat("  feature.selection  :", .list_str(object@feature.selection), "\n")
@@ -945,6 +984,9 @@ InspectObject <- function(object) {
     cat("  info.data          :", .dim_str(object@info.data), "\n")
     cat("  survival.data      :", .dim_str(object@survival.data), "\n")
     cat("  sub.data           :", .dim_str(object@sub.data), "\n")
+    # group_col is the label reference introduced with the label-location
+    # contract; showing it makes a dangling reference visible.
+    cat("  group_col          :", as.character(object@group_col), "\n")
     cat("  time_col           :", as.character(object@time_col), "\n")
     cat("  status_col         :", as.character(object@status_col), "\n")
     cat("  baseline.table     :",

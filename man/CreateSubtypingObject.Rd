@@ -8,6 +8,7 @@ CreateSubtypingObject(
   clean.data = NULL,
   info.data = data.frame(),
   scale.data = data.frame(),
+  group_col = NULL,
   Optimal.cluster = NULL,
   cluster.results = NULL,
   visualization.results = NULL,

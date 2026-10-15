@@ -16,7 +16,9 @@ compute_descriptive_stats(
 
 \item{count_feature}{A logical value indicating whether to compute counts for categorical variables (default is TRUE).}
 
-\item{group_col}{The column name representing the grouping variable (default is "group").}
+\item{group_col}{The column name representing the grouping variable. For a Stat
+object this defaults to the stored group_col slot; for a plain data frame it
+must be supplied.}
 
 \item{max_unique_values}{The maximum number of unique values a variable can have to be considered categorical (default is 5).}
 }

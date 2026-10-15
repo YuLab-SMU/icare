@@ -1347,6 +1347,10 @@ ModelTrainAnalysis <- function(object,
       object@process.info$task_type   <- task_type
       object@process.info$preProcess  <- preProcess
       object@process.info$preprocess_model <- pp   # <- fitted preProcess object (NULL if none learned)
+      # Root cause: preprocess_columns was only set by PreprocessModelData(), never on
+      # this main path, so deploy_clinlab_app()'s primary source was NULL and its
+      # fallback chain was dead code.
+      object@process.info$preprocess_columns <- pp_result$columns
       object@process.info$imbalance_handling <- imbalance_handling
       cat("\n>>> Train_Model object updated (binary mode).\n")
       return(object)
@@ -1408,6 +1412,7 @@ ModelTrainAnalysis <- function(object,
         selection_basis = paste0("Cross-Validation (", metric_selection, ")")
       )
       object@process.info$preprocess_model <- pp   # <- fitted preProcess object (NULL if none learned)
+      object@process.info$preprocess_columns <- pp_result$columns   # same root cause as the binary branch
       cat("\n>>> Train_Model object updated (non-binary mode).\n")
       return(object)
     } else {
