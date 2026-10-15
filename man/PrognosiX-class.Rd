@@ -17,6 +17,9 @@ survival modeling, and subgroup risk assessment.
 
 \item{\code{info.data}}{Data frame.}
 
+\item{\code{group_col}}{Grouping column name, resolved in `info.data`. Optional: a
+survival analysis does not necessarily compare groups.}
+
 \item{\code{time_col}}{Any.}
 
 \item{\code{status_col}}{Any.}

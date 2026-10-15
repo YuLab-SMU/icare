@@ -6,6 +6,11 @@
 #' @import methods
 #' @slot data.df A `data.frame` containing the original input data.
 #' @slot clean.df A `data.frame` containing cleaned and preprocessed data.
+#'   Unlike `Stat@clean.data`, this frame DOES carry the outcome column, because
+#'   caret needs `group_col ~ .` in a single frame.
+#' @slot info.data A `data.frame` of sample metadata retained from the source
+#'   object, so that a round trip back to `Stat` does not lose the label or the
+#'   clinical variables.
 #' @slot group_col A column name or identifier indicating group labels.
 #' @slot process.info A `list` storing information about class balancing.
 #' @slot split.data A `list` of training/testing data splits.
@@ -23,6 +28,7 @@ Train_Model <- setClass(
   slots = c(
     data.df = 'data.frame',
     clean.df = 'data.frame',
+    info.data = 'data.frame',
     group_col = "ANY",
     process.info = 'list',
     split.data = 'list',
@@ -38,6 +44,7 @@ Train_Model <- setClass(
     data.df = data.frame(),
     group_col = NULL,
     clean.df = data.frame(),
+    info.data = data.frame(),
     process.info = list(),
     split.data = list(),
     split.scale.data = list(),
@@ -55,6 +62,9 @@ Train_Model <- setClass(
     }
     if (!is.data.frame(object@clean.df)) {
       return("Slot 'clean.df' must be a data.frame")
+    }
+    if (!is.data.frame(object@info.data)) {
+      return("Slot 'info.data' must be a data.frame")
     }
     
     # Check list slots
@@ -92,7 +102,23 @@ Train_Model <- setClass(
         return("Row names of 'data.df' and 'clean.df' should match")
       }
     }
-    
+
+    # info.data must cover whatever samples the modelling frames hold.
+    if (nrow(object@info.data) > 0 && nrow(object@clean.df) > 0) {
+      if (!all(rownames(object@clean.df) %in% rownames(object@info.data))) {
+        return("Row names of 'clean.df' must all be present in 'info.data'")
+      }
+    }
+
+    # The outcome must be present in clean.df: caret fits `group_col ~ .` there.
+    if (length(object@group_col) == 1 && !is.null(object@group_col) &&
+        nrow(object@clean.df) > 0) {
+      if (!as.character(object@group_col) %in% colnames(object@clean.df)) {
+        return(sprintf("Outcome column '%s' must be present in clean.df",
+                       as.character(object@group_col)))
+      }
+    }
+
     return(TRUE)
   }
 )
@@ -220,17 +246,33 @@ CreateModelObject <- function(
       stop("The 'data' parameter must be a data frame.")
     }
     data.df <- prepare_data(data, "input data")
+    info.df <- data.frame(row.names = rownames(data.df))
   } else {
     if (!inherits(object, "Stat")) {
       stop("The 'object' parameter must be an instance of class 'Stat'.")
     }
-    data.df <- ExtractCleanData(object = object)
-    if (is.null(data.df)) {
+    object <- .stat_adopt_legacy(object)
+    if (is.null(group_col)) {
+      group_col <- .stat_group_col(object)
+    }
+    # Stat@clean.data is label-free by contract. The label is joined here, after
+    # prepare_data() has settled the row set and before group_col is resolved --
+    # Train_Model needs `group_col ~ .` in one frame for caret, so this is the
+    # single re-attachment point between the two contracts.
+    data.df <- .stat_with_group(object, .stat_features(object, "clean"),
+                                group_col = group_col)
+    if (is.null(data.df) || nrow(data.df) == 0) {
       stop("Failed to extract clean data from the provided 'Stat' object.")
     }
     data.df <- prepare_data(data.df, "clean data from Stat object")
-    if (is.null(group_col)) {
-      group_col <- object@group_col
+    info.df <- .stat_info(object)
+    if (nrow(info.df) > 0) {
+      keep <- rownames(data.df)
+      if (all(keep %in% rownames(info.df))) {
+        info.df <- info.df[keep, , drop = FALSE]
+      } else {
+        info.df <- data.frame(row.names = keep)
+      }
     }
   }
   
@@ -240,21 +282,30 @@ CreateModelObject <- function(
     stop(paste("Specified group_col", group_col, "not found in the data columns."))
   }
   
+  # Track the outcome by position, so it survives renaming exactly (matching the
+  # approach in CreateStatObject; re-deriving the mangled name drifts whenever
+  # modify_column_names() changes).
+  group_idx <- if (!is.null(original_group_col) && original_group_col %in% colnames(data.df)) {
+    which(colnames(data.df) == original_group_col)[1]
+  } else {
+    NA_integer_
+  }
+
   data.df <- modify_column_names(data.df)
-  
-  # Update group_col if it was modified by modify_column_names
-  if (!is.null(original_group_col)) {
-    modified_group_col <- make.names(tolower(gsub(" ", "_", gsub("[^[:alnum:]_]", "", original_group_col))))
-    if (modified_group_col != original_group_col && modified_group_col %in% colnames(data.df)) {
-      message("Note: group_col '", original_group_col, "' was modified to '", modified_group_col, "'")
-      group_col <- modified_group_col
+
+  if (!is.na(group_idx)) {
+    resolved <- colnames(data.df)[group_idx]
+    if (!identical(resolved, original_group_col)) {
+      message("Note: group_col '", original_group_col, "' was modified to '", resolved, "'")
     }
+    group_col <- resolved
   }
   
   # Create the S4 object
   Train_Model_instance <- new(
     'Train_Model',
     data.df = data.df,
+    info.data = info.df,
     group_col = group_col
   )
   

@@ -359,6 +359,9 @@ ModelDeployment <- function(object,
     object       = object,
     preproc      = preproc,
     ref_data     = ref_data,
+    # Columns the model was actually fitted on, so the UI never offers (or
+    # forwards) the outcome or any stray metadata column as an input feature.
+    preprocess_columns = object@process.info$preprocess_columns,
     group_col    = object@group_col,
     class_labels = class_labels,
     model_desc   = model_description,
@@ -384,7 +387,20 @@ deploy_clinlab_app <- function(deployment, title = "Clinlabomics Terminal") {
       stop(sprintf("Package '%s' is required for app deployment. Install with: install.packages('%s')", pkg, pkg))
   
   train_data <- deployment$ref_data
-  feat_cols <- setdiff(colnames(train_data), c(".outcome", "group", "Group", deployment$group_col))
+  # Derive the feature set from what the model was actually fitted on, rather
+  # than from a hardcoded name list. The previous version named only one
+  # outcome column, so any extra label column survived into the UI inputs and
+  # was then passed to predict(preproc, newdata), where caret::preProcess errors
+  # on unexpected columns.
+  feat_cols <- deployment$preprocess_columns
+  if (is.null(feat_cols) || length(feat_cols) == 0) {
+    feat_cols <- tryCatch(deployment$preprocess_model$columns, error = function(e) NULL)
+  }
+  if (is.null(feat_cols) || length(feat_cols) == 0) {
+    feat_cols <- setdiff(colnames(train_data),
+                         c(".outcome", "group", "Group", deployment$group_col))
+  }
+  feat_cols <- intersect(feat_cols, colnames(train_data))
   
   # Base Tech Theme Configuration
   tech_theme <- bslib::bs_theme(

@@ -14,7 +14,13 @@ modeling pipeline, including feature selection, model training.
 \describe{
 \item{\code{data.df}}{A `data.frame` containing the original input data.}
 
-\item{\code{clean.df}}{A `data.frame` containing cleaned and preprocessed data.}
+\item{\code{clean.df}}{A `data.frame` containing cleaned and preprocessed data.
+Unlike `Stat@clean.data`, this frame DOES carry the outcome column, because
+caret needs `group_col ~ .` in a single frame.}
+
+\item{\code{info.data}}{A `data.frame` of sample metadata retained from the source
+object, so that a round trip back to `Stat` does not lose the label or the
+clinical variables.}
 
 \item{\code{group_col}}{A column name or identifier indicating group labels.}
 

@@ -7,6 +7,7 @@
 CreatePrognosiXObject(
   clean.data = NULL,
   info.data = data.frame(),
+  group_col = NULL,
   time_col = "time",
   status_col = "status",
   baseline.table = NULL,
@@ -28,6 +29,10 @@ CreatePrognosiXObject(
 \item{clean.data}{Data frame of numeric features (samples x features).}
 
 \item{info.data}{Data frame of metadata (including time, status, clinical vars).}
+
+\item{group_col}{Optional character; name of the grouping column in
+\code{info.data}, used for group-aware plots and tables. It must not appear
+in \code{clean.data}, which holds features only.}
 
 \item{time_col}{Character; name of the survival time column (default "time").}
 

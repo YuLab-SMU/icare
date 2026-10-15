@@ -121,13 +121,30 @@ Stat <- setClass(
       return("Slot 'variable.types' must be a list")
     }
     
-    # Check row name consistency if data exists
+    # Row alignment. info.data is append-only: it must COVER clean.data, not
+    # equal it, because operations that drop samples from clean.data leave
+    # info.data untouched and labels are aligned by row name at read time.
     if (nrow(object@clean.data) > 0 && nrow(object@info.data) > 0) {
-      if (!setequal(rownames(object@clean.data), rownames(object@info.data))) {
-        return("Row names of 'clean.data' and 'info.data' must match")
+      if (!all(rownames(object@clean.data) %in% rownames(object@info.data))) {
+        return("Row names of 'clean.data' must all be present in 'info.data'")
       }
     }
-    
+
+    # Label location. Note this only runs on new()/validObject(); `@<-` does not
+    # re-validate, so .stat_validate() is called explicitly at write sites.
+    if (length(object@group_col) == 1 && !is.null(object@group_col)) {
+      gc <- as.character(object@group_col)
+      for (nm in c("raw.data", "clean.data")) {
+        d <- if (nm == "raw.data") object@raw.data else object@clean.data
+        if (nrow(d) > 0 && gc %in% colnames(d)) {
+          return(sprintf("Label column '%s' must not appear in %s", gc, nm))
+        }
+      }
+      if (nrow(object@info.data) > 0 && !(gc %in% colnames(object@info.data))) {
+        return(sprintf("Label column '%s' not found in info.data", gc))
+      }
+    }
+
     return(TRUE)
   }
 )
@@ -139,25 +156,38 @@ Stat <- setClass(
 #' information. It performs basic checks and preparation on the input data before creating the object.
 #' 
 #' @import methods
-#' @param raw.data A data.frame containing the raw data for analysis. Defaults to an empty data frame.
-#' @param clean.data A data.frame containing the cleaned data for analysis. Defaults to an empty data frame.
-#' @param info.data A data.frame containing additional metadata related to the data. Defaults to an empty data frame.
-#' @param group_col A character string specifying the name of the column used for grouping. Default is `"group"`.
+#' @param raw.data A data.frame containing the raw features. Defaults to an empty
+#'   data frame. Must not contain the group column.
+#' @param clean.data A data.frame containing pre-cleaned features. Defaults to an
+#'   empty data frame. Must not contain the group column.
+#' @param info.data A data.frame of sample metadata. This is the only place the
+#'   group/outcome column may live.
+#' @param group_col A character string naming the grouping column **in `info.data`**.
 #' @param ... Additional arguments passed to methods (not used in this function).
-#' @param na.action Character string specifying how to handle NA values. 
+#' @param na.action Character string specifying how to handle NA values.
 #'   Options are "allow" (keep NA values, default), "omit" (remove rows with NA),
 #'   or "error" (stop if NA values are found).
 #' @returns An object of class `Stat`, which contains the processed data and metadata as slots.
 #' @export
 #'
+#' @details
+#' **Label location.** `group_col` must be a column of `info.data`. It must NOT be
+#' a column of `raw.data` or `clean.data`; passing it there is an error, with no
+#' automatic migration. The reason is that a label sitting in the feature matrix
+#' is indistinguishable from a feature to any code that selects columns by type:
+#' a numeric `0`/`1` label is silently consumed by `PlotPCA()` and by
+#' `PlotCorrelationHeatmap()`, which inflates the apparent group separation
+#' without any warning. Keeping the label out of the matrix makes that class of
+#' bug unrepresentable rather than merely discouraged.
+#'
+#' `info.data` is append-only. Operations that drop samples from `clean.data`
+#' leave `info.data` untouched; labels are aligned by row name at read time.
+#'
 #' @examples
-#' raw <- data.frame(id = 1:10, value = rnorm(10), group = rep(c("A","B"), each=5))
-#' inf<-data.frame(age = 1:10, value = rnorm(10), group = rep(c("A","B"), each=5))
-#' stat_new <- CreateStatObject(raw.data = raw,  group_col = "group")
-#' print(stat_new)
-#' stat_new <- CreateStatObject(raw.data = raw, clean.data = raw, group_col = "group")
-#' print(stat_new)
-#' stat_new <- CreateStatObject(raw.data = raw, group_col = "group",info.data = inf)
+#' raw <- data.frame(id = 1:10, value = rnorm(10))
+#' inf <- data.frame(group = rep(c("A","B"), each = 5))
+#' rownames(raw) <- rownames(inf) <- paste0("S", 1:10)
+#' stat_new <- CreateStatObject(raw.data = raw, info.data = inf, group_col = "group")
 #' print(stat_new)
 CreateStatObject <- function(
     raw.data = data.frame(),
@@ -172,15 +202,15 @@ CreateStatObject <- function(
   raw.data <- as.data.frame(raw.data)
   clean.data <- as.data.frame(clean.data)
   info.data <- as.data.frame(info.data)
-  
+
   # Store original group_col before any column name modifications
   original_group_col <- group_col
-  
+
   # Handle NA values based on na.action
   handle_na <- function(data, data_name) {
     if (is.null(data) || nrow(data) == 0) return(data)
     if (!any(is.na(data))) return(data)
-    
+
     switch(na.action,
            "allow" = {
              message("Note: NA values found in ", data_name, " but kept (na.action='allow')")
@@ -195,9 +225,21 @@ CreateStatObject <- function(
            }
     )
   }
-  
+
   raw.data <- handle_na(raw.data, "raw.data")
   clean.data <- handle_na(clean.data, "clean.data")
+
+  # info.data is append-only, so it must NOT be na.omit()'d on its own: its row
+  # mask would differ from the feature frames' and the setequal check below would
+  # then abort. Row removal is expressed once, at the end, by re-indexing
+  # info.data to the feature frame. na.action="error" must still see label NAs,
+  # so that case is reported here.
+  if (nrow(info.data) > 0 && any(is.na(info.data))) {
+    switch(na.action,
+           "allow" = message("Note: NA values found in info.data but kept (na.action='allow')"),
+           "error" = stop("NA values found in info.data. Set na.action='omit' to remove or na.action='allow' to keep."),
+           "omit"  = NULL)
+  }
 
   clean_symbol_values <- function(data) {
     for(col in colnames(data)) {
@@ -227,24 +269,74 @@ CreateStatObject <- function(
     clean.data <- clean_symbol_values(clean.data)
   }
 
+  # ---------------------------------------------------------------------------
+  # Label location contract (checked BEFORE any column renaming, so that the
+  # names reported in the error are the ones the user actually wrote).
+  # ---------------------------------------------------------------------------
+  if (!is.null(original_group_col)) {
+    in_info  <- original_group_col %in% colnames(info.data)
+    in_clean <- original_group_col %in% colnames(clean.data)
+    in_raw   <- original_group_col %in% colnames(raw.data)
+    in_matrix <- in_clean || in_raw
+
+    if (in_matrix) {
+      where <- c(if (in_raw) "raw.data", if (in_clean) "clean.data")
+      stop(sprintf(
+        paste0(
+          "group_col '%s' is present in the feature matrix (%s), but icare requires ",
+          "the label column to live in info.data.\n\n",
+          "Why: a label inside the feature matrix is indistinguishable from a ",
+          "feature to any code that selects columns by type. A numeric 0/1 label ",
+          "is silently consumed by PlotPCA() and PlotCorrelationHeatmap(), which ",
+          "inflates the apparent group separation without warning.\n\n",
+          "Fix -- move it, don't copy it:\n",
+          "  inf$%s <- <your group labels>\n",
+          "  stat_obj <- CreateStatObject(raw.data = mat, info.data = inf,\n",
+          "                               group_col = \"%s\", na.action = \"allow\")\n",
+          "  # and delete the `mat$%s <- ...` line\n"),
+        original_group_col, paste(where, collapse = " and "),
+        original_group_col, original_group_col, original_group_col),
+        call. = FALSE)
+    }
+
+    if (!in_info) {
+      if (nrow(info.data) == 0) {
+        stop(sprintf(
+          paste0(
+            "group_col '%s' was requested but info.data is empty.\n\n",
+            "The label column must be supplied through info.data:\n",
+            "  inf$%s <- <your group labels>          # rownames must match the features\n",
+            "  stat_obj <- CreateStatObject(raw.data = mat, info.data = inf, group_col = \"%s\")"),
+          original_group_col, original_group_col, original_group_col),
+          call. = FALSE)
+      }
+      stop(sprintf("Column '%s' is not in info.data (columns present: %s). ",
+                   original_group_col, paste(colnames(info.data), collapse = ", ")),
+           "group_col is resolved against info.data, not against the feature matrix, ",
+           "and is matched verbatim -- note that data.frame() and read.csv() rewrite ",
+           "spaces and punctuation unless check.names = FALSE.",
+           call. = FALSE)
+    }
+  }
+
   if (nrow(info.data) > 0) {
     if (nrow(raw.data) > 0 && !setequal(rownames(info.data), rownames(raw.data))) {
       stop("Row names in 'info.data' do not match 'raw.data' (content mismatch).")
     }
-    
+
     if (nrow(clean.data) > 0 && !setequal(rownames(info.data), rownames(clean.data))) {
       stop("Row names in 'info.data' do not match 'clean.data' (content mismatch).")
     }
   }
-  
-  # Check group_col BEFORE modifying column names
-  if (!is.null(original_group_col)) {
-    # Check in raw.data or clean.data (whichever has data)
-    ref_data <- if(nrow(clean.data) > 0) clean.data else if(nrow(raw.data) > 0) raw.data else NULL
-    if (!is.null(ref_data) && !(original_group_col %in% colnames(ref_data))) {
-      stop(sprintf("Specified group_col '%s' not found in data columns: %s",
-                   original_group_col, paste(colnames(ref_data), collapse = ", ")))
-    }
+
+  # raw.data and clean.data are filtered independently by handle_na() above, so
+  # na.action="omit" can leave them describing different sample sets. Warn: every
+  # downstream read aligns labels to one specific frame.
+  if (nrow(raw.data) > 0 && nrow(clean.data) > 0 &&
+      !identical(rownames(raw.data), rownames(clean.data))) {
+    warning("'raw.data' and 'clean.data' cover different samples. ",
+            "Labels are aligned against 'raw.data'; make the two frames agree ",
+            "to keep sample-level results unambiguous.")
   }
 
   prepare_data <- function(data, data_name) {
@@ -273,20 +365,30 @@ CreateStatObject <- function(
     return(data)
   }
 
+  # Track the label by POSITION before renaming, so that group_col resolves to
+  # the right column no matter what modify_column_names() does (spaces, illegal
+  # characters, or duplicate names made unique). Resolving by re-deriving the
+  # mangled string would silently drift the moment the renamer changes.
+  group_idx <- if (!is.null(original_group_col) && original_group_col %in% colnames(info.data)) {
+    which(colnames(info.data) == original_group_col)[1]
+  } else {
+    NA_integer_
+  }
+
   raw.data <- prepare_data(raw.data, "raw.data")
   clean.data <- prepare_data(clean.data, "clean.data")
-  
-  # Update group_col if it was modified by modify_column_names
-  if (!is.null(original_group_col)) {
-    modified_group_col <- make.names(tolower(gsub(" ", "_", gsub("[^[:alnum:]_]", "", original_group_col))))
-    if (modified_group_col != original_group_col) {
-      if (modified_group_col %in% colnames(clean.data)) {
-        message("Note: group_col '", original_group_col, "' was modified to '", modified_group_col, "'")
-        group_col <- modified_group_col
-      } else if (nrow(clean.data) > 0 && !(original_group_col %in% colnames(clean.data))) {
-        warning("group_col '", original_group_col, "' not found in data columns after name modification")
-      }
+  # info.data goes through the SAME renamer as the feature frames. Previously it
+  # was skipped, so group_col = "Diag Group" resolved against a renamed feature
+  # matrix but not against an unrenamed info.data.
+  info.data <- prepare_data(info.data, "info.data")
+
+  if (!is.na(group_idx)) {
+    resolved <- colnames(info.data)[group_idx]
+    if (!identical(resolved, original_group_col)) {
+      message("Note: group_col '", original_group_col, "' was renamed to '",
+              resolved, "' in info.data")
     }
+    group_col <- resolved
   }
 
   if (nrow(raw.data) > 0) {
@@ -297,21 +399,46 @@ CreateStatObject <- function(
     meta.featurename <- character()
   }
 
-  if (nrow(info.data) == 0) {
-    if (nrow(clean.data) > 0) {
-      info.data <- data.frame(row.names = row.names(clean.data))
-    } else if (nrow(raw.data) > 0) {
-      info.data <- data.frame(row.names = row.names(raw.data))
+  # Align info.data to the feature frame. This is the single place where a row
+  # set is narrowed, so raw/clean/scale/info can never disagree by construction:
+  # info.data keeps every row it has, and reads align to whatever frame they ask
+  # for (see .stat_labels()).
+  target <- if (nrow(clean.data) > 0) clean.data else if (nrow(raw.data) > 0) raw.data else NULL
+
+  if (is.null(target)) {
+    if (nrow(info.data) > 0) {
+      warning("No feature data supplied; info.data was kept as-is.")
     }
+  } else if (nrow(info.data) == 0) {
+    # Only reachable when group_col is NULL: a label was never requested, so an
+    # empty metadata frame is legitimate.
+    info.data <- data.frame(row.names = rownames(target))
   } else {
-    if (nrow(clean.data) > 0) {
-      rownames(info.data) <- rownames(clean.data)
-    } else if (nrow(raw.data) > 0) {
-      rownames(info.data) <- rownames(raw.data)
+    missing_rows <- setdiff(rownames(target), rownames(info.data))
+    if (length(missing_rows) > 0) {
+      stop(sprintf("info.data is missing %d row name(s) present in the feature frame ",
+                   length(missing_rows)),
+           sprintf("(e.g. %s). ", paste(head(missing_rows, 3), collapse = ", ")),
+           "Both frames must describe the same samples.", call. = FALSE)
     }
+    info.data <- info.data[rownames(target), , drop = FALSE]
+    rownames(info.data) <- rownames(target)
   }
 
   cat("Final info.data prepared.\n")
+
+  # The label must not survive in any feature frame. This is a construction-time
+  # invariant, so assert it rather than repair it -- the earlier check already
+  # rejected it, and this catches anything a future edit might reintroduce.
+  if (!is.null(group_col)) {
+    for (nm in c("raw.data", "clean.data")) {
+      d <- if (nm == "raw.data") raw.data else clean.data
+      if (nrow(d) > 0 && group_col %in% colnames(d)) {
+        stop(sprintf("Internal consistency error: '%s' ended up in %s after preparation.",
+                     group_col, nm), call. = FALSE)
+      }
+    }
+  }
 
   Stat <- new(
     Class = 'Stat',

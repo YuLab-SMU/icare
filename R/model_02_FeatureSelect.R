@@ -28,18 +28,23 @@
 }
 
 .extract_xy <- function(object) {
-  # Extract predictors (x) and outcome (y) from a Train_Model object
+  # Extract predictors (x) and outcome (y).
+  # Train_Model@clean.df legitimately carries the outcome (caret fits
+  # `group_col ~ .` there), so it is split out of the frame.
+  # Stat@clean.data is label-free by contract, so the outcome is read from
+  # info.data and aligned to the feature rows by name.
   if (inherits(object, "Train_Model")) {
+    gc <- object@group_col
     cd <- object@clean.df
-    gc <- object@group_col
+    x  <- cd[, setdiff(colnames(cd), gc), drop = FALSE]
+    y  <- cd[[gc]]
   } else if (inherits(object, "Stat")) {
-    cd <- object@clean.data
-    gc <- object@group_col
+    gc <- .stat_group_col(object)
+    x  <- .stat_features(object, "clean")
+    y  <- if (is.null(gc)) NULL else .stat_labels(object, rownames(x))[[1]]
   } else {
     stop("Object must be Train_Model or Stat.")
   }
-  x <- cd[, setdiff(colnames(cd), gc), drop = FALSE]
-  y <- cd[[gc]]
   list(x = x, y = y, group_col = gc)
 }
 

@@ -30,19 +30,22 @@
 # Internal helpers (same as before)
 # ------------------------------------------------------------------------------
 .extract_xy <- function(object) {
+  # Train_Model@clean.df carries the outcome; Stat@clean.data is label-free by
+  # contract, so its outcome is read from info.data and aligned by row name.
   if (inherits(object, "Train_Model")) {
+    gc <- object@group_col
     cd <- object@clean.df
-    gc <- object@group_col
+    x  <- cd[, setdiff(colnames(cd), gc), drop = FALSE]
+    y  <- cd[[gc]]
   } else if (inherits(object, "Stat")) {
-    cd <- object@clean.data
-    gc <- object@group_col
+    gc <- .stat_group_col(object)
+    x  <- .stat_features(object, "clean")
+    y  <- if (is.null(gc)) NULL else .stat_labels(object, rownames(x))[[1]]
   } else {
     stop("Object must be Train_Model or Stat.", call. = FALSE)
   }
-  x <- cd[, setdiff(colnames(cd), gc), drop = FALSE]
   colnames(x) <- make.names(colnames(x), unique = TRUE)
-  y <- cd[[gc]]
-  list(x = x, y = y, group_col = make.names(gc, unique = TRUE))
+  list(x = x, y = y, group_col = if (is.null(gc)) gc else make.names(gc, unique = TRUE))
 }
 
 .validate_model <- function(algo) {

@@ -57,11 +57,50 @@
 }
 
 .object_info_data <- function(object) {
-  if (inherits(object, "Train_Model")) return(data.frame())
+  # Train_Model now carries info.data too, so a round trip back to Stat no
+  # longer drops the label and the clinical variables.
   tryCatch(slot(object, "info.data"), error = function(e) data.frame())
 }
 
 ## -- 1. ConvertObject ---------------------------------------------------------
+#' Split an outcome column out of a modelling frame into a metadata frame
+#'
+#' Train_Model's `clean.df` legitimately holds the outcome (caret fits
+#' `group_col ~ .` there), whereas Stat's `clean.data` must not. Any conversion
+#' from Train_Model into Stat / Subtyping / PrognosiX therefore has to move the
+#' column rather than copy it, otherwise `CreateStatObject()` rejects the frame.
+#'
+#' @param df Feature frame that may contain `grp`.
+#' @param info Existing metadata frame (may be empty).
+#' @param grp Outcome column name, or NULL.
+#' @return A list with `data` (label-free) and `info` (label relocated).
+#' @keywords internal
+.object_split_label <- function(df, info, grp) {
+  if (is.null(df) || !is.data.frame(df) || nrow(df) == 0) {
+    return(list(data = df, info = info))
+  }
+  if (is.null(info) || !is.data.frame(info)) info <- data.frame()
+  if (is.null(grp) || !grp %in% colnames(df)) {
+    return(list(data = df, info = info))
+  }
+
+  if (nrow(info) == 0) {
+    info <- data.frame(row.names = rownames(df))
+  } else {
+    keep <- intersect(rownames(df), rownames(info))
+    if (length(keep) == 0) {
+      info <- data.frame(row.names = rownames(df))
+    } else {
+      info <- info[rownames(df), , drop = FALSE]
+      rownames(info) <- rownames(df)
+    }
+  }
+  if (!grp %in% colnames(info)) info[[grp]] <- df[[grp]]
+
+  list(data = df[, colnames(df) != grp, drop = FALSE], info = info)
+}
+
+
 #' Convert any package object to another class
 #'
 #' A single entry-point for all cross-class conversions.
@@ -128,6 +167,7 @@ ConvertObject <- function(object,
   # -- helper: build a minimal Stat from any object ---------------------
   # Track conversion chain to prevent infinite recursion
   .to_stat <- function(obj, grp = group_col, visited = NULL) {
+
     # Initialize visited set if not provided
     if (is.null(visited)) {
       visited <- character()
@@ -144,9 +184,11 @@ ConvertObject <- function(object,
     cd   <- .object_clean_data(obj)
     info <- .object_info_data(obj)
     if (is.null(grp) && .hasSlot(obj, "group_col")) grp <- obj@group_col
-    CreateStatObject(clean.data = cd,
-                     info.data  = if (nrow(info) > 0) info else data.frame(),
-                     group_col  = if (!is.null(grp)) grp else "group")
+    # Train_Model legitimately keeps the outcome in clean.df; Stat must not.
+    split <- .object_split_label(cd, info, grp)
+    CreateStatObject(clean.data = split$data,
+                     info.data  = split$info,
+                     group_col  = grp)
   }
   
   # -- dispatch table ----------------------------------------------------
@@ -257,19 +299,26 @@ ConvertObject <- function(object,
     ## -- Train_Model -> * ----------------------------------------------
     Train_Model_to_Stat = {
       grp <- if (!is.null(group_col)) group_col else object@group_col
-      CreateStatObject(clean.data = object@clean.df, group_col = grp)
+      split <- .object_split_label(object@clean.df, .object_info_data(object), grp)
+      CreateStatObject(clean.data = split$data, info.data = split$info,
+                       group_col = grp)
     },
-    
+
     Train_Model_to_Subtyping = {
-      stat_tmp <- CreateStatObject(clean.data = object@clean.df,
-                                   group_col  = object@group_col)
+      grp <- if (!is.null(group_col)) group_col else object@group_col
+      split <- .object_split_label(object@clean.df, .object_info_data(object), grp)
+      stat_tmp <- CreateStatObject(clean.data = split$data, info.data = split$info,
+                                   group_col = grp)
       CreateSubtypingObject(object = stat_tmp)
     },
-    
+
     Train_Model_to_PrognosiX = {
-      stat_tmp <- CreateStatObject(clean.data = object@clean.df,
-                                   group_col  = object@group_col)
+      grp <- if (!is.null(group_col)) group_col else object@group_col
+      split <- .object_split_label(object@clean.df, .object_info_data(object), grp)
+      stat_tmp <- CreateStatObject(clean.data = split$data, info.data = split$info,
+                                   group_col = grp)
       CreatePrognosiXObject(object     = stat_tmp,
+                            group_col  = grp,
                             time_col   = time_col,
                             status_col = status_col)
     },
@@ -336,6 +385,7 @@ SubsetObject <- function(object, samples = NULL, features = NULL) {
   else if (inherits(object, "Train_Model")) {
     object@data.df  <- .subset_df(object@data.df,  samples, features)
     object@clean.df <- .subset_df(object@clean.df, samples, features)
+    object@info.data <- .subset_df(object@info.data, samples, NULL)
     # invalidate downstream slots
     object@split.data        <- list()
     object@split.scale.data  <- list()
@@ -539,11 +589,20 @@ DownsampleObject <- function(object, n, per_group = FALSE,
     src_df  <- if (nrow(meta_df) > 0 && grp_col %in% colnames(meta_df)) meta_df else cd
     if (!grp_col %in% colnames(src_df))
       stop("Column '", grp_col, "' not found.")
-    
-    groups <- src_df[[grp_col]]
-    levels_vec <- unique(groups)
+
+    # Compare by ROW NAME, not by position. `all_samples` comes from clean.data
+    # while `groups` may come from info.data, and nothing guarantees the two
+    # frames share a row order -- a positional match would then silently sample
+    # the wrong samples, with no error to notice.
+    groups <- src_df[all_samples, grp_col]
+    if (anyNA(groups))
+      stop("Cannot downsample per group: ",
+           sum(is.na(groups)), " of ", length(all_samples),
+           " samples in clean.data have no row in info.data.", call. = FALSE)
+
+    levels_vec <- unique(as.character(groups))
     kept <- unlist(lapply(levels_vec, function(lv) {
-      ids <- all_samples[groups == lv]
+      ids <- all_samples[as.character(groups) == lv]
       sample(ids, min(n, length(ids)))
     }))
   }

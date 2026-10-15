@@ -66,8 +66,11 @@ inf=raw_dis[,c("Case ID", "Sample type", "Plasma proteome ID", "Tissue proteome 
                "Progressive-free survival_Months", "Tumor location", "Tumor size (cm)", 
                "T-category", "Lymph node involvement", "Distant metastasis", 
                "TNM Stage", "Grade", "Morphology")]
-inf$group=ifelse(index,'0','1')
-mat$group=inf$group
+# The group label lives in `inf` ONLY -- see the QUICKSTART script for why.
+# Keeping it out of the feature matrix also frees its type: readable labels are
+# fine, and they become the Table 1 column headers.
+inf$group = factor(ifelse(index, "Healthy Control", "Case"),
+                   levels = c("Healthy Control", "Case"))
 mat=as.matrix(mat)
 storage.mode(mat) <- "numeric"
 

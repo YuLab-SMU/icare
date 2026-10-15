@@ -37,8 +37,17 @@ inf=raw_dis[,c("Case ID", "Sample type", "Plasma proteome ID", "Tissue proteome 
       "Progressive-free survival_Months", "Tumor location", "Tumor size (cm)", 
       "T-category", "Lymph node involvement", "Distant metastasis", 
       "TNM Stage", "Grade", "Morphology")]
-inf$group=ifelse(index,'0','1')
-mat$group=inf$group
+# The group label goes in `inf` ONLY. icare stores the label in info.data and
+# keeps it out of the feature matrix entirely: a label sitting among the features
+# is indistinguishable from a feature to any code that selects columns by type,
+# and a numeric 0/1 label would silently be fed into PCA and the correlation
+# heatmap. Because the label never enters `mat`, its R type is free -- labels can
+# be readable strings, which is what you want in the Table 1 column headers.
+inf$group = factor(ifelse(index, "Healthy Control", "Case"),
+                   levels = c("Healthy Control", "Case"))
+
+# `mat` stays purely numeric, so as.matrix()/storage.mode() is a safe no-op and
+# any non-numeric column here would be a genuine mistake rather than a silent NA.
 mat=as.matrix(mat)
 storage.mode(mat) <- "numeric"
 
@@ -48,7 +57,8 @@ rownames(inf)=inf$`Case ID`
 # 2. Create the Stat object
 # ---------------------------------------------------------------------------
 # This is the container icare uses to track your data through cleaning.
-# group_col tells icare which column is the outcome you want to compare groups on.
+# group_col names a column of info.data (never of raw.data) -- the outcome you
+# want to compare groups on.
 stat_obj <- CreateStatObject(
   raw.data  = mat,info.data = inf,
   group_col = "group",

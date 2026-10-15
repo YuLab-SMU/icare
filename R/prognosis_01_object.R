@@ -7,6 +7,8 @@
 #' @import methods
 #' @slot clean.data Data frame.
 #' @slot info.data Data frame.
+#' @slot group_col Grouping column name, resolved in `info.data`. Optional: a
+#'   survival analysis does not necessarily compare groups.
 #' @slot time_col Any.
 #' @slot status_col Any.
 #' @slot survival.data Data frame.
@@ -39,6 +41,7 @@ PrognosiX <- setClass(
   slots = c(
     clean.data = 'data.frame',
     info.data = 'data.frame',
+    group_col = 'ANY',
     time_col = 'ANY',
     status_col = 'ANY',
     survival.data ='data.frame',
@@ -57,6 +60,7 @@ PrognosiX <- setClass(
   prototype = list(
     clean.data = data.frame(),
     info.data = data.frame(),
+    group_col = NULL,
     time_col = NULL,
     status_col = NULL,
     survival.data = data.frame(),
@@ -139,7 +143,20 @@ PrognosiX <- setClass(
         return("Row names of 'clean.data' and 'info.data' should match")
       }
     }
-    
+
+    # clean.data must hold features only -- a numeric group/outcome column left
+    # inside it would be picked up as a candidate feature by the univariate Cox
+    # scan in prognosis_02_framework.R.
+    if (length(object@group_col) == 1 && !is.null(object@group_col)) {
+      gc <- as.character(object@group_col)
+      if (nrow(object@clean.data) > 0 && gc %in% colnames(object@clean.data)) {
+        return(sprintf("Label column '%s' must not appear in clean.data", gc))
+      }
+      if (nrow(object@info.data) > 0 && !(gc %in% colnames(object@info.data))) {
+        return(sprintf("Label column '%s' not found in info.data", gc))
+      }
+    }
+
     return(TRUE)
   }
 )
@@ -166,6 +183,9 @@ save_plot_sur <- function(p, name, w=8, h=6) {
 #'
 #' @param clean.data Data frame of numeric features (samples x features).
 #' @param info.data Data frame of metadata (including time, status, clinical vars).
+#' @param group_col Optional character; name of the grouping column in
+#'   \code{info.data}, used for group-aware plots and tables. It must not appear
+#'   in \code{clean.data}, which holds features only.
 #' @param time_col Character; name of the survival time column (default "time").
 #' @param status_col Character; name of the event status column (default "status").
 #' @param baseline.table Optional baseline table (reserved).
@@ -197,6 +217,7 @@ save_plot_sur <- function(p, name, w=8, h=6) {
 CreatePrognosiXObject <- function(
     clean.data = NULL,
     info.data = data.frame(),
+    group_col = NULL,
     time_col = "time",
     status_col = "status",
     baseline.table = NULL,
@@ -226,8 +247,9 @@ CreatePrognosiXObject <- function(
       stop("'object' must be of class 'Stat', 'PrognosiX', or 'Subtyping'.")
     }
     if (inherits(object, "Stat")) {
-      clean.data <- ExtractCleanData(object)
-      info.data <- ExtractInfoData(object)
+      object <- .stat_adopt_legacy(object)
+      clean.data <- .stat_features(object, "clean")
+      info.data <- .stat_info(object)
       if (is.null(clean.data) || nrow(clean.data) == 0) {
         stop("Failed to extract valid clean data from 'Stat' object.")
       }
@@ -235,12 +257,15 @@ CreatePrognosiXObject <- function(
         info.data <- data.frame(row.names = rownames(clean.data))
         cat("info.data was created from clean.data with", nrow(info.data), "rows.\n")
       }
+      # Carry the label across so downstream group-aware plots still work.
+      if (is.null(group_col)) group_col <- .stat_group_col(object)
     } else if (inherits(object, "PrognosiX")) {
       clean.data <- object@clean.data
       info.data <- object@info.data
       sub.data <- object@sub.data
       time_col <- object@time_col
       status_col <- object@status_col
+      if (is.null(group_col)) group_col <- tryCatch(object@group_col, error = function(e) NULL)
     } else if (inherits(object, "Subtyping")) {
       clean.data <- if (!is.null(slot(object, "clustered.data")) && nrow(slot(object, "clustered.data")) > 0) {
         slot(object, "clustered.data")
@@ -289,7 +314,13 @@ CreatePrognosiXObject <- function(
   status_info <- .find_col(status_col)
   
   if (is.null(time_info) || is.null(status_info)) {
-    stop(sprintf("Columns '%s' and/or '%s' not found in clean.data or info.data.", time_col, status_col))
+    stop(sprintf("Columns '%s' and/or '%s' not found in clean.data or info.data. ",
+                 time_col, status_col),
+         sprintf("Columns available in info.data: %s. ",
+                 paste(colnames(info.data), collapse = ", ")),
+         "Note that CreateStatObject() normalises column names (spaces and ",
+         "punctuation are rewritten), so pass the normalised name here.",
+         call. = FALSE)
   }
   
   # Move time/status to info.data if they are currently in clean.data
@@ -325,9 +356,26 @@ CreatePrognosiXObject <- function(
     colnames(df) <- make.names(colnames(df), unique = TRUE)
     df
   }
+
+  # Track time/status/group by POSITION across the rename: re-deriving a mangled
+  # name is fragile, and the previous code did not re-derive at all -- it kept
+  # using time_col/status_col verbatim below, so any name make.names() rewrote
+  # (e.g. "Time To Event") raised "replacement has 0 rows".
+  idx_of <- function(nm, df) {
+    if (is.null(nm) || !nm %in% colnames(df)) return(NA_integer_)
+    which(colnames(df) == nm)[1]
+  }
+  i_time   <- idx_of(time_col,   info.data)
+  i_status <- idx_of(status_col, info.data)
+  i_group  <- idx_of(group_col,  info.data)
+
   clean.data <- .prepare_colnames(clean.data)
   info.data  <- .prepare_colnames(info.data)
-  
+
+  if (!is.na(i_time))   time_col   <- colnames(info.data)[i_time]
+  if (!is.na(i_status)) status_col <- colnames(info.data)[i_status]
+  if (!is.na(i_group))  group_col  <- colnames(info.data)[i_group]
+
   # ---- 9. Build survival.data (features + time/status) ----
   # Ensure time and status are numeric
   info.data[[time_col]] <- as.numeric(as.character(info.data[[time_col]]))
@@ -349,6 +397,7 @@ CreatePrognosiXObject <- function(
     Class = "PrognosiX",
     clean.data = clean.data,
     info.data = info.data,
+    group_col = group_col,
     sub.data = sub.data,
     univariate.analysis = univariate.analysis,
     time_col = time_col,

@@ -97,8 +97,9 @@ one_hot_encode <- function(data,
     df <- data
   }
   
+  # Under the label-location contract a feature frame normally carries no label
+  # column at all, so this normalization is the expected path, not a warning.
   if (length(group_col) == 0 || !is.character(group_col) || !(group_col %in% colnames(df))) {
-    cat("Group column is not valid, setting to NULL.\n")
     group_col <- NULL
   }
   
@@ -148,8 +149,21 @@ one_hot_encode <- function(data,
       status_col <- data@status_col
       if (!is.null(time_col) && !is.null(status_col) && 
           time_col %in% colnames(data@info.data) && status_col %in% colnames(data@info.data)) {
-        data@survival.data <- cbind(encoded_data, data@info.data[, c(time_col, status_col), drop = FALSE])
-        data@survival.data <- data@survival.data[complete.cases(data@survival.data[, c(time_col, status_col)]), ]
+        surv_df <- cbind(encoded_data, data@info.data[, c(time_col, status_col), drop = FALSE])
+        keep <- complete.cases(surv_df[, c(time_col, status_col)])
+        # Dropping rows must apply to EVERY frame, not just survival.data.
+        # Previously clean.data and info.data kept all N rows while
+        # survival.data was filtered, so the three frames silently described
+        # different sample sets.
+        if (any(!keep)) {
+          message(sprintf(
+            "Dropping %d sample(s) with missing %s/%s from clean.data, info.data and survival.data.",
+            sum(!keep), time_col, status_col))
+          data@clean.data <- data@clean.data[keep, , drop = FALSE]
+          data@info.data  <- data@info.data[keep, , drop = FALSE]
+          encoded_data    <- encoded_data[keep, , drop = FALSE]
+        }
+        data@survival.data <- surv_df[keep, , drop = FALSE]
       }
     } else
     if (inherits(data, "Train_Model")) data@clean.df <- encoded_data

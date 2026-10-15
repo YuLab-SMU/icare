@@ -3002,7 +3002,12 @@ surv_filter_features_clinical <- function(object,
     # Remove time/status columns from info if they are already in surv_df
     time_col <- object@time_col %||% "time"
     status_col <- object@status_col %||% "status"
-    info_cols <- setdiff(colnames(info_df), c(time_col, status_col))
+    # The label must not be merged in as a candidate feature: a 0/1-coded group
+    # column would be picked up by the univariate Cox scan below and reported as
+    # a prognostic marker. Drop it along with time/status.
+    group_col <- tryCatch(object@group_col, error = function(e) NULL)
+    drop_cols <- c(time_col, status_col, if (!is.null(group_col)) group_col)
+    info_cols <- setdiff(colnames(info_df), drop_cols)
     data <- cbind(surv_df, info_df[, info_cols, drop = FALSE])
     target_time <- time_col
     target_status <- status_col
@@ -3020,13 +3025,20 @@ surv_filter_features_clinical <- function(object,
   
   # Determine candidate features
   all_cols <- colnames(data)
+  # The label is never a candidate feature, regardless of how `data` was built.
+  label_col <- tryCatch(object@group_col, error = function(e) NULL)
+  exclude_from_features <- c(target_time, target_status,
+                             if (!is.null(label_col)) label_col)
   if (is.null(features)) {
     # Use all numeric columns except time/status
     numeric_cols <- names(which(sapply(data, is.numeric)))
-    features <- setdiff(numeric_cols, c(target_time, target_status))
+    features <- setdiff(numeric_cols, exclude_from_features)
     if (include_clinical && inherits(object, "PrognosiX")) {
       # Also include all columns from info.data (non-numeric allowed)
-      clinical_vars <- setdiff(colnames(info_df), c(target_time, target_status, features))
+      clinical_vars <- setdiff(colnames(info_df),
+                               c(target_time, target_status,
+                                 if (!is.null(label_col)) label_col,
+                                 features))
       # Convert character/factor to numeric? We'll test as-is; coxph can handle factors.
       features <- c(features, clinical_vars)
     }

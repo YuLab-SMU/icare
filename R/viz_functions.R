@@ -142,8 +142,16 @@ PlotGroupedDistribution <- function(object,
   
   # ---- Extract data and group column ----
   if (inherits(object, "Stat")) {
-    df <- object@clean.data
-    if (is.null(group_col)) group_col <- object@group_col
+    object <- .stat_adopt_legacy(object)
+    df <- .stat_primary_frame(object)
+    if (is.null(group_col)) group_col <- .stat_group_col(object)
+    if (is.null(group_col)) {
+      stop("This Stat object has no group_col, so there is nothing to group by. ",
+           "Create it with CreateStatObject(..., group_col = \"<name>\").",
+           call. = FALSE)
+    }
+    # Label comes from info.data; the feature matrix no longer carries it.
+    df <- .stat_with_group(object, df, group_col = group_col)
   } else {
     df <- as.data.frame(object)
     if (is.null(group_col)) {
@@ -158,8 +166,8 @@ PlotGroupedDistribution <- function(object,
   df[[group_col]] <- as.character(df[[group_col]])
   
   # ---- Select numeric features ----
-  num_cols <- names(df)[sapply(df, is.numeric)]
-  num_cols <- setdiff(num_cols, group_col)
+  # The label is joined above purely for grouping, so it is removed here.
+  num_cols <- setdiff(names(df)[sapply(df, is.numeric)], group_col)
   if (is.null(features)) features <- head(num_cols, 12)
   features <- intersect(features, num_cols)
   if (length(features) == 0) {
@@ -686,9 +694,22 @@ PlotPCA <- function(object,
   colnames(scores) <- paste0("PC", pcs)
   
   # ---- Prepare color column ----
-  if (nrow(info) == nrow(scores) && color_by %in% colnames(info)) {
+  # Normalise colour-by to a single string or NULL (the slot can be character(0)).
+  if (length(color_by) != 1 || is.na(color_by)) color_by <- NULL
+  if (!is.null(color_by) && nrow(info) == nrow(scores) && color_by %in% colnames(info)) {
     scores[[color_by]] <- as.factor(info[rownames(scores), color_by])
+  } else if (is.null(color_by)) {
+    # Legitimate request for an ungrouped PCA.
+    color_by <- "group"
+    scores[[color_by]] <- factor("all")
   } else {
+    # Do NOT silently render every point in one colour: that is what made a
+    # mis-aligned info.data look like "there is simply no separation".
+    warning(sprintf(
+      "Colour variable '%s' is not available as a column of info.data aligned to ",
+      color_by),
+      "the samples, so the PCA points cannot be grouped. Pass color_by naming a ",
+      "column of the Stat object's info.data.", call. = FALSE)
     scores[[color_by]] <- factor("all")
   }
   

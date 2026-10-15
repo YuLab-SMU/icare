@@ -1,7 +1,7 @@
 Package: icare
 Type: Package
 Title: Intelligent ClinlAbomics Research Expedition
-Version: 1.0.1
+Version: 1.1.0
 Author: Huaichao Luo, Fei Long, Hongyan Lin, Jian Huang,Guangchuang Yu
 Maintainer: Huaichao Luo <luohc@uestc.edu.cn>
 Description: A modular framework for clinical statistics, missing-data
@@ -125,6 +125,7 @@ Depends: R (>= 3.5.0)
 Config/roxygen2/version: 8.1.0
 LazyDataCompression: xz
 Collate:
+  'stat_00_label.R'
   'stat_01_object.R'
   'model_01_object.R'
   'subtyping_01_object.R'

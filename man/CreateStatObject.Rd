@@ -14,15 +14,18 @@ CreateStatObject(
 )
 }
 \arguments{
-\item{raw.data}{A data.frame containing the raw data for analysis. Defaults to an empty data frame.}
+\item{raw.data}{A data.frame containing the raw features. Defaults to an empty
+data frame. Must not contain the group column.}
 
-\item{clean.data}{A data.frame containing the cleaned data for analysis. Defaults to an empty data frame.}
+\item{clean.data}{A data.frame containing pre-cleaned features. Defaults to an
+empty data frame. Must not contain the group column.}
 
-\item{info.data}{A data.frame containing additional metadata related to the data. Defaults to an empty data frame.}
+\item{info.data}{A data.frame of sample metadata. This is the only place the
+group/outcome column may live.}
 
-\item{group_col}{A character string specifying the name of the column used for grouping. Default is `"group"`.}
+\item{group_col}{A character string naming the grouping column **in `info.data`**.}
 
-\item{na.action}{Character string specifying how to handle NA values. 
+\item{na.action}{Character string specifying how to handle NA values.
 Options are "allow" (keep NA values, default), "omit" (remove rows with NA),
 or "error" (stop if NA values are found).}
 
@@ -36,13 +39,23 @@ This function creates a `Stat` object, which is used to store and manage various
 of statistical analysis, such as raw data, cleaned data, additional metadata, and processing
 information. It performs basic checks and preparation on the input data before creating the object.
 }
+\details{
+**Label location.** `group_col` must be a column of `info.data`. It must NOT be
+a column of `raw.data` or `clean.data`; passing it there is an error, with no
+automatic migration. The reason is that a label sitting in the feature matrix
+is indistinguishable from a feature to any code that selects columns by type:
+a numeric `0`/`1` label is silently consumed by `PlotPCA()` and by
+`PlotCorrelationHeatmap()`, which inflates the apparent group separation
+without any warning. Keeping the label out of the matrix makes that class of
+bug unrepresentable rather than merely discouraged.
+
+`info.data` is append-only. Operations that drop samples from `clean.data`
+leave `info.data` untouched; labels are aligned by row name at read time.
+}
 \examples{
-raw <- data.frame(id = 1:10, value = rnorm(10), group = rep(c("A","B"), each=5))
-inf<-data.frame(age = 1:10, value = rnorm(10), group = rep(c("A","B"), each=5))
-stat_new <- CreateStatObject(raw.data = raw,  group_col = "group")
-print(stat_new)
-stat_new <- CreateStatObject(raw.data = raw, clean.data = raw, group_col = "group")
-print(stat_new)
-stat_new <- CreateStatObject(raw.data = raw, group_col = "group",info.data = inf)
+raw <- data.frame(id = 1:10, value = rnorm(10))
+inf <- data.frame(group = rep(c("A","B"), each = 5))
+rownames(raw) <- rownames(inf) <- paste0("S", 1:10)
+stat_new <- CreateStatObject(raw.data = raw, info.data = inf, group_col = "group")
 print(stat_new)
 }

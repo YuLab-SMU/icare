@@ -675,11 +675,15 @@ stat_gaze_analysis <- function(object,
   
   # ---- 1. Extract data ----
   if (inherits(object, "Stat")) {
-    data <- slot(object, "clean.data")
-    if (is.null(data) || nrow(data) == 0) {
-      data <- slot(object, "raw.data")
-    }
-    group_col <- slot(object, "group_col")
+    object <- .stat_adopt_legacy(object)
+    # Features come from the matrix; the label is joined from info.data. A
+    # missing label is an error, never a silent fall back to an ungrouped table.
+    data <- .stat_primary_frame(object)
+    group_col <- .stat_group_col(object)
+    if (is.null(group_col))
+      stop("group_col slot is empty in the Stat object, so the baseline table ",
+           "cannot be split by group.", call. = FALSE)
+    data <- .stat_with_group(object, data, group_col = group_col)
   } else if (is.data.frame(object)) {
     data <- object
   } else {
@@ -691,7 +695,7 @@ stat_gaze_analysis <- function(object,
   
   # ---- 2. Sanitize grouping column ----
   if (!is.null(group_col) && !group_col %in% colnames(data))
-    group_col <- NULL
+    stop("Group column '", group_col, "' not found in the data. ", call. = FALSE)
   
   # ---- 3. Drop problematic columns ----
   # (a) Remove all-NA columns
