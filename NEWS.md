@@ -91,6 +91,15 @@ class of bug unrepresentable rather than merely discouraged.
 *   **Roxygen examples still put the group column inside the feature matrix**,
     which the new contract rejects. All 14 affected examples were rewritten to
     pass the label through info.data and verified end-to-end.
+*   **`batch_Wilcoxon_MultiClass()` / `_OrderedMultiClass()` crashed when a
+    comparison produced nothing significant.** A 0-row frame aborted on scalar
+    column assignment ("replacement has 1 row, data has 0"), and an all-empty
+    result list made `do.call(rbind, list())` return NULL. Both now skip the
+    empty comparison and warn; an entirely empty result is returned as a
+    well-formed 0-row frame. (Commit 0c0efdd guarded only `batch_Wilcoxon()`.)
+*   **`ConvertObject(Subtyping -> PrognosiX)` lost `group_col`**, so the label
+    was not excluded from the survival candidate-feature scan and could be
+    tested as a Cox feature.
 *   **`stat_convert_variables()` dropped `group_col`** when calling its worker, so
     the label was treated as an ordinary variable and coerced with
     `as.numeric()`. Character labels such as `"HC"`/`"Case"` became `NA` for

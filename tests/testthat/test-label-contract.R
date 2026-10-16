@@ -178,3 +178,38 @@ test_that("a label column absent from info.data is a hard error", {
   obj@group_col <- "group"   # name that does not exist in info.data
   expect_error(.stat_labels(obj), "not in info.data")
 })
+
+test_that("na.action='omit' warns when the LABEL column itself has NAs", {
+  # Those rows survive by design (info.data is append-only) but drop out of
+  # every group comparison; previously that was silent.
+  set.seed(1)
+  n <- 20
+  feat <- data.frame(f1 = rnorm(n), f2 = rnorm(n))
+  rownames(feat) <- paste0("S", seq_len(n))
+  info <- data.frame(group = c(rep("HC", n / 2 - 1), NA, rep("Case", n / 2)),
+                     row.names = rownames(feat))
+
+  obj <- expect_warning(
+    CreateStatObject(raw.data = feat, info.data = info,
+                     group_col = "group", na.action = "omit"),
+    "NA in the label column"
+  )
+  # The numeric columns' NAs drive row removal; the label NA must NOT drop the
+  # sample silently.
+  expect_equal(nrow(obj@info.data), n)
+})
+
+test_that("na.action='error' rejects NAs in the label column", {
+  set.seed(2)
+  n <- 12
+  feat <- data.frame(f1 = rnorm(n))
+  rownames(feat) <- paste0("S", seq_len(n))
+  info <- data.frame(group = c(rep("HC", n / 2 - 1), NA, rep("Case", n / 2)),
+                     row.names = rownames(feat))
+
+  expect_error(
+    CreateStatObject(raw.data = feat, info.data = info,
+                     group_col = "group", na.action = "error"),
+    "NA values found in info.data"
+  )
+})

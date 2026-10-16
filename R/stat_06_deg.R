@@ -410,13 +410,29 @@ batch_Wilcoxon_MultiClass <- function(mat,
                     ifelse(deg_result$logFC < -logfc_threshold, "Down", "Stable")),
              "Stable")
     )
-    
+
+    # A 0-row comparison would abort on the scalar assignment below
+    # ("replacement has 1 row, data has 0"); skip it instead.
+    if (nrow(deg_result) == 0) {
+      message("No features passed the p < ", p_threshold, " threshold for target group '",
+              target_group, "'.")
+      next
+    }
+
     deg_result$target_group <- target_group
-    
+
     results_list[[i]] <- deg_result
   }
   
   # Combine all results
+  # Every comparison can be empty (nothing passed the threshold), which makes
+  # results_list an empty list; do.call(rbind, list()) returns NULL and the
+  # ordering below would abort on a NULL.
+  if (length(results_list) == 0) {
+    warning("No comparison produced a significant feature at p < ", p_threshold, ".",
+            call. = FALSE)
+    return(deg_result[0, , drop = FALSE])
+  }
   all_results <- do.call(rbind, results_list)
   rownames(all_results) <- NULL
   
@@ -536,14 +552,31 @@ batch_Wilcoxon_OrderedMultiClass <- function(mat,
                     ifelse(deg_result$logFC < -logfc_threshold, "Down", "Stable")),
              "Stable")
     )
-    
+
+    # A comparison where nothing passed the threshold yields a 0-row frame;
+    # assigning a scalar to it aborts with "replacement has 1 row, data has 0".
+    # Skip it (the other comparisons still populate the result).
+    if (nrow(deg_result) == 0) {
+      message("No features passed the p < ", p_threshold, " threshold for comparison '",
+              group1, " vs. ", group2, "'.")
+      next
+    }
+
     deg_result$comparison <- paste0(group1, " vs. ", group2)
     deg_result$target_group <- group2
-    
+
     results_list[[i]] <- deg_result
   }
   
   # Combine all results
+  # Every comparison can be empty (nothing passed the threshold), which makes
+  # results_list an empty list; do.call(rbind, list()) returns NULL and the
+  # ordering below would abort on a NULL.
+  if (length(results_list) == 0) {
+    warning("No comparison produced a significant feature at p < ", p_threshold, ".",
+            call. = FALSE)
+    return(deg_result[0, , drop = FALSE])
+  }
   all_results <- do.call(rbind, results_list)
   rownames(all_results) <- NULL
   

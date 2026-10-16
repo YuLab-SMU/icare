@@ -116,3 +116,15 @@ test_that("an unknown stratify_by warns instead of silently not stratifying", {
   expect_warning(SplitSubtypingObject(s, stratify_by = "nope"),
                  "not a column of info.data")
 })
+
+test_that("Subtyping -> PrognosiX keeps the label name so survival analysis excludes it", {
+  # prognosis_02_framework.R reads @group_col to drop the label from the
+  # candidate-feature scan; a NULL there makes the label a Cox feature.
+  obj <- make_stat()
+  info <- obj@info.data
+  info$time <- rexp(nrow(info), 0.05); info$status <- rbinom(nrow(info), 1, 0.6)
+  obj@info.data <- info
+  sub <- ConvertObject(obj, to = "Subtyping")
+  px  <- ConvertObject(sub, to = "PrognosiX", time_col = "time", status_col = "status")
+  expect_equal(px@group_col, "diagnosis")
+})

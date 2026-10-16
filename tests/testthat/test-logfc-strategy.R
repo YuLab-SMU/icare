@@ -129,3 +129,31 @@ test_that("a row-dropped object stays aligned and still runs the full pipeline",
   }))
   expect_s3_class(ExtractLastTestSig(obj), "data.frame")
 })
+
+test_that("the multiclass DEG paths survive a comparison with nothing significant", {
+  # A 0-row deg_result aborted on scalar column assignment
+  # ("replacement has 1 row, data has 0"), and an all-empty results_list made
+  # do.call(rbind, list()) return NULL.
+  set.seed(2)
+  n <- 60
+  feat <- data.frame(f1 = rnorm(n), f2 = rnorm(n), f3 = rnorm(n))
+  rownames(feat) <- paste0("S", seq_len(n))
+
+  multi <- cbind(feat, group = factor(rep(c("A", "B", "C"), each = n / 3)))
+  expect_error(
+    withCallingHandlers(
+      batch_Wilcoxon_MultiClass(multi, group_col = "group", logfc_mat = multi,
+                                 p_threshold = 1e-12),
+      warning = function(x) invokeRestart("muffleWarning")),
+    NA
+  )
+
+  ordered <- cbind(feat, group = factor(rep(c("A", "B"), each = n / 2)))
+  expect_error(
+    withCallingHandlers(
+      batch_Wilcoxon_OrderedMultiClass(ordered, group_col = "group",
+                                        p_threshold = 1e-12),
+      warning = function(x) invokeRestart("muffleWarning")),
+    NA
+  )
+})

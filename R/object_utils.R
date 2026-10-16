@@ -277,7 +277,12 @@ ConvertObject <- function(object,
     },
     
     Subtyping_to_PrognosiX = {
+      # Propagate the label name: prognosis_02_framework.R reads @group_col to
+      # exclude the label from the candidate-feature scan, and a NULL there
+      # makes the label a Cox feature.
+      grp <- if (!is.null(group_col)) group_col else tryCatch(object@group_col, error = function(e) NULL)
       CreatePrognosiXObject(object     = object,
+                            group_col  = grp,
                             time_col   = time_col,
                             status_col = status_col)
     },
