@@ -22,3 +22,4 @@ reasonix.toml
 
 /.quarto/
 **/*.quarto_ipynb
+tests/
