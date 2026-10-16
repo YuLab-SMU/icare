@@ -237,31 +237,62 @@ ConvertObject <- function(object,
       # -- Move group_col from clean.data -> info.data ------------------
       # If the group column is present in clean.data, migrate it to info.data
       # and strip it from the numeric feature matrices (clean.data, scale.data).
+      # NOTE: CreateSubtypingObject renames info.data with
+      # janitor::make_clean_names(), a DIFFERENT rule from the
+      # modify_column_names() that ran in CreateStatObject -- so the resolved
+      # grp_col (e.g. "Diag_Group") no longer matches the stored column
+      # (e.g. "diag_group"). Re-resolve against the ACTUAL info.data names, or
+      # the label becomes unreadable downstream (stratify_by, PlotPCA, DEG all
+      # look the name up there).
+      if (!is.null(grp_col) && grp_col %in% colnames(sub_obj@info.data)) {
+        # Name already resolves: nothing to do.
+      } else if (!is.null(grp_col) && length(grp_col) == 1 && nzchar(grp_col)) {
+        # The label travelled inside info.data under a janitor-mangled name;
+        # find it by matching against the mangled form of grp_col, falling back
+        # to a case/punctuation-insensitive match.
+        mangled <- janitor::make_clean_names(grp_col)
+        new_grp_col <- if (mangled %in% colnames(sub_obj@info.data)) {
+          mangled
+        } else {
+          norm <- function(x) tolower(gsub("[^[:alnum:]]", "", x))
+          hit <- which(norm(colnames(sub_obj@info.data)) == norm(grp_col))
+          if (length(hit) == 1) colnames(sub_obj@info.data)[hit] else grp_col
+        }
+        if (!identical(new_grp_col, grp_col)) {
+          message("Stat -> Subtyping: label column '", grp_col,
+                  "' is stored as '", new_grp_col,
+                  "' in info.data (Subtyping normalises names differently).")
+          grp_col <- new_grp_col
+        }
+      }
+
+      sub_obj@group_col <- grp_col
+
       if (!is.null(grp_values) && grp_col %in% colnames(sub_obj@clean.data)) {
-        
+
         # Initialise info.data if it is empty, preserving sample row names
         if (is.null(sub_obj@info.data) || nrow(sub_obj@info.data) == 0) {
           sub_obj@info.data <- data.frame(row.names = rownames(sub_obj@clean.data))
         }
-        
+
         # Write original (non-numeric-coded) group labels into info.data
         sub_obj@info.data[[grp_col]] <- grp_values
-        
+
         # Remove group column from clean.data
         sub_obj@clean.data <- sub_obj@clean.data[
           , colnames(sub_obj@clean.data) != grp_col, drop = FALSE]
-        
+
         # Remove group column from scale.data if present
         if (ncol(sub_obj@scale.data) > 0 &&
             grp_col %in% colnames(sub_obj@scale.data)) {
           sub_obj@scale.data <- sub_obj@scale.data[
             , colnames(sub_obj@scale.data) != grp_col, drop = FALSE]
         }
-        
+
         message("Stat \u2192 Subtyping: column '", grp_col,
                 "' moved from clean.data to info.data.")
       }
-      
+
       sub_obj
     },
     

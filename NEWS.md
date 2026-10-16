@@ -91,6 +91,14 @@ class of bug unrepresentable rather than merely discouraged.
 *   **Roxygen examples still put the group column inside the feature matrix**,
     which the new contract rejects. All 14 affected examples were rewritten to
     pass the label through info.data and verified end-to-end.
+*   **`ConvertObject(Stat -> Subtyping)` left `group_col` pointing at a
+    column that no longer exists.** Subtyping renames info.data with
+    `janitor::make_clean_names()`, a DIFFERENT rule from the
+    `modify_column_names()` used by `CreateStatObject()` -- "Diag Group"
+    becomes "Diag_Group" in Stat but "diag_group" in Subtyping. The slot kept
+    the Stat-side name, which matched nothing: labels were unreadable and
+    `stratify_by` could not find the column. The name is now re-resolved
+    against the actual info.data columns after conversion, with a message.
 *   **`batch_Wilcoxon_MultiClass()` / `_OrderedMultiClass()` crashed when a
     comparison produced nothing significant.** A 0-row frame aborted on scalar
     column assignment ("replacement has 1 row, data has 0"), and an all-empty

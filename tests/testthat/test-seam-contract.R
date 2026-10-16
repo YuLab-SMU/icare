@@ -128,3 +128,29 @@ test_that("Subtyping -> PrognosiX keeps the label name so survival analysis excl
   px  <- ConvertObject(sub, to = "PrognosiX", time_col = "time", status_col = "status")
   expect_equal(px@group_col, "diagnosis")
 })
+
+make_feat2 <- function(n = 30, seed = 1) {
+  set.seed(seed)
+  d <- data.frame(f1 = rnorm(n), f2 = rnorm(n), f3 = rnorm(n))
+  rownames(d) <- paste0("S", seq_len(n))
+  d
+}
+
+test_that("Stat -> Subtyping re-resolves the label name after janitor renaming", {
+  # Subtyping renames info.data with janitor::make_clean_names(), a DIFFERENT
+  # rule from modify_column_names(): "Diag Group" -> "Diag_Group" in Stat but
+  # "diag_group" in Subtyping. The group_col slot used to keep the Stat-side
+  # name, which matched nothing -- labels unreadable, stratify_by broken.
+  feat <- make_feat2()
+  info <- data.frame(row.names = rownames(feat))
+  info[["Diag Group"]] <- factor(rep(c("HC", "Case"), each = nrow(feat) / 2))
+  obj <- suppressMessages(
+    CreateStatObject(raw.data = feat, clean.data = feat, info.data = info,
+                     group_col = "Diag Group", na.action = "allow"))
+  obj <- suppressMessages(stat_miss_processed(obj, impute_method = "median_mode",
+                                              save_data = FALSE))
+
+  sub <- ConvertObject(obj, to = "Subtyping")
+  expect_true(sub@group_col %in% colnames(sub@info.data))
+  expect_setequal(unique(sub@info.data[[sub@group_col]]), c("HC", "Case"))
+})
