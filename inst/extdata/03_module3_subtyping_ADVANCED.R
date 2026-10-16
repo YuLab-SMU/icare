@@ -37,11 +37,8 @@ GROUP_COL       <- "group"   # the outcome/group column carried over from Module
 SEED            <- 123
 
 dir.create(OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
-sub_dir <- function(...) {
-  d <- file.path(OUTPUT_DIR, ...)
-  dir.create(d, showWarnings = FALSE, recursive = TRUE)
-  d
-}
+# set_output_root() points both this script and the package at the same tree.
+set_output_root(OUTPUT_DIR)
 
 # =============================================================================
 # 1. Load Data and Convert to a Subtyping Object
@@ -72,13 +69,13 @@ split <- SplitSubtypingObject(sub_obj, p = 0.7, stratify_by = GROUP_COL)
 # Fit normalization on the TRAINING split only.
 # min-max scaling keeps all features non-negative, which NMF requires.
 # Fit normalization on the TRAINING split only.
-# IMPORTANT: explicitly pass group_col = GROUP_COL ("SWAB", configured at the
-# top of this script) so the outcome column is correctly excluded from
-# scaling. Sub_normalize_process()'s default group_col is the literal string
-# "group" -- if left unset here, "SWAB" would NOT be recognized as the
-# group column, and (being non-numeric) would silently remain in scale.data,
-# later crashing NMF::nmf() deep inside with an unrelated "'x' must be
-# numeric" error instead of a clear one at this step.
+# IMPORTANT: pass group_col = GROUP_COL explicitly. Sub_normalize_process()'s
+# default is the literal string "group", so renaming GROUP_COL in the CONFIG
+# block and leaving this call alone would normalize against the wrong name.
+# Since the 1.1 label contract the outcome lives in info.data and never in
+# clean.data, so it can no longer leak into scale.data; the defensive check
+# below still guards the assumption that matters -- every column handed to
+# K-means / LPA / NMF must be numeric.
 sub_train <- Sub_normalize_process(split$train, normalize_method = "min_max",
                                    group_col = GROUP_COL)
 cat("Normalization completed. scale.data dimensions:", dim(sub_train@scale.data), "\n")
@@ -260,7 +257,8 @@ PlotClusterHeatmap(
   sub_train, p_cutoff = 2, deg_df = multi_deg, group_by = "cluster_lpa",
   annotation_cols = tolower(GROUP_COL), top_n = 5, log_transform = TRUE,
   save_path = file.path(deg_dir, "cluster_heatmap_with_outcome.pdf"),
-  annotation_palette = list(swab = c("0" = "#D32F2F", "1" = "#1976D2"))
+  annotation_palette = setNames(list(c("Case" = "#D32F2F", "Healthy Control" = "#1976D2")),
+                                tolower(GROUP_COL))
 )
 # Group-mean z-score heatmap (one column per subtype, not per sample) —
 # useful for a compact summary figure.

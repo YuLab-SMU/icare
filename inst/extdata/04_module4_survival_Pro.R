@@ -31,12 +31,8 @@ VERSION <- "Advanced_extensions"
 OUTPUT_ROOT <- "./PrognosiX_Output"
 OUTPUT_DIR <- file.path(OUTPUT_ROOT, VERSION)
 
-# Helper to create subdirectories
-sub_dir <- function(...) {
-  d <- file.path(OUTPUT_DIR, ...)
-  dir.create(d, showWarnings = FALSE, recursive = TRUE)
-  d
-}
+# directory. Calling set_output_root() points both at the same tree.
+set_output_root(OUTPUT_DIR)
 
 # Create version root and standard subfolders
 sub_dir()
@@ -92,8 +88,9 @@ inf <- raw_dis[, c("Case ID", "Sample type", "Plasma proteome ID", "Tissue prote
                    "T-category", "Lymph node involvement", "Distant metastasis", 
                    "TNM Stage", "Grade", "Morphology")]
 
-inf$group <- ifelse(index, '0', '1')
-mat$group <- inf$group
+# The group label lives in `inf` ONLY -- see Module 1 for why.
+inf$group <- factor(ifelse(index, "Healthy Control", "Case"),
+                    levels = c("Healthy Control", "Case"))
 mat <- as.matrix(mat)
 storage.mode(mat) <- "numeric"
 
@@ -105,10 +102,11 @@ mat$sex <- inf$Gender
 
 inf$time <- inf$`Combined days to last followup or death`
 inf$event <- inf$`Vital status`
-inf$event <- ifelse(inf$event == "Dead", 0, 1)
+inf$event <- ifelse(inf$event == "Dead", 1, 0)
 
-# Keep only disease samples (group == 1)
-inf <- inf[inf$group == 1, ]
+# Keep only disease samples (compare the label text, not a code -- the group
+# column is a factor, so `== 1` would silently match nothing)
+inf <- inf[inf$group == "Case", ]
 mat <- mat[rownames(inf), ]
 mat$time <- inf$time
 mat$status <- inf$event
@@ -280,7 +278,7 @@ train_prog@info.data <- prog@info.data[train_idx, , drop = FALSE]
 train_prog@survival.data <- prog@survival.data[train_idx, , drop = FALSE]
 
 clinical_cols <- colnames(train_prog@info.data)
-candidate_vars <- c("Gender", "Tobacco.smoking.history", "Drinking.history", "TNM.Stage")
+candidate_vars <- c("Gender", "Tobacco_smoking_history", "Drinking_history", "TNM_Stage")
 subgroup_vars <- intersect(candidate_vars, clinical_cols)
 
 forest <- surv_plot_subgroup_forest(

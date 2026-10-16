@@ -37,11 +37,8 @@ OUTPUT_DIR     <- "./Module2_Advanced_Output"
 SEED           <- 123
 
 dir.create(OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
-sub_dir <- function(...) {
-  d <- file.path(OUTPUT_DIR, ...)
-  dir.create(d, showWarnings = FALSE, recursive = TRUE)
-  d
-}
+# set_output_root() points both this script and the package at the same tree.
+set_output_root(OUTPUT_DIR)
 
 # =============================================================================
 # 1. Load the Stat Object and Convert it to a Modeling Object
@@ -410,7 +407,10 @@ df=model_obj@process.info$clinical_data
 df=df[,-c(1:4)]
 df$Gender=ifelse(df$Gender=='Male',0,1)
 df$Lymphocytes_count=model_obj@clean.df$Lymphocytes_count
-df$age_group=ifelse(df$`Age at diagnosis`>60,'>60 years','<= 60 years')
+# `model_obj@process.info$clinical_data` comes from stat_obj@info.data, whose
+# column names were normalized by CreateStatObject(); use Age_at_diagnosis,
+# not the original spaced Excel header.
+df$age_group = ifelse(df$Age_at_diagnosis > 60, '>60 years', '<= 60 years')
 
 model_obj@process.info$clinical_data=df
 ClinicalCorrelation(model_obj, save_plot = TRUE, save_dir = file.path(clin_dir, "correlation"))
@@ -419,8 +419,10 @@ PlotSubgroupForest(model_obj, subgroup_var = c("Gender", "age_group"),compare_me
 newdata <- model_obj@split.data$testing
 model_obj@process.info$clinical_data
 
+# positive_class must name a factor level of the outcome: the label here is
+# "Healthy Control" / "Case" (see Module 1), so the events are "Case".
 PlotConfounderForest(model_obj, dataset_type = "testing",adjust_vars= c("Gender", "age_group"),outcome_var="group",
-                     save_plot = TRUE,positive_class = '1', save_dir = file.path(clin_dir, "Confounder"))
+                     save_plot = TRUE,positive_class = 'Case', save_dir = file.path(clin_dir, "Confounder"))
 # --- 12.1 Decision thresholds for the best model ---------------------------
 thresh <- CalculateThresholds(model_obj, target_ppv = 0.9, target_npv = 0.9, target_acc = TRUE)
 names(thresh$thresholds)
@@ -440,10 +442,14 @@ ClinicalThreshold(model_obj, target_ppv = 0.8, target_npv = 0.9,
 # --- 12.2 Compare against an external / simulated model ---------------------
 # ---- Code with English comments ----
 
-# Extract the name of the positive class (the second level of the outcome factor)
-# The group column (model_obj@group_col) contains the binary outcome.
-# The positive class is assumed to be the second factor level (e.g., "1" if levels are c("0","1")).
-positive <- paste0("X", levels(factor(test_data[[model_obj@group_col]]))[2])
+# The positive class is the second factor level of the outcome column.
+# NOTE: do not reconstruct the probability-column name with a "X" prefix --
+# that was an artifact of a 0/1-coded label ("X1"). caret names the `type =
+# "prob"` columns after the factor LEVELS themselves, and make syntactically
+# valid names (so "Healthy Control" becomes "Healthy.Control"). With the
+# readable labels used since icare 1.1 the positive level is, e.g., "Case",
+# and the matching probability column is named identically.
+positive <- levels(factor(test_data[[model_obj@group_col]]))[2]
 
 # Calculate classification thresholds (e.g., probability cutoffs) from the internal model
 # to achieve target Positive Predictive Value (PPV) = 0.8, Negative Predictive Value (NPV) = 0.9,
@@ -467,10 +473,12 @@ rdoc_probs <- pmax(0, pmin(1, rdoc_probs))
 
 # Calculate thresholds from the simulated external model's probabilities,
 # using the same performance targets (PPV, NPV, accuracy).
-# Note: here the positive class is hardcoded as "1" – assumes the outcome factor levels are c("0","1").
+# Note: `positive` is the level derived above, not a hardcoded "1" -- the
+# outcome factor carries readable labels since icare 1.1, and
+# CalculateThresholdsFromProbs() checks it against levels(true).
 thresh_external <- CalculateThresholdsFromProbs(
   probs = rdoc_probs, true = factor(test_data[[model_obj@group_col]]),
-  positive = "1", target_ppv = 0.8, target_npv = 0.9, target_acc = TRUE
+  positive = positive, target_ppv = 0.8, target_npv = 0.9, target_acc = TRUE
 )
 
 # Compare the two sets of thresholds by plotting performance metrics (e.g., confusion matrices)
@@ -492,8 +500,9 @@ ref_prob <- predict(model_obj@train.models$rf,  test_data, type = "prob")[, posi
 new_prob <- predict(model_obj@train.models$svmRadial, test_data, type = "prob")[, positive]
 
 # Scenario A: both models judged against the same clinical risk thresholds.
-# 设置目录
-save_dir <- file.path(getwd(), "NRIDI_Manual_Results")
+# Set directories: keep these figures inside the script's output tree instead
+# of the working directory.
+save_dir <- file.path(nri_dir, "manual_results")
 dir.create(save_dir, recursive = TRUE, showWarnings = FALSE)
 
 # ROC
@@ -501,7 +510,7 @@ PlotROCCompare(true_labels, ref_prob, new_prob,
                labels = c("Ref", "New"), save_plot = TRUE, save_dir = save_dir)
 
 # IDI
-idi <- PlotIDICurve(true_labels, ref_prob, new_prob, positive = "1", 
+idi <- PlotIDICurve(true_labels, ref_prob, new_prob, positive = positive, 
                     save_plot = TRUE, save_dir = save_dir)
 idi
 # NRI 计算
@@ -519,8 +528,10 @@ PlotNRIHeatmap(nri, save_plot = TRUE, save_dir = save_dir)
 PlotNRIBars(nri, save_plot = TRUE, save_dir = save_dir)
 
 # 概率分布
-PlotPredDist(true_labels, ref_prob, new_prob, 
-             labels = c("Ref", "New"), outcome_labels = c("0", "1"),
+# outcome_labels must be given in the order of levels(true_labels); passing
+# c("0","1") here would relabel the readable classes back to meaningless codes.
+PlotPredDist(true_labels, ref_prob, new_prob,
+             labels = c("Ref", "New"), outcome_labels = levels(true_labels),
              save_plot = TRUE, save_dir = save_dir)
 
 # 阈值‑NRI 曲线（可选）
@@ -550,7 +561,7 @@ PlotIDICurve(true_labels, ref_prob, new_prob, risk_thresholds = c(0.02, 0.1, 0.5
 PlotROCCompare(true_labels, ref_prob, new_prob, labels = c("RF", "svm"), show_ci = FALSE,
                save_plot = TRUE, save_dir = file.path(nri_dir, "roc"))
 PlotPredDist(true_labels, ref_prob, new_prob, labels = c("RF", "New"),
-             outcome_labels = c("0", "1"), save_plot = TRUE, save_dir = file.path(nri_dir, "dist"))
+             outcome_labels = levels(true_labels), save_plot = TRUE, save_dir = file.path(nri_dir, "dist"))
 PlotThresholdNRI(true_labels, ref_prob, new_prob, save_plot = TRUE,
                   save_dir = file.path(nri_dir, "threshold_scan"))
 
