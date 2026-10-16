@@ -563,7 +563,7 @@ tryCatch(
     sub_train, p_cutoff = 2, deg_df = multi_deg, group_by = "cluster_lpa",
     annotation_cols = tolower(GROUP_COL), top_n = 5, log_transform = TRUE,
     save_path = file.path(deg_dir, "cluster_heatmap_with_outcome.pdf"),
-    annotation_palette = list(swab = c("0" = "#D32F2F", "1" = "#1976D2"))
+    annotation_palette = list(swab = c("Case" = "#D32F2F", "Healthy Control" = "#1976D2"))
   ),
   error = function(e) message("Annotated sample-level heatmap skipped (raster backend): ", e$message)
 )

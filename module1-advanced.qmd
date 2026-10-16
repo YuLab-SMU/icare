@@ -206,8 +206,18 @@ inf=raw_dis[,c("Case ID", "Sample type", "Plasma proteome ID", "Tissue proteome 
                "Progressive-free survival_Months", "Tumor location", "Tumor size (cm)", 
                "T-category", "Lymph node involvement", "Distant metastasis", 
                "TNM Stage", "Grade", "Morphology")]
-inf$group=ifelse(index,'0','1')
-mat$group=inf$group
+# The group label goes in `inf` ONLY. icare stores the label in info.data and
+# keeps it out of the feature matrix entirely: a label sitting among the
+# features is indistinguishable from a feature to any code that selects columns
+# by type, and a numeric 0/1 label would silently be fed into PCA and the
+# correlation heatmap. Because the label never enters `mat`, its R type is free
+# -- labels can be readable strings, which is what you want in the Table 1
+# column headers.
+inf$group = factor(ifelse(index, "Healthy Control", "Case"),
+                   levels = c("Healthy Control", "Case"))
+
+# `mat` stays purely numeric, so as.matrix()/storage.mode() is a safe no-op and
+# any non-numeric column here would be a genuine mistake rather than a silent NA.
 mat=as.matrix(mat)
 storage.mode(mat) <- "numeric"
 
@@ -364,7 +374,9 @@ viz_dir <- sub_dir("02_visualizations")
 ## annotated with a Wilcoxon test p-value between groups. Swap `features`
 ## for any variable list you want to feature in a figure.
 numeric_vars <- names(stat_obj@clean.data)[sapply(stat_obj@clean.data, is.numeric)]
-my_colors <- c("0" = "#404040", "1" = "#ca0020")
+# Key these by the label text, not by a code: the group column holds
+# "Healthy Control"/"Case", and unmatched keys would silently fall back.
+my_colors <- c("Healthy Control" = "#404040", "Case" = "#ca0020")
 PlotGroupedDistribution(
   object       = stat_obj,
   features     = head(numeric_vars, 6),
@@ -390,7 +402,9 @@ PlotCorrelationHeatmap(
 ## 5.3 PCA scatter plot coloured by the outcome group, with 95% confidence
 ## ellipses — a standard "does the outcome separate along the main axes of
 ## variation" sanity check before modeling.
-my_colors <- c("0" = "#404040", "1" = "#ca0020")
+# Key these by the label text, not by a code: the group column holds
+# "Healthy Control"/"Case", and unmatched keys would silently fall back.
+my_colors <- c("Healthy Control" = "#404040", "Case" = "#ca0020")
 PlotPCA(
   object       = stat_obj,
   color_by     = "group",          
@@ -422,7 +436,9 @@ This section creates exploratory and reporting figures. Plots appear below the c
 stat_obj <- plot_categorical_descriptive(stat_obj, save_plots = TRUE, save_dir = viz_dir)
 
 ## 6.2 Violin plots for every numeric variable (one plot per variable)
-my_colors <- c("0" = "#404040", "1" = "#ca0020")
+# Key these by the label text, not by a code: the group column holds
+# "Healthy Control"/"Case", and unmatched keys would silently fall back.
+my_colors <- c("Healthy Control" = "#404040", "Case" = "#ca0020")
 stat_obj <- plot_numeric_descriptive(
   stat_obj, plot_type = "violin", vars_per_plot = 1,group_col = 'group',group_colors = my_colors,
   save_plots = TRUE, save_dir = viz_dir
@@ -483,7 +499,10 @@ This section selects candidate features. Consider effect size, stability, and bi
 ## significant AND discriminative (AUC far from 0.5).
 PlotAUCPval(
   deg_df     = deg_result,
-  mat_test   = stat_obj@clean.data,
+  # PlotAUCPval() takes a plain data frame and expects the label alongside the
+  # features. Since Stat@clean.data is label-free by contract, join it back from
+  # info.data for this call (the public helper .stat_with_group does exactly this).
+  mat_test   = icare:::.stat_with_group(stat_obj),
   group_col  = GROUP_COL,base_size = 8,text_repel_size = 2,
   auc_thresh = 0.55,
   p_thresh   = 0.05,
@@ -494,12 +513,14 @@ PlotAUCPval(
 ## 8.2 Heatmap of the top differential features across samples
 # Build the top annotation (assuming rownames(mat) contains sample IDs)
 top_anno <- stat_obj@info.data
-top_anno <-top_anno [,c('Gender','Age at diagnosis')]
+# info.data column names are normalised by CreateStatObject() (spaces become
+# underscores), so reference the normalised names, not the original Excel header.
+top_anno <-top_anno [,c('Gender','Age_at_diagnosis')]
 # Custom color palette
 custom_cols <- list(
-  Group= c("0" = "#404040", "1" = "#ca0020"),
+  group= c("Case" = "#404040", "Healthy Control" = "#ca0020"),
   Gender= c( Female= "#018571", Male = "#a6611a"),
-  `Age at diagnosis`= circlize::colorRamp2(c(40, 55, 70), c("#edf8b1", "#7fcdbb", "#2c7fb8"))
+  `Age_at_diagnosis`= circlize::colorRamp2(c(40, 55, 70), c("#edf8b1", "#7fcdbb", "#2c7fb8"))
 )
 PlotFeatureHeatmap(
   object = stat_obj,
@@ -525,7 +546,9 @@ stat_obj <- VarFeature_radarchart(stat_obj, save_dir = deg_dir, save_plot = TRUE
 ## 8.5 Boxplots for the top 3 differential features (raw/clean scale)
 p_box <- PlotDegBoxplot(
   deg_results = deg_result,
-  expr_data   = stat_obj@clean.data,
+  # PlotDegBoxplot() takes a plain data frame and needs the label beside the
+  # features; Stat@clean.data is label-free by contract, so join it back.
+  expr_data   = icare:::.stat_with_group(stat_obj),
   group_col   = GROUP_COL,
   top_n       = 5,
   save_plot   = TRUE,

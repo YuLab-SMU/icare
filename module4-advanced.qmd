@@ -245,8 +245,11 @@ inf <- raw_dis[, c("Case ID", "Sample type", "Plasma proteome ID", "Tissue prote
                    "T-category", "Lymph node involvement", "Distant metastasis", 
                    "TNM Stage", "Grade", "Morphology")]
 
-inf$group <- ifelse(index, '0', '1')
-mat$group <- inf$group
+# The group label lives in `inf` ONLY -- see the Module 1 chapter for why.
+# Keeping it out of the feature matrix also frees its type: readable labels are
+# fine, and they become the Table 1 column headers.
+inf$group <- factor(ifelse(index, "Healthy Control", "Case"),
+                    levels = c("Healthy Control", "Case"))
 mat <- as.matrix(mat)
 storage.mode(mat) <- "numeric"
 
@@ -260,7 +263,9 @@ inf$time <- inf$`Combined days to last followup or death`
 inf$event <- inf$`Vital status`
 inf$event <- ifelse(inf$event == "Dead", 1, 0)
 
-inf <- inf[inf$group == 1, ]
+# Keep only disease samples (comparing against the label text, not a code --
+# the group column is a factor, so `== 1` would silently match nothing)
+inf <- inf[inf$group == "Case", ]
 mat <- mat[rownames(inf), ]
 mat$time <- inf$time
 mat$status <- inf$event
