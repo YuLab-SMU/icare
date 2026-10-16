@@ -8,187 +8,28 @@ This workflow is computationally intensive and uses optional packages that are c
 
 ## Step-by-step Workflow
 
-<!-- split-into-step-chunks -->
-
 The workflow is divided into short stages. Each note explains the purpose, key checks, and interpretation limits. Generated plots and tables appear directly below their code chunk.
 
-### Environment and Global Setup
+### About this chapter
 
-This section performs the core analysis for this stage. Review the output immediately below the code and confirm that data ranges, assumptions, and results match the study design.
+**Audience.** Users who already have a working PrognosiX pipeline and want the ten production extensions on top of it.
 
-````{r}
-#| label: module4-pro-01
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-# =============================================================================
-# icare Package — Module 4: Survival / Prognosis Modeling (PrognosiX)
-# ADVANCED / PUBLICATION EDITION — STRICT TRAIN/VALIDATION SPLIT
-# =============================================================================
-#
-# This is a complete, production‑ready pipeline for developing and validating
-# a clinical survival model. It includes 10 advanced extensions covering
-# model comparison, competing risks, multi‑time calibration, Bayesian tuning,
-# clinical impact, and more – suitable for high‑impact journals.
-#
-# Pipeline structure:
-````
+**Input.** Reads `data/PMID37633276_DIA_plasmaproomic.xlsx` (sheet `Table S1B`) directly.
 
-### 0 Environment setup and path management
+The chapter runs end to end as one session:
 
-This section defines seeds, output paths, and dependencies. Update these paths and key parameters first when using new data.
-
-````{r}
-#| label: module4-pro-02
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   0. Environment setup and path management
-````
-
-### 1 Data preparation (split time/status into info.data)
-
-This section imports and organizes the data. Check dimensions and variable coding before continuing.
-
-````{r}
-#| label: module4-pro-03
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   1. Data preparation (split time/status into info.data)
-````
-
-### 2 Feature selection (multi‑method, training set only)
-
-This section selects candidate features. Consider effect size, stability, and biological plausibility rather than a single significance measure.
-
-````{r}
-#| label: module4-pro-04
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   2. Feature selection (multi‑method, training set only)
-````
-
-### 3 Algorithm benchmarking and hyperparameter tuning
-
-This section trains and compares candidate models. Select models using discrimination, calibration, stability, and clinical utility together.
-
-````{r}
-#| label: module4-pro-05
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   3. Algorithm benchmarking and hyperparameter tuning
-````
-
-### 4 Core model evaluation (KM, forest, time‑dependent AUC, calibration, nomogram)
-
-This section trains and compares candidate models. Select models using discrimination, calibration, stability, and clinical utility together.
-
-````{r}
-#| label: module4-pro-06
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   4. Core model evaluation (KM, forest, time‑dependent AUC, calibration, nomogram)
-````
-
-### 5 Robustness analysis (stability, ablation, sensitivity)
-
-This section tests sensitivity to sampling, censoring, and feature changes. Robust conclusions should remain similar under reasonable perturbations.
-
-````{r}
-#| label: module4-pro-07
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   5. Robustness analysis (stability, ablation, sensitivity)
-````
-
-### 6 Decision curve analysis (DCA) and SHAP explanations
-
-This section examines clinical utility and model explanations. Explanatory plots describe model behavior and do not establish causality.
-
-````{r}
-#| label: module4-pro-08
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   6. Decision curve analysis (DCA) and SHAP explanations
-````
-
-### 7 Ten advanced extensions (all executed sequentially)
-
-This section performs the core analysis for this stage. Review the output immediately below the code and confirm that data ranges, assumptions, and results match the study design.
-
-````{r}
-#| label: module4-pro-09
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   7. Ten advanced extensions (all executed sequentially)
-````
-
-### 8 Save final model and deployment (prediction + Shiny app)
-
-This section trains and compares candidate models. Select models using discrimination, calibration, stability, and clinical utility together.
-
-````{r}
-#| label: module4-pro-10
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   8. Save final model and deployment (prediction + Shiny app)
-````
-
-### 9 Final report summary
-
-This section saves model objects, tables, and figures for reproducibility, review, and reuse.
-
-````{r}
-#| label: module4-pro-11
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   9. Final report summary
-# =============================================================================
-
-# ---------------------------------------------------------------------------
-````
+1. **Environment and configuration**
+2. **Data preparation (move time/status to info.data)**
+3. **Feature selection (ONLY on training set)**
+4. **Algorithm benchmarking and hyperparameter tuning**
+5. **Core model evaluation**
+   - **Feature stability (LASSO bootstrapping)**
+   - **Feature ablation (drop each feature and measure C-index drop)**
+   - **Model sensitivity (sample size and censoring rate)**
+6. **Decision curve analysis (DCA) and SHAP explanations (on validation set)**
+7. **Ten advanced extensions (all executed sequentially)**
+8. **Save final PrognosiX object and deploy**
+9. **Final report**
 
 ### 0 Environment and configuration
 
@@ -211,22 +52,6 @@ VERSION <- "Advanced_extensions"
 OUTPUT_ROOT <- "./PrognosiX_Output"
 OUTPUT_DIR <- file.path(OUTPUT_ROOT, VERSION)
 
-# Helper to create subdirectories
-sub_dir <- function(...) {
-  d <- file.path(OUTPUT_DIR, ...)
-  dir.create(d, showWarnings = FALSE, recursive = TRUE)
-  d
-}
-
-# Create version root and standard subfolders
-sub_dir()
-sub_dir("data")
-sub_dir("01_feature_selection")
-sub_dir("02_model")
-sub_dir("03_evaluation")
-sub_dir("04_robustness")
-sub_dir("05_xai")
-
 # Load required packages
 library(icare)
 required_pkgs <- c("mlr3", "mlr3proba", "mlr3viz", "mlr3learners", 
@@ -236,6 +61,23 @@ required_pkgs <- c("mlr3", "mlr3proba", "mlr3viz", "mlr3learners",
 missing_pkgs <- required_pkgs[!sapply(required_pkgs, requireNamespace, quietly = TRUE)]
 if (length(missing_pkgs)) install.packages(missing_pkgs)
 invisible(lapply(required_pkgs, library, character.only = TRUE))
+
+# Register OUTPUT_DIR with the package rather than defining a local sub_dir().
+# icare already ships sub_dir(); a local definition shadows it only inside this
+# script, so functions INSIDE the package that call sub_dir() themselves (e.g.
+# plot_tdROC_comparison(), plot_multitime_calibration(), plot_clinical_impact())
+# would still resolve it in the icare namespace and write to a session-temp
+# directory. Calling set_output_root() points both at the same tree.
+set_output_root(OUTPUT_DIR)
+
+# Create version root and standard subfolders
+sub_dir()
+sub_dir("data")
+sub_dir("01_feature_selection")
+sub_dir("02_model")
+sub_dir("03_evaluation")
+sub_dir("04_robustness")
+sub_dir("05_xai")
 
 # Additional packages for extensions (checked inside each function)
 ext_pkgs <- c("mlr3extralearners", "survcomp", "mlr3mbo", "bbotk", "MASS", "glmnet")
@@ -513,7 +355,10 @@ train_prog@info.data <- prog@info.data[train_idx, , drop = FALSE]
 train_prog@survival.data <- prog@survival.data[train_idx, , drop = FALSE]
 
 clinical_cols <- colnames(train_prog@info.data)
-candidate_vars <- c("Gender", "Tobacco.smoking.history", "Drinking.history", "TNM.Stage")
+# info.data names are normalised by CreateStatObject(): spaces and dots become
+# underscores. Passing the dotted spelling would make intersect() drop
+# everything except "Gender" and silently shrink the subgroup forest.
+candidate_vars <- c("Gender", "Tobacco_smoking_history", "Drinking_history", "TNM_Stage")
 subgroup_vars <- intersect(candidate_vars, clinical_cols)
 
 forest <- surv_plot_subgroup_forest(
@@ -559,19 +404,7 @@ nom <- surv_generate_nomogram(train_task,
 
 ### 5 Robustness analysis
 
-This section tests sensitivity to sampling, censoring, and feature changes. Robust conclusions should remain similar under reasonable perturbations.
-
-````{r}
-#| label: module4-pro-17
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-# 5. Robustness analysis
-# ---------------------------------------------------------------------------
-````
+This section tests sensitivity to sampling, censoring, and feature changes. Robust conclusions should remain similar under reasonable perturbations. It is run in three parts: feature stability, feature ablation, and model sensitivity.
 
 ### 5.1 Feature stability (LASSO bootstrapping)
 

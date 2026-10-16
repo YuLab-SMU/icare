@@ -8,145 +8,31 @@ Split the data first, fit min–max parameters on the development set, and apply
 
 ## Step-by-step Workflow
 
-<!-- split-into-step-chunks -->
-
 The workflow is divided into short stages. Each note explains the purpose, key checks, and interpretation limits. Generated plots and tables appear directly below their code chunk.
 
-### Environment and Global Setup
+### About this chapter
 
-This section performs the core analysis for this stage. Review the output immediately below the code and confirm that data ranges, assumptions, and results match the study design.
+**Audience.** Advanced users who want to compare multiple clustering methods, validate them, and produce publication-style figures.
 
-````{r}
-#| label: module3-advanced-01
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-# =============================================================================
-# icare Package Vignette — Module 3: Subtyping / Unsupervised Clustering
-# ADVANCED / PUBLICATION EDITION
-# =============================================================================
-# Audience : Advanced users who want to compare multiple clustering methods,
-#            validate them, and produce publication-style figures.
-# Input    : "stat_obj.rds", produced by Module 1 (data cleaning).
-#
-# Pipeline covered in this script:
-````
+**Input.** Requires `stat_obj.rds`, produced by Module 1.
 
-### 1 Convert the cleaned Stat object into a Subtyping object
+The chapter runs end to end as one session:
 
-This section creates the icare analysis object that stores data, metadata, and workflow state for all later steps.
-
-````{r}
-#| label: module3-advanced-02
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   1) Convert the cleaned Stat object into a Subtyping object
-````
-
-### 2 Normalize data and split into train/validation sets
-
-This section preprocesses the data. Review missingness, outlier handling, and normalization before accepting the defaults.
-
-````{r}
-#| label: module3-advanced-03
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   2) Normalize data and split into train/validation sets
-````
-
-### 3 Cluster with three complementary methods: K-means, LPA (Gaussian
-
-This section performs the core analysis for this stage. Review the output immediately below the code and confirm that data ranges, assumptions, and results match the study design.
-
-````{r}
-#| label: module3-advanced-04
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   3) Cluster with three complementary methods: K-means, LPA (Gaussian
-#      mixture), and NMF (the primary method, since it also yields a
-#      re-usable model for predicting subtypes in new data)
-````
-
-### 4 Reduce dimensions (t-SNE / UMAP) for visualization
-
-This section creates exploratory and reporting figures. Plots appear below the code and are also saved as vector PDFs for publication.
-
-````{r}
-#| label: module3-advanced-05
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   4) Reduce dimensions (t-SNE / UMAP) for visualization
-````
-
-### 5 Evaluate and cross-compare the three clustering solutions
-
-This section performs the core analysis for this stage. Review the output immediately below the code and confirm that data ranges, assumptions, and results match the study design.
-
-````{r}
-#| label: module3-advanced-06
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   5) Evaluate and cross-compare the three clustering solutions
-````
-
-### 6 Find subtype-specific marker features and visualize them
-
-This section creates exploratory and reporting figures. Plots appear below the code and are also saved as vector PDFs for publication.
-
-````{r}
-#| label: module3-advanced-07
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   6) Find subtype-specific marker features and visualize them
-#      (heatmaps, silhouette plot, alluvial diagram)
-````
-
-### 7 Deploy the trained NMF model for predicting subtypes in new samples
-
-This section trains and compares candidate models. Select models using discrimination, calibration, stability, and clinical utility together.
-
-````{r}
-#| label: module3-advanced-08
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   7) Deploy the trained NMF model for predicting subtypes in new samples
-#
-# All figures are written into structured sub-folders of OUTPUT_DIR.
-# =============================================================================
-# NOTE: the previous first line here was `load("../all_model.csv")`, which
-# is a bug -- load() only reads .RData/.rds binary files, not CSV, and would
-# error immediately (before rm(list=ls()) even runs). Removed as apparent
-# leftover debug code; if you need to load model presets from a CSV, use
-# read.csv() instead, or icare's own data(allmodel)/list_presets().
-rm(list = ls())
-library(icare)
-
-# ---------------------------------------------------------------------------
-````
+1. **CONFIG**
+2. **Load Data and Convert to a Subtyping Object**
+3. **Split into Train / Validation Sets, then Normalize**
+4. **Clustering — Three Complementary Methods**
+   - **Estimate the best rank (= number of subtypes) across a candidate range.**
+   - **Pick the best rank from the estimation above.**
+   - **Assign each training sample to a subtype.**
+   - **Refit with more NMF runs and save a re-usable model object, so new**
+5. **Predict Subtypes on the Validation Split**
+6. **Dimensionality Reduction for Visualization (t-SNE & UMAP)**
+7. **Clustering Quality Evaluation**
+8. **Consistency Between the Three Clustering Methods**
+9. **Subtype-Specific Marker Features & Enhanced Visualization**
+10. **Deployment: Predict Subtypes for New Samples**
+11. **Save Final Objects**
 
 ### 0 CONFIG
 
@@ -161,17 +47,21 @@ This section defines seeds, output paths, and dependencies. Update these paths a
 #| out-width: '100%'
 # 0. CONFIG
 # ---------------------------------------------------------------------------
+rm(list = ls())
+library(icare)
+
 INPUT_STAT_OBJ  <- "stat_obj.rds"
 OUTPUT_DIR      <- "./Module3_Advanced_Output"
 GROUP_COL       <- "group"   # the outcome/group column carried over from Module 1
 SEED            <- 123
 
 dir.create(OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
-sub_dir <- function(...) {
-  d <- file.path(OUTPUT_DIR, ...)
-  dir.create(d, showWarnings = FALSE, recursive = TRUE)
-  d
-}
+# Register OUTPUT_DIR with the package rather than defining a local sub_dir().
+# icare already ships sub_dir(); a local definition shadows it only inside this
+# script, so functions INSIDE the package that call sub_dir() themselves would
+# still resolve it in the icare namespace and write somewhere else. Calling
+# set_output_root() points both this script and the package at the same tree.
+set_output_root(OUTPUT_DIR)
 
 # =============================================================================
 ````
@@ -199,22 +89,6 @@ sub_obj@clean.data <- sub_obj@clean.data[, features, drop = FALSE]
 # =============================================================================
 ````
 
-### 2 Normalize and Split into Train / Validation Sets
-
-This section preprocesses the data. Review missingness, outlier handling, and normalization before accepting the defaults.
-
-````{r}
-#| label: module3-advanced-11
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-# 2. Normalize and Split into Train / Validation Sets
-# =============================================================================
-# =============================================================================
-````
-
 ### 2 Split into Train / Validation Sets, then Normalize
 
 This section preprocesses the data. Review missingness, outlier handling, and normalization before accepting the defaults.
@@ -239,15 +113,13 @@ split <- SplitSubtypingObject(sub_obj, p = 0.7, stratify_by = GROUP_COL)
 
 # min-max scaling keeps all features non-negative, which NMF requires.
 # Fit normalization on the TRAINING split only.
-# min-max scaling keeps all features non-negative, which NMF requires.
-# Fit normalization on the TRAINING split only.
-# IMPORTANT: explicitly pass group_col = GROUP_COL ("SWAB", configured at the
-# top of this script) so the outcome column is correctly excluded from
-# scaling. Sub_normalize_process()'s default group_col is the literal string
-# "group" -- if left unset here, "SWAB" would NOT be recognized as the
-# group column, and (being non-numeric) would silently remain in scale.data,
-# later crashing NMF::nmf() deep inside with an unrelated "'x' must be
-# numeric" error instead of a clear one at this step.
+# IMPORTANT: pass group_col = GROUP_COL explicitly. Sub_normalize_process()'s
+# default is the literal string "group", so renaming GROUP_COL in the CONFIG
+# block and leaving this call alone would normalize against the wrong name.
+# Since the 1.1 label contract the outcome lives in info.data and never in
+# clean.data, so it can no longer leak into scale.data; the defensive check
+# below still guards the assumption that matters -- every column handed to
+# K-means / LPA / NMF must be numeric.
 sub_train <- Sub_normalize_process(split$train, normalize_method = "min_max",
                                    group_col = GROUP_COL)
 cat("Normalization completed. scale.data dimensions:", dim(sub_train@scale.data), "\n")
@@ -378,7 +250,7 @@ print(table(sub_train@info.data$cluster_nmf))
 
 ````
 
-### 3.3d Refit with more NMF runs and save a re-usable model object, so new
+### 3.3d Refit with more NMF runs and save a re-usable model object for new data
 
 This section trains and compares candidate models. Select models using discrimination, calibration, stability, and clinical utility together.
 
@@ -563,7 +435,12 @@ tryCatch(
     sub_train, p_cutoff = 2, deg_df = multi_deg, group_by = "cluster_lpa",
     annotation_cols = tolower(GROUP_COL), top_n = 5, log_transform = TRUE,
     save_path = file.path(deg_dir, "cluster_heatmap_with_outcome.pdf"),
-    annotation_palette = list(swab = c("Case" = "#D32F2F", "Healthy Control" = "#1976D2"))
+    # Key the palette by the SAME name as annotation_cols. A key that does not
+    # match an annotation column is ignored silently, so the bar comes out in
+    # the default colours instead of failing loudly.
+    annotation_palette = setNames(
+      list(c("Case" = "#D32F2F", "Healthy Control" = "#1976D2")),
+      tolower(GROUP_COL))
   ),
   error = function(e) message("Annotated sample-level heatmap skipped (raster backend): ", e$message)
 )

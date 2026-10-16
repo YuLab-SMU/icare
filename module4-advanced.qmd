@@ -8,155 +8,26 @@ The optional development check runs only when the referenced local package path 
 
 ## Step-by-step Workflow
 
-<!-- split-into-step-chunks -->
-
 The workflow is divided into short stages. Each note explains the purpose, key checks, and interpretation limits. Generated plots and tables appear directly below their code chunk.
 
-### Environment and Global Setup
+### About this chapter
 
-This section performs the core analysis for this stage. Review the output immediately below the code and confirm that data ranges, assumptions, and results match the study design.
+**Audience.** Advanced users building and validating a clinical survival model with all diagnostic and explanatory tools.
 
-````{r}
-#| label: module4-advanced-01
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-# =============================================================================
-# icare Package Vignette — Module 4: Survival / Prognosis Modeling (PrognosiX)
-# ADVANCED / PUBLICATION EDITION — STRICT TRAIN/VALIDATION SPLIT
-# =============================================================================
-# Audience : Advanced users building and validating a clinical survival model
-#            with all diagnostic and explanatory tools.
-# Dataset  : Custom Excel file from PMID37633276_DIA_plasmaproomic.xlsx.
-#            Replace the file path with your own data.
-# Pipeline (all steps performed on TRAINING set, except final validation):
-````
+**Input.** Reads `data/PMID37633276_DIA_plasmaproomic.xlsx` (sheet `Table S1B`) directly.
 
-### 1 Build Stat object with time/status in info.data, convert to PrognosiX
+The chapter runs end to end as one session:
 
-This section creates the icare analysis object that stores data, metadata, and workflow state for all later steps.
-
-````{r}
-#| label: module4-advanced-02
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   1) Build Stat object with time/status in info.data, convert to PrognosiX
-````
-
-### 2 Feature selection (multi-method, ONLY on training set)
-
-This section selects candidate features. Consider effect size, stability, and biological plausibility rather than a single significance measure.
-
-````{r}
-#| label: module4-advanced-03
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   2) Feature selection (multi-method, ONLY on training set)
-````
-
-### 3 Train/Validation split, algorithm benchmarking, hyperparameter tuning
-
-This section creates training and validation sets. Restrict feature selection and parameter estimation to the training set to prevent leakage.
-
-````{r}
-#| label: module4-advanced-04
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   3) Train/Validation split, algorithm benchmarking, hyperparameter tuning
-````
-
-### 4 Model evaluation: KM curves, subgroup forest, time‑dependent AUC,
-
-This section trains and compares candidate models. Select models using discrimination, calibration, stability, and clinical utility together.
-
-````{r}
-#| label: module4-advanced-05
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   4) Model evaluation: KM curves, subgroup forest, time‑dependent AUC,
-#      calibration, nomogram, external validation
-````
-
-### 5 Robustness checks: stability, ablation, sensitivity
-
-This section tests sensitivity to sampling, censoring, and feature changes. Robust conclusions should remain similar under reasonable perturbations.
-
-````{r}
-#| label: module4-advanced-06
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   5) Robustness checks: stability, ablation, sensitivity
-````
-
-### 6 Decision curve analysis (DCA) and SHAP explanations (on validation set)
-
-This section examines clinical utility and model explanations. Explanatory plots describe model behavior and do not establish causality.
-
-````{r}
-#| label: module4-advanced-07
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   6) Decision curve analysis (DCA) and SHAP explanations (on validation set)
-````
-
-### 7 Save final PrognosiX object
-
-This section saves model objects, tables, and figures for reproducibility, review, and reuse.
-
-````{r}
-#| label: module4-advanced-08
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   7) Save final PrognosiX object
-````
-
-### 8 Deployment: prediction functions + interactive Shiny app
-
-This section applies the trained object to new samples. Validate input format, performance, and target population in an independent cohort before deployment.
-
-````{r}
-#| label: module4-advanced-09
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-#   8) Deployment: prediction functions + interactive Shiny app
-# =============================================================================
-# ---------------------------------------------------------------------------
-````
+1. **CONFIG & Environment Setup**
+2. **Data Preparation (custom Excel data)**
+3. **Feature Selection (ONLY on training set)**
+4. **Algorithm Benchmarking & Hyperparameter Tuning**
+5. **Model Evaluation**
+6. **Robustness Analysis**
+7. **DCA & SHAP**
+8. **Save Final PrognosiX Object**
+9. **Deployment: Prediction for New Samples**
+10. **Final Report**
 
 ### 0 CONFIG & Environment Setup
 
@@ -179,22 +50,6 @@ VERSION <- "Advanced"
 OUTPUT_ROOT <- "./PrognosiX_Output"
 OUTPUT_DIR <- file.path(OUTPUT_ROOT, VERSION)
 
-# Helper to create subdirectories
-sub_dir <- function(...) {
-  d <- file.path(OUTPUT_DIR, ...)
-  dir.create(d, showWarnings = FALSE, recursive = TRUE)
-  d
-}
-
-# Create version root and standard subfolders
-sub_dir()
-sub_dir("data")
-sub_dir("01_feature_selection")
-sub_dir("02_model")
-sub_dir("03_evaluation")
-sub_dir("04_robustness")
-sub_dir("05_xai")
-
 # Load required packages
 library(icare)
 required_pkgs <- c("mlr3", "mlr3proba", "mlr3viz", "mlr3learners", 
@@ -204,6 +59,23 @@ required_pkgs <- c("mlr3", "mlr3proba", "mlr3viz", "mlr3learners",
 missing_pkgs <- required_pkgs[!sapply(required_pkgs, requireNamespace, quietly = TRUE)]
 if (length(missing_pkgs)) install.packages(missing_pkgs)
 invisible(lapply(required_pkgs, library, character.only = TRUE))
+
+# Register OUTPUT_DIR with the package rather than defining a local sub_dir().
+# icare already ships sub_dir(); a local definition shadows it only inside this
+# script, so functions INSIDE the package that call sub_dir() themselves (e.g.
+# plot_tdROC_comparison(), plot_multitime_calibration()) would still resolve it
+# in the icare namespace and write to a session-temp directory. Calling
+# set_output_root() points both this script and the package at the same tree.
+set_output_root(OUTPUT_DIR)
+
+# Create version root and standard subfolders
+sub_dir()
+sub_dir("data")
+sub_dir("01_feature_selection")
+sub_dir("02_model")
+sub_dir("03_evaluation")
+sub_dir("04_robustness")
+sub_dir("05_xai")
 
 # ---------------------------------------------------------------------------
 ````
@@ -461,7 +333,10 @@ train_prog@info.data <- prog@info.data[train_idx, , drop = FALSE]
 train_prog@survival.data <- prog@survival.data[train_idx, , drop = FALSE]
 
 clinical_cols <- colnames(train_prog@info.data)
-candidate_vars <- c("Gender", "Tobacco.smoking.history", "Drinking.history", "TNM.Stage")
+# info.data names are normalised by CreateStatObject(): spaces and dots become
+# underscores. Passing the dotted spelling would make intersect() drop
+# everything except "Gender" and silently shrink the subgroup forest.
+candidate_vars <- c("Gender", "Tobacco_smoking_history", "Drinking_history", "TNM_Stage")
 subgroup_vars <- intersect(candidate_vars, clinical_cols)
 
 forest <- surv_plot_subgroup_forest(
@@ -631,23 +506,6 @@ prog@subgroup.risk <- list(
 prog@split.data <- list(train_idx = train_idx, val_idx = val_idx)
 saveRDS(prog, file = file.path(sub_dir("data"), "prog_obj_final.rds"))
 
-# ---------------------------------------------------------------------------
-````
-
-### 8 Deployment
-
-This section applies the trained object to new samples. Validate input format, performance, and target population in an independent cohort before deployment.
-
-````{r}
-#| label: module4-advanced-18
-#| cache: false
-#| echo: true
-#| message: false
-#| warning: false
-#| fig-show: hold
-#| out-width: '100%'
-# 8. Deployment
-# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 ````
 

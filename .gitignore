@@ -19,3 +19,6 @@ PrognosiX*_Output/
 NRIDI_Manual_Results/
 .reasonix/
 reasonix.toml
+
+/.quarto/
+**/*.quarto_ipynb
