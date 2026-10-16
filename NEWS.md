@@ -89,8 +89,13 @@ class of bug unrepresentable rather than merely discouraged.
     is NA.** Their rows survive by design (info.data is append-only), but a
     warning now says they will drop out of every group comparison.
 *   **Roxygen examples still put the group column inside the feature matrix**,
-    which the new contract rejects. All 14 affected examples were rewritten to
-    pass the label through info.data and verified end-to-end.
+    which the new contract rejects. The first pass caught 14 examples, but R
+    CMD check on `main` still failed: 18 *executable* examples (the stat
+    module) and 3 `\dontrun{}` examples (the prognosis module) had been missed,
+    because the interactive-gated and non-run blocks are not exercised by the
+    test suite. All 21 were rewritten to pass the label through info.data, and
+    the `@param group_col` missing from `CreateSubtypingObject()` was
+    documented, clearing the matching `Rd \usage` WARNING.
 *   **`ConvertObject(Stat -> Subtyping)` left `group_col` pointing at a
     column that no longer exists.** Subtyping renames info.data with
     `janitor::make_clean_names()`, a DIFFERENT rule from the
