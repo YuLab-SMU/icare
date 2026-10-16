@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.10.18">
+<meta name="generator" content="quarto-1.10.19">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -79,10 +79,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-aae1decb7c0a57a761683734fafe0f97.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-fa39313ee0ae67082205aa4c05164dde.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -399,20 +399,20 @@ Built-in (union): 20 features</code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>                                                                            Feature
 Platelet_volume_distribution_width               Platelet_volume_distribution_width
-Platelet_count                                                       Platelet_count
-Hematocrit                                                               Hematocrit
 Mean_corpuscular_hemoglobin_concentration Mean_corpuscular_hemoglobin_concentration
 Mean_platelet_volume                                           Mean_platelet_volume
 age                                                                             age
 Lymphocytes_count                                                 Lymphocytes_count
-Mean_red_blood_cell_volume                               Mean_red_blood_cell_volume
+Hematocrit                                                               Hematocrit
+Platelet_count                                                       Platelet_count
 Hemoglobin                                                               Hemoglobin
 Eosinophil                                                               Eosinophil
-Red_blood_cell_distribution_width_CV           Red_blood_cell_distribution_width_CV
-PCT                                                                             PCT
+Mean_red_blood_cell_volume                               Mean_red_blood_cell_volume
+Lymphocytes                                                             Lymphocytes
 Monocytes                                                                 Monocytes
 Red_blood_cell_count                                           Red_blood_cell_count
-Lymphocytes                                                             Lymphocytes
+Mean_cell_hemoglobin                                           Mean_cell_hemoglobin
+PCT                                                                             PCT
 Basophil_count                                                       Basophil_count
 Monocytes_count                                                     Monocytes_count
 sex2                                                                           sex2
@@ -420,20 +420,20 @@ Red_blood_cell_distribution_width_SD           Red_blood_cell_distribution_width
 Basophil                                                                   Basophil
                                            rf glm Selected
 Platelet_volume_distribution_width        Yes Yes     [OK]
-Platelet_count                            Yes Yes     [OK]
-Hematocrit                                Yes Yes     [OK]
 Mean_corpuscular_hemoglobin_concentration Yes Yes     [OK]
 Mean_platelet_volume                      Yes Yes     [OK]
 age                                       Yes Yes     [OK]
 Lymphocytes_count                         Yes Yes     [OK]
-Mean_red_blood_cell_volume                Yes Yes     [OK]
+Hematocrit                                Yes Yes     [OK]
+Platelet_count                            Yes Yes     [OK]
 Hemoglobin                                Yes Yes     [OK]
 Eosinophil                                Yes Yes     [OK]
-Red_blood_cell_distribution_width_CV      Yes   -     [OK]
-PCT                                       Yes   -     [OK]
+Mean_red_blood_cell_volume                Yes Yes     [OK]
+Lymphocytes                               Yes   -     [OK]
 Monocytes                                 Yes   -     [OK]
 Red_blood_cell_count                      Yes   -     [OK]
-Lymphocytes                               Yes   -     [OK]
+Mean_cell_hemoglobin                      Yes   -     [OK]
+PCT                                       Yes   -     [OK]
 Basophil_count                              - Yes     [OK]
 Monocytes_count                             - Yes     [OK]
 sex2                                        - Yes     [OK]
@@ -455,20 +455,20 @@ Downstream slots (models, results) have been reset ; split.data/split.scale.data
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "Platelet_volume_distribution_width"       
- [2] "Platelet_count"                           
- [3] "Hematocrit"                               
- [4] "Mean_corpuscular_hemoglobin_concentration"
- [5] "Mean_platelet_volume"                     
- [6] "age"                                      
- [7] "Lymphocytes_count"                        
- [8] "Mean_red_blood_cell_volume"               
- [9] "Hemoglobin"                               
-[10] "Eosinophil"                               
-[11] "Red_blood_cell_distribution_width_CV"     
-[12] "PCT"                                      
-[13] "Monocytes"                                
-[14] "Red_blood_cell_count"                     
-[15] "Lymphocytes"                              
+ [2] "Mean_corpuscular_hemoglobin_concentration"
+ [3] "Mean_platelet_volume"                     
+ [4] "age"                                      
+ [5] "Lymphocytes_count"                        
+ [6] "Hematocrit"                               
+ [7] "Platelet_count"                           
+ [8] "Hemoglobin"                               
+ [9] "Eosinophil"                               
+[10] "Mean_red_blood_cell_volume"               
+[11] "Lymphocytes"                              
+[12] "Monocytes"                                
+[13] "Red_blood_cell_count"                     
+[14] "Mean_cell_hemoglobin"                     
+[15] "PCT"                                      
 [16] "group"                                    </code></pre>
 </div>
 <details class="code-fold">
@@ -556,25 +556,23 @@ Using repeatedcv with 10 folds and 3 repeats (n = 422 ) | folds shared across al
 
 ========== Cross-Validation Performance ==========
    Model   CV_Mean      CV_SD
-2     rf 0.9322723 0.04133843
-3    gbm 0.9188892 0.05600074
-1 glmnet 0.8863598 0.04837112</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
+2     rf 0.9249854 0.04065092
+3    gbm 0.9241539 0.04043910
+1 glmnet 0.8776949 0.05194069
+
 ========== Final Evaluation on Holdout Test Set ==========
-Test ROC     : 0.9667 
-Test Accuracy: 0.905 
+Test ROC     : 0.9634 
+Test Accuracy: 0.8939 
 Train AUC    : 1 
-Gap          : 0.0333 (Acceptable)
+Gap          : 0.0366 (Acceptable)
 
 Saving diagnostic plots to: . </code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Plot saved to: ./roc_curves.pdf 
 Plot data saved to: ./roc_curve_data.csv 
-       rf       gbm    glmnet 
-0.9666797 0.9663537 0.9406625 </code></pre>
+      gbm        rf    glmnet 
+0.9645279 0.9633542 0.9337507 </code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>CV comparison plot + data saved to: . 
@@ -583,7 +581,7 @@ Plot data saved to: ./roc_curve_data.csv
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -607,37 +605,34 @@ Plot data saved to: ./roc_curve_data.csv
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Pick the best model (by AUC) and look at its performance</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>model_obj <span class="ot">&lt;-</span> <span class="fu">SelectBestModel</span>(model_obj, <span class="at">metric =</span> <span class="st">"auc"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Pick the best model (by AUC) and look at its performance</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>model_obj <span class="ot">&lt;-</span> <span class="fu">SelectBestModel</span>(model_obj, <span class="at">metric =</span> <span class="st">"auc"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>Best model ( auc ):  rf </code></pre>
+<pre><code>Best model ( auc ):  gbm </code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Best model:"</span>, model_obj<span class="sc">@</span>best.model.result<span class="sc">$</span>model_type, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Best model:"</span>, model_obj<span class="sc">@</span>best.model.result<span class="sc">$</span>model_type, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>Best model: rf </code></pre>
+<pre><code>Best model: gbm </code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotMultiROC</span>(model_obj, <span class="at">test_data =</span> model_obj<span class="sc">@</span>split.scale.data<span class="sc">$</span>testing, <span class="at">save_plot =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotMultiROC</span>(model_obj, <span class="at">test_data =</span> model_obj<span class="sc">@</span>split.scale.data<span class="sc">$</span>testing, <span class="at">save_plot =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>Truth factor levels: 0, 1
-Using '1' as positive class
+<pre><code>Truth factor levels: Healthy Control, Case
+Using 'Case' as positive class
 
 Processing model: glmnet
-  Warning: Column '1' not found. Using 2nd column instead.
-  [OK] AUC = 0.941
+  [OK] AUC = 0.934
 Processing model: rf
-  Warning: Column '1' not found. Using 2nd column instead.
-  [OK] AUC = 0.967
+  [OK] AUC = 0.963
 Processing model: gbm
-  Warning: Column '1' not found. Using 2nd column instead.
-  [OK] AUC = 0.966</code></pre>
+  [OK] AUC = 0.965</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Plot saved to: /home/runner/work/icare/icare/Figures/Model/multi_ROC.pdf 
@@ -646,43 +641,42 @@ Processing model: gbm
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotConfusionMatrix</span>(model_obj, <span class="at">test_data =</span> model_obj<span class="sc">@</span>split.scale.data<span class="sc">$</span>testing,</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">model_name =</span> model_obj<span class="sc">@</span>best.model.result<span class="sc">$</span>model_type,</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">threshold =</span> <span class="fl">0.5</span>, <span class="at">save_plot =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotConfusionMatrix</span>(model_obj, <span class="at">test_data =</span> model_obj<span class="sc">@</span>split.scale.data<span class="sc">$</span>testing,</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">model_name =</span> model_obj<span class="sc">@</span>best.model.result<span class="sc">$</span>model_type,</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">threshold =</span> <span class="fl">0.5</span>, <span class="at">save_plot =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>True labels - Levels: [0, 1]
+<pre><code>True labels - Levels: [Healthy Control, Case]
 Using probability predictions with threshold = 0.500
-Positive class: 1 | Negative class: 0
-Assuming second column corresponds to positive class.
-Predicted labels (thresholded) - Levels: [0, 1]
-Final predicted levels: [0, 1]
+Positive class: Case | Negative class: Healthy Control
+Predicted labels (thresholded) - Levels: [Healthy Control, Case]
+Final predicted levels: [Healthy Control, Case]
 
 ----------------------------------------
 Performance Metrics (test set)
 ----------------------------------------
-TP = 105 | TN = 57 | FP = 14 | FN = 3
+TP = 100 | TN = 61 | FP = 10 | FN = 8
 Total N = 179
-Accuracy     = 0.905 (90.5%)
-Sensitivity  = 0.972 (97.2%)   [Recall / TPR]
-Specificity  = 0.803 (80.3%)   [TNR]
-PPV (Precision) = 0.882 (88.2%)
-NPV             = 0.950 (95.0%)
+Accuracy     = 0.899 (89.9%)
+Sensitivity  = 0.926 (92.6%)   [Recall / TPR]
+Specificity  = 0.859 (85.9%)   [TNR]
+PPV (Precision) = 0.909 (90.9%)
+NPV             = 0.884 (88.4%)
 Prevalence (test) = 0.603 (60.3%)</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[OK] Plot saved to: /home/runner/work/icare/icare/Figures/Model/confusion_rf_thr050.pdf</code></pre>
+<pre><code>[OK] Plot saved to: /home/runner/work/icare/icare/Figures/Model/confusion_gbm_thr050.pdf</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotFeatureImportance</span>(model_obj, <span class="at">top_n =</span> <span class="dv">15</span>, <span class="at">save_plot =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotFeatureImportance</span>(model_obj, <span class="at">top_n =</span> <span class="dv">15</span>, <span class="at">save_plot =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Plot saved to: /home/runner/work/icare/icare/Figures/Model/feature_importance.pdf </code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -713,13 +707,13 @@ Prevalence (test) = 0.603 (60.3%)</code></pre>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 6. Save your trained model</span></span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(model_obj, <span class="at">file =</span> <span class="st">"model_obj.rds"</span>)</span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Done! model_obj.rds saved.</span><span class="sc">\n</span><span class="st">"</span>,</span>
-<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Want ensembles, tuning, SHAP explanations, or clinical thresholds?"</span>,</span>
-<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"See the ADVANCED version of this script.</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 6. Save your trained model</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(model_obj, <span class="at">file =</span> <span class="st">"model_obj.rds"</span>)</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Done! model_obj.rds saved.</span><span class="sc">\n</span><span class="st">"</span>,</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Want ensembles, tuning, SHAP explanations, or clinical thresholds?"</span>,</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"See the ADVANCED version of this script.</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -1198,224 +1192,224 @@ Done! model_obj.rds saved.
       </a>
   </div>
 </nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># Module 2: Classification Modeling — Quick Start</span></span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>This chapter converts the cleaned <span class="in">`Stat`</span> object into icare's <span class="in">`Train_Model`</span> object, selects informative features, performs a stratified development split, estimates preprocessing from training data, benchmarks common classifiers through the caret-based interface, and selects a final model using held-out AUC.</span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a><span class="fu">## Important Notes</span></span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>The <span class="in">`Train_Model`</span> object is designed to preserve the modeling state needed for later prediction and deployment. Estimate imputation, scaling, feature selection, tuning, and decision thresholds from training data only, then apply the stored operations unchanged to the test set. Preserve this sequence when changing the data, class outcome, or resampling design.</span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step-by-step Workflow</span></span>
-<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- split-into-step-chunks --&gt;</span></span>
-<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>The workflow is divided into short stages. Each note explains the purpose, key checks, and interpretation limits. Generated plots and tables appear directly below their code chunk.</span>
-<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a><span class="fu">### Environment and Global Setup</span></span>
-<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>This section performs the core analysis for this stage. Review the output immediately below the code and confirm that data ranges, assumptions, and results match the study design.</span>
-<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a><span class="in">````{r}</span></span>
-<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: module2-quickstart-01</span></span>
-<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a><span class="co">#| cache: false</span></span>
-<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
-<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
-<span id="cb36-24"><a href="#cb36-24" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
-<span id="cb36-25"><a href="#cb36-25" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-show: hold</span></span>
-<span id="cb36-26"><a href="#cb36-26" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: '100%'</span></span>
-<span id="cb36-27"><a href="#cb36-27" aria-hidden="true" tabindex="-1"></a><span class="co"># =============================================================================</span></span>
-<span id="cb36-28"><a href="#cb36-28" aria-hidden="true" tabindex="-1"></a><span class="co"># icare Package Vignette — Module 2: Modeling Pipeline</span></span>
-<span id="cb36-29"><a href="#cb36-29" aria-hidden="true" tabindex="-1"></a><span class="co"># QUICK-START EDITION</span></span>
-<span id="cb36-30"><a href="#cb36-30" aria-hidden="true" tabindex="-1"></a><span class="co"># =============================================================================</span></span>
-<span id="cb36-31"><a href="#cb36-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Audience : Users who just want a trained, evaluated model without exploring</span></span>
-<span id="cb36-32"><a href="#cb36-32" aria-hidden="true" tabindex="-1"></a><span class="co">#            every feature-selection method, ensemble strategy, or clinical</span></span>
-<span id="cb36-33"><a href="#cb36-33" aria-hidden="true" tabindex="-1"></a><span class="co">#            extra.</span></span>
-<span id="cb36-34"><a href="#cb36-34" aria-hidden="true" tabindex="-1"></a><span class="co"># Input    : "stat_obj.rds", produced by Module 1 (data cleaning).</span></span>
-<span id="cb36-35"><a href="#cb36-35" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
-<span id="cb36-36"><a href="#cb36-36" aria-hidden="true" tabindex="-1"></a><span class="co"># This script covers: convert to a modeling object -&gt; select features -&gt;</span></span>
-<span id="cb36-37"><a href="#cb36-37" aria-hidden="true" tabindex="-1"></a><span class="co"># split &amp; scale -&gt; train a few algorithms -&gt; pick the best -&gt; evaluate it.</span></span>
-<span id="cb36-38"><a href="#cb36-38" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
-<span id="cb36-39"><a href="#cb36-39" aria-hidden="true" tabindex="-1"></a><span class="co"># Looking for feature-selection comparisons, ensembles, tuning, SHAP</span></span>
-<span id="cb36-40"><a href="#cb36-40" aria-hidden="true" tabindex="-1"></a><span class="co"># explanations, or clinical thresholds/NRI? See</span></span>
-<span id="cb36-41"><a href="#cb36-41" aria-hidden="true" tabindex="-1"></a><span class="co"># "02_module2_modeling_ADVANCED.R" instead.</span></span>
-<span id="cb36-42"><a href="#cb36-42" aria-hidden="true" tabindex="-1"></a><span class="co"># =============================================================================</span></span>
-<span id="cb36-43"><a href="#cb36-43" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
-<span id="cb36-44"><a href="#cb36-44" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(icare)</span>
-<span id="cb36-45"><a href="#cb36-45" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(caret)</span>
-<span id="cb36-46"><a href="#cb36-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-47"><a href="#cb36-47" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
-<span id="cb36-48"><a href="#cb36-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-49"><a href="#cb36-49" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
-<span id="cb36-50"><a href="#cb36-50" aria-hidden="true" tabindex="-1"></a><span class="in">````</span></span>
-<span id="cb36-51"><a href="#cb36-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-52"><a href="#cb36-52" aria-hidden="true" tabindex="-1"></a><span class="fu">### 1 Load the cleaned data and convert it into a modeling object</span></span>
-<span id="cb36-53"><a href="#cb36-53" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-54"><a href="#cb36-54" aria-hidden="true" tabindex="-1"></a>This section imports and organizes the data. Check dimensions and variable coding before continuing.</span>
-<span id="cb36-55"><a href="#cb36-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-56"><a href="#cb36-56" aria-hidden="true" tabindex="-1"></a><span class="in">````{r}</span></span>
-<span id="cb36-57"><a href="#cb36-57" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: module2-quickstart-02</span></span>
-<span id="cb36-58"><a href="#cb36-58" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
-<span id="cb36-59"><a href="#cb36-59" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
-<span id="cb36-60"><a href="#cb36-60" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
-<span id="cb36-61"><a href="#cb36-61" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-show: hold</span></span>
-<span id="cb36-62"><a href="#cb36-62" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: '100%'</span></span>
-<span id="cb36-63"><a href="#cb36-63" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Load the cleaned data and convert it into a modeling object</span></span>
-<span id="cb36-64"><a href="#cb36-64" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
-<span id="cb36-65"><a href="#cb36-65" aria-hidden="true" tabindex="-1"></a>stat_obj  <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"stat_obj.rds"</span>)</span>
-<span id="cb36-66"><a href="#cb36-66" aria-hidden="true" tabindex="-1"></a>model_obj <span class="ot">&lt;-</span> <span class="fu">ConvertObject</span>(stat_obj, <span class="at">to =</span> <span class="st">"Train_Model"</span>)</span>
-<span id="cb36-67"><a href="#cb36-67" aria-hidden="true" tabindex="-1"></a>model_obj<span class="sc">@</span>clean.df[[model_obj<span class="sc">@</span>group_col]] <span class="ot">&lt;-</span> <span class="fu">factor</span>(model_obj<span class="sc">@</span>clean.df[[model_obj<span class="sc">@</span>group_col]])</span>
-<span id="cb36-68"><a href="#cb36-68" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-69"><a href="#cb36-69" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
-<span id="cb36-70"><a href="#cb36-70" aria-hidden="true" tabindex="-1"></a><span class="in">````</span></span>
-<span id="cb36-71"><a href="#cb36-71" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-72"><a href="#cb36-72" aria-hidden="true" tabindex="-1"></a><span class="fu">### 2 Quick feature selection (built-in importance from a couple of models)</span></span>
-<span id="cb36-73"><a href="#cb36-73" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-74"><a href="#cb36-74" aria-hidden="true" tabindex="-1"></a>This section selects candidate features. Consider effect size, stability, and biological plausibility rather than a single significance measure.</span>
-<span id="cb36-75"><a href="#cb36-75" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-76"><a href="#cb36-76" aria-hidden="true" tabindex="-1"></a><span class="in">````{r}</span></span>
-<span id="cb36-77"><a href="#cb36-77" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: module2-quickstart-03</span></span>
-<span id="cb36-78"><a href="#cb36-78" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
-<span id="cb36-79"><a href="#cb36-79" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
-<span id="cb36-80"><a href="#cb36-80" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
-<span id="cb36-81"><a href="#cb36-81" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-show: hold</span></span>
-<span id="cb36-82"><a href="#cb36-82" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: '100%'</span></span>
-<span id="cb36-83"><a href="#cb36-83" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Quick feature selection (built-in importance from a couple of models)</span></span>
-<span id="cb36-84"><a href="#cb36-84" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
-<span id="cb36-85"><a href="#cb36-85" aria-hidden="true" tabindex="-1"></a>builtin <span class="ot">&lt;-</span> <span class="fu">FeatureSelectBuiltin</span>(</span>
-<span id="cb36-86"><a href="#cb36-86" aria-hidden="true" tabindex="-1"></a>  <span class="at">object =</span> model_obj,</span>
-<span id="cb36-87"><a href="#cb36-87" aria-hidden="true" tabindex="-1"></a>  <span class="at">models =</span> <span class="fu">c</span>(<span class="st">"rf"</span>, <span class="st">"glm"</span>),</span>
-<span id="cb36-88"><a href="#cb36-88" aria-hidden="true" tabindex="-1"></a>  <span class="at">top_n  =</span> <span class="dv">15</span>,</span>
-<span id="cb36-89"><a href="#cb36-89" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed   =</span> <span class="dv">123</span></span>
-<span id="cb36-90"><a href="#cb36-90" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb36-91"><a href="#cb36-91" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(builtin<span class="sc">$</span>importance_table)</span>
-<span id="cb36-92"><a href="#cb36-92" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-93"><a href="#cb36-93" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep only the top features identified above.</span></span>
-<span id="cb36-94"><a href="#cb36-94" aria-hidden="true" tabindex="-1"></a>model_obj <span class="ot">&lt;-</span> <span class="fu">ApplyFeatureSelection</span>(model_obj,builtin<span class="sc">$</span>importance_table<span class="sc">$</span>Feature[<span class="dv">1</span><span class="sc">:</span><span class="dv">15</span>])</span>
-<span id="cb36-95"><a href="#cb36-95" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(model_obj<span class="sc">@</span>clean.df)</span>
-<span id="cb36-96"><a href="#cb36-96" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
-<span id="cb36-97"><a href="#cb36-97" aria-hidden="true" tabindex="-1"></a><span class="in">````</span></span>
-<span id="cb36-98"><a href="#cb36-98" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-99"><a href="#cb36-99" aria-hidden="true" tabindex="-1"></a><span class="fu">### 3 Split into training/testing sets and scale the predictors</span></span>
-<span id="cb36-100"><a href="#cb36-100" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-101"><a href="#cb36-101" aria-hidden="true" tabindex="-1"></a>This section creates training and validation sets. Restrict feature selection and parameter estimation to the training set to prevent leakage.</span>
-<span id="cb36-102"><a href="#cb36-102" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-103"><a href="#cb36-103" aria-hidden="true" tabindex="-1"></a><span class="in">````{r}</span></span>
-<span id="cb36-104"><a href="#cb36-104" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: module2-quickstart-04</span></span>
-<span id="cb36-105"><a href="#cb36-105" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
-<span id="cb36-106"><a href="#cb36-106" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
-<span id="cb36-107"><a href="#cb36-107" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
-<span id="cb36-108"><a href="#cb36-108" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-show: hold</span></span>
-<span id="cb36-109"><a href="#cb36-109" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: '100%'</span></span>
-<span id="cb36-110"><a href="#cb36-110" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Split into training/testing sets and scale the predictors</span></span>
-<span id="cb36-111"><a href="#cb36-111" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
-<span id="cb36-112"><a href="#cb36-112" aria-hidden="true" tabindex="-1"></a><span class="co"># Stratified split: create 70% training indices while preserving</span></span>
-<span id="cb36-113"><a href="#cb36-113" aria-hidden="true" tabindex="-1"></a><span class="co">#    the distribution of the grouping variable (e.g., response class)</span></span>
-<span id="cb36-114"><a href="#cb36-114" aria-hidden="true" tabindex="-1"></a><span class="co">#    using caret's createDataPartition.</span></span>
-<span id="cb36-115"><a href="#cb36-115" aria-hidden="true" tabindex="-1"></a><span class="co">#    - model_obj@clean.df: the cleaned data frame</span></span>
-<span id="cb36-116"><a href="#cb36-116" aria-hidden="true" tabindex="-1"></a><span class="co">#    - model_obj@group_col: name of the column used for stratification</span></span>
-<span id="cb36-117"><a href="#cb36-117" aria-hidden="true" tabindex="-1"></a><span class="co">#    - p = 0.7: proportion for training</span></span>
-<span id="cb36-118"><a href="#cb36-118" aria-hidden="true" tabindex="-1"></a><span class="co">#    - list = FALSE: returns a vector of indices instead of a list</span></span>
-<span id="cb36-119"><a href="#cb36-119" aria-hidden="true" tabindex="-1"></a>idx <span class="ot">&lt;-</span> <span class="fu">createDataPartition</span>(model_obj<span class="sc">@</span>clean.df[[model_obj<span class="sc">@</span>group_col]], <span class="at">p =</span> <span class="fl">0.7</span>, <span class="at">list =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb36-120"><a href="#cb36-120" aria-hidden="true" tabindex="-1"></a><span class="co"># Split the original clean data into training and testing sets</span></span>
-<span id="cb36-121"><a href="#cb36-121" aria-hidden="true" tabindex="-1"></a><span class="co">#    based on the indices, and store them in the 'split.data' slot</span></span>
-<span id="cb36-122"><a href="#cb36-122" aria-hidden="true" tabindex="-1"></a><span class="co">#    of the S4 object.</span></span>
-<span id="cb36-123"><a href="#cb36-123" aria-hidden="true" tabindex="-1"></a>model_obj<span class="sc">@</span>split.data <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb36-124"><a href="#cb36-124" aria-hidden="true" tabindex="-1"></a>  <span class="at">training =</span> model_obj<span class="sc">@</span>clean.df[idx, ],</span>
-<span id="cb36-125"><a href="#cb36-125" aria-hidden="true" tabindex="-1"></a>  <span class="at">testing  =</span> model_obj<span class="sc">@</span>clean.df[<span class="sc">-</span>idx, ]</span>
-<span id="cb36-126"><a href="#cb36-126" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb36-127"><a href="#cb36-127" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute pre-processing parameters (center and scale) from the</span></span>
-<span id="cb36-128"><a href="#cb36-128" aria-hidden="true" tabindex="-1"></a><span class="co">#    training set, but ONLY on feature columns (exclude the grouping</span></span>
-<span id="cb36-129"><a href="#cb36-129" aria-hidden="true" tabindex="-1"></a><span class="co">#    column to avoid leaking the target/label information).</span></span>
-<span id="cb36-130"><a href="#cb36-130" aria-hidden="true" tabindex="-1"></a><span class="co">#    - setdiff() removes the group column from the feature set.</span></span>
-<span id="cb36-131"><a href="#cb36-131" aria-hidden="true" tabindex="-1"></a><span class="co">#    - method = c("center", "scale") standardises each feature to</span></span>
-<span id="cb36-132"><a href="#cb36-132" aria-hidden="true" tabindex="-1"></a><span class="co">#      mean = 0 and sd = 1.</span></span>
-<span id="cb36-133"><a href="#cb36-133" aria-hidden="true" tabindex="-1"></a>preProc <span class="ot">&lt;-</span> <span class="fu">preProcess</span>(</span>
-<span id="cb36-134"><a href="#cb36-134" aria-hidden="true" tabindex="-1"></a>  model_obj<span class="sc">@</span>split.data<span class="sc">$</span>training[, <span class="fu">setdiff</span>(<span class="fu">colnames</span>(model_obj<span class="sc">@</span>split.data<span class="sc">$</span>training), model_obj<span class="sc">@</span>group_col)],</span>
-<span id="cb36-135"><a href="#cb36-135" aria-hidden="true" tabindex="-1"></a>  <span class="at">method =</span> <span class="fu">c</span>(<span class="st">"center"</span>, <span class="st">"scale"</span>))</span>
-<span id="cb36-136"><a href="#cb36-136" aria-hidden="true" tabindex="-1"></a><span class="co">#  Apply the same pre-processing parameters (estimated from the</span></span>
-<span id="cb36-137"><a href="#cb36-137" aria-hidden="true" tabindex="-1"></a><span class="co">#    training data) to BOTH training and testing sets, ensuring</span></span>
-<span id="cb36-138"><a href="#cb36-138" aria-hidden="true" tabindex="-1"></a><span class="co">#    that the testing data is transformed using the training</span></span>
-<span id="cb36-139"><a href="#cb36-139" aria-hidden="true" tabindex="-1"></a><span class="co">#    statistics (no data leakage). The results are stored in the</span></span>
-<span id="cb36-140"><a href="#cb36-140" aria-hidden="true" tabindex="-1"></a><span class="co">#    'split.scale.data' slot as a list.</span></span>
-<span id="cb36-141"><a href="#cb36-141" aria-hidden="true" tabindex="-1"></a>model_obj<span class="sc">@</span>split.scale.data <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb36-142"><a href="#cb36-142" aria-hidden="true" tabindex="-1"></a>  <span class="at">training =</span> <span class="fu">predict</span>(preProc, model_obj<span class="sc">@</span>split.data<span class="sc">$</span>training),</span>
-<span id="cb36-143"><a href="#cb36-143" aria-hidden="true" tabindex="-1"></a>  <span class="at">testing  =</span> <span class="fu">predict</span>(preProc, model_obj<span class="sc">@</span>split.data<span class="sc">$</span>testing)</span>
-<span id="cb36-144"><a href="#cb36-144" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb36-145"><a href="#cb36-145" aria-hidden="true" tabindex="-1"></a><span class="co"># Assign the scaled datasets to the 'filtered.set' slot.</span></span>
-<span id="cb36-146"><a href="#cb36-146" aria-hidden="true" tabindex="-1"></a><span class="co">#    This step may be used for subsequent modelling or further</span></span>
-<span id="cb36-147"><a href="#cb36-147" aria-hidden="true" tabindex="-1"></a><span class="co">#    feature filtering (e.g., removing near-zero variance predictors).</span></span>
-<span id="cb36-148"><a href="#cb36-148" aria-hidden="true" tabindex="-1"></a>model_obj<span class="sc">@</span>filtered.set <span class="ot">&lt;-</span> model_obj<span class="sc">@</span>split.scale.data</span>
-<span id="cb36-149"><a href="#cb36-149" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-150"><a href="#cb36-150" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
-<span id="cb36-151"><a href="#cb36-151" aria-hidden="true" tabindex="-1"></a><span class="in">````</span></span>
-<span id="cb36-152"><a href="#cb36-152" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-153"><a href="#cb36-153" aria-hidden="true" tabindex="-1"></a><span class="fu">### 4 Train a handful of common algorithms and compare them</span></span>
-<span id="cb36-154"><a href="#cb36-154" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-155"><a href="#cb36-155" aria-hidden="true" tabindex="-1"></a>This section trains and compares candidate models. Select models using discrimination, calibration, stability, and clinical utility together.</span>
-<span id="cb36-156"><a href="#cb36-156" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-157"><a href="#cb36-157" aria-hidden="true" tabindex="-1"></a><span class="in">````{r}</span></span>
-<span id="cb36-158"><a href="#cb36-158" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: module2-quickstart-05</span></span>
-<span id="cb36-159"><a href="#cb36-159" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
-<span id="cb36-160"><a href="#cb36-160" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
-<span id="cb36-161"><a href="#cb36-161" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
-<span id="cb36-162"><a href="#cb36-162" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-show: hold</span></span>
-<span id="cb36-163"><a href="#cb36-163" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: '100%'</span></span>
-<span id="cb36-164"><a href="#cb36-164" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Train a handful of common algorithms and compare them</span></span>
-<span id="cb36-165"><a href="#cb36-165" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
-<span id="cb36-166"><a href="#cb36-166" aria-hidden="true" tabindex="-1"></a>model_obj <span class="ot">&lt;-</span> <span class="fu">ModelTrainAnalysis</span>(</span>
-<span id="cb36-167"><a href="#cb36-167" aria-hidden="true" tabindex="-1"></a>  <span class="at">object   =</span> model_obj,</span>
-<span id="cb36-168"><a href="#cb36-168" aria-hidden="true" tabindex="-1"></a>  <span class="at">methods  =</span> <span class="fu">c</span>(<span class="st">"glmnet"</span>, <span class="st">"rf"</span>, <span class="st">"gbm"</span>),</span>
-<span id="cb36-169"><a href="#cb36-169" aria-hidden="true" tabindex="-1"></a>  <span class="at">save_plots =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb36-170"><a href="#cb36-170" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed     =</span> <span class="dv">123</span>,<span class="at">save_dir =</span> <span class="st">"."</span></span>
-<span id="cb36-171"><a href="#cb36-171" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb36-172"><a href="#cb36-172" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-173"><a href="#cb36-173" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
-<span id="cb36-174"><a href="#cb36-174" aria-hidden="true" tabindex="-1"></a><span class="in">````</span></span>
-<span id="cb36-175"><a href="#cb36-175" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-176"><a href="#cb36-176" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5 Pick the best model (by AUC) and look at its performance</span></span>
-<span id="cb36-177"><a href="#cb36-177" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-178"><a href="#cb36-178" aria-hidden="true" tabindex="-1"></a>This section trains and compares candidate models. Select models using discrimination, calibration, stability, and clinical utility together.</span>
-<span id="cb36-179"><a href="#cb36-179" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-180"><a href="#cb36-180" aria-hidden="true" tabindex="-1"></a><span class="in">````{r}</span></span>
-<span id="cb36-181"><a href="#cb36-181" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: module2-quickstart-06</span></span>
-<span id="cb36-182"><a href="#cb36-182" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
-<span id="cb36-183"><a href="#cb36-183" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
-<span id="cb36-184"><a href="#cb36-184" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
-<span id="cb36-185"><a href="#cb36-185" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-show: hold</span></span>
-<span id="cb36-186"><a href="#cb36-186" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: '100%'</span></span>
-<span id="cb36-187"><a href="#cb36-187" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Pick the best model (by AUC) and look at its performance</span></span>
-<span id="cb36-188"><a href="#cb36-188" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
-<span id="cb36-189"><a href="#cb36-189" aria-hidden="true" tabindex="-1"></a>model_obj <span class="ot">&lt;-</span> <span class="fu">SelectBestModel</span>(model_obj, <span class="at">metric =</span> <span class="st">"auc"</span>)</span>
-<span id="cb36-190"><a href="#cb36-190" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Best model:"</span>, model_obj<span class="sc">@</span>best.model.result<span class="sc">$</span>model_type, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb36-191"><a href="#cb36-191" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotMultiROC</span>(model_obj, <span class="at">test_data =</span> model_obj<span class="sc">@</span>split.scale.data<span class="sc">$</span>testing, <span class="at">save_plot =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb36-192"><a href="#cb36-192" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotConfusionMatrix</span>(model_obj, <span class="at">test_data =</span> model_obj<span class="sc">@</span>split.scale.data<span class="sc">$</span>testing,</span>
-<span id="cb36-193"><a href="#cb36-193" aria-hidden="true" tabindex="-1"></a>                    <span class="at">model_name =</span> model_obj<span class="sc">@</span>best.model.result<span class="sc">$</span>model_type,</span>
-<span id="cb36-194"><a href="#cb36-194" aria-hidden="true" tabindex="-1"></a>                    <span class="at">threshold =</span> <span class="fl">0.5</span>, <span class="at">save_plot =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb36-195"><a href="#cb36-195" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotFeatureImportance</span>(model_obj, <span class="at">top_n =</span> <span class="dv">15</span>, <span class="at">save_plot =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb36-196"><a href="#cb36-196" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-197"><a href="#cb36-197" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
-<span id="cb36-198"><a href="#cb36-198" aria-hidden="true" tabindex="-1"></a><span class="in">````</span></span>
-<span id="cb36-199"><a href="#cb36-199" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-200"><a href="#cb36-200" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6 Save your trained model</span></span>
-<span id="cb36-201"><a href="#cb36-201" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-202"><a href="#cb36-202" aria-hidden="true" tabindex="-1"></a>This section trains and compares candidate models. Select models using discrimination, calibration, stability, and clinical utility together.</span>
-<span id="cb36-203"><a href="#cb36-203" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-204"><a href="#cb36-204" aria-hidden="true" tabindex="-1"></a><span class="in">````{r}</span></span>
-<span id="cb36-205"><a href="#cb36-205" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: module2-quickstart-07</span></span>
-<span id="cb36-206"><a href="#cb36-206" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
-<span id="cb36-207"><a href="#cb36-207" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
-<span id="cb36-208"><a href="#cb36-208" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
-<span id="cb36-209"><a href="#cb36-209" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-show: hold</span></span>
-<span id="cb36-210"><a href="#cb36-210" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: '100%'</span></span>
-<span id="cb36-211"><a href="#cb36-211" aria-hidden="true" tabindex="-1"></a><span class="co"># 6. Save your trained model</span></span>
-<span id="cb36-212"><a href="#cb36-212" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
-<span id="cb36-213"><a href="#cb36-213" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(model_obj, <span class="at">file =</span> <span class="st">"model_obj.rds"</span>)</span>
-<span id="cb36-214"><a href="#cb36-214" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-215"><a href="#cb36-215" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Done! model_obj.rds saved.</span><span class="sc">\n</span><span class="st">"</span>,</span>
-<span id="cb36-216"><a href="#cb36-216" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Want ensembles, tuning, SHAP explanations, or clinical thresholds?"</span>,</span>
-<span id="cb36-217"><a href="#cb36-217" aria-hidden="true" tabindex="-1"></a>    <span class="st">"See the ADVANCED version of this script.</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb36-218"><a href="#cb36-218" aria-hidden="true" tabindex="-1"></a><span class="in">````</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># Module 2: Classification Modeling — Quick Start</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>This chapter converts the cleaned <span class="in">`Stat`</span> object into icare's <span class="in">`Train_Model`</span> object, selects informative features, performs a stratified development split, estimates preprocessing from training data, benchmarks common classifiers through the caret-based interface, and selects a final model using held-out AUC.</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a><span class="fu">## Important Notes</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>The <span class="in">`Train_Model`</span> object is designed to preserve the modeling state needed for later prediction and deployment. Estimate imputation, scaling, feature selection, tuning, and decision thresholds from training data only, then apply the stored operations unchanged to the test set. Preserve this sequence when changing the data, class outcome, or resampling design.</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step-by-step Workflow</span></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- split-into-step-chunks --&gt;</span></span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>The workflow is divided into short stages. Each note explains the purpose, key checks, and interpretation limits. Generated plots and tables appear directly below their code chunk.</span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a><span class="fu">### Environment and Global Setup</span></span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>This section performs the core analysis for this stage. Review the output immediately below the code and confirm that data ranges, assumptions, and results match the study design.</span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a><span class="in">````{r}</span></span>
+<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: module2-quickstart-01</span></span>
+<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a><span class="co">#| cache: false</span></span>
+<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb35-23"><a href="#cb35-23" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb35-24"><a href="#cb35-24" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
+<span id="cb35-25"><a href="#cb35-25" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-show: hold</span></span>
+<span id="cb35-26"><a href="#cb35-26" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: '100%'</span></span>
+<span id="cb35-27"><a href="#cb35-27" aria-hidden="true" tabindex="-1"></a><span class="co"># =============================================================================</span></span>
+<span id="cb35-28"><a href="#cb35-28" aria-hidden="true" tabindex="-1"></a><span class="co"># icare Package Vignette — Module 2: Modeling Pipeline</span></span>
+<span id="cb35-29"><a href="#cb35-29" aria-hidden="true" tabindex="-1"></a><span class="co"># QUICK-START EDITION</span></span>
+<span id="cb35-30"><a href="#cb35-30" aria-hidden="true" tabindex="-1"></a><span class="co"># =============================================================================</span></span>
+<span id="cb35-31"><a href="#cb35-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Audience : Users who just want a trained, evaluated model without exploring</span></span>
+<span id="cb35-32"><a href="#cb35-32" aria-hidden="true" tabindex="-1"></a><span class="co">#            every feature-selection method, ensemble strategy, or clinical</span></span>
+<span id="cb35-33"><a href="#cb35-33" aria-hidden="true" tabindex="-1"></a><span class="co">#            extra.</span></span>
+<span id="cb35-34"><a href="#cb35-34" aria-hidden="true" tabindex="-1"></a><span class="co"># Input    : "stat_obj.rds", produced by Module 1 (data cleaning).</span></span>
+<span id="cb35-35"><a href="#cb35-35" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb35-36"><a href="#cb35-36" aria-hidden="true" tabindex="-1"></a><span class="co"># This script covers: convert to a modeling object -&gt; select features -&gt;</span></span>
+<span id="cb35-37"><a href="#cb35-37" aria-hidden="true" tabindex="-1"></a><span class="co"># split &amp; scale -&gt; train a few algorithms -&gt; pick the best -&gt; evaluate it.</span></span>
+<span id="cb35-38"><a href="#cb35-38" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb35-39"><a href="#cb35-39" aria-hidden="true" tabindex="-1"></a><span class="co"># Looking for feature-selection comparisons, ensembles, tuning, SHAP</span></span>
+<span id="cb35-40"><a href="#cb35-40" aria-hidden="true" tabindex="-1"></a><span class="co"># explanations, or clinical thresholds/NRI? See</span></span>
+<span id="cb35-41"><a href="#cb35-41" aria-hidden="true" tabindex="-1"></a><span class="co"># "02_module2_modeling_ADVANCED.R" instead.</span></span>
+<span id="cb35-42"><a href="#cb35-42" aria-hidden="true" tabindex="-1"></a><span class="co"># =============================================================================</span></span>
+<span id="cb35-43"><a href="#cb35-43" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
+<span id="cb35-44"><a href="#cb35-44" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(icare)</span>
+<span id="cb35-45"><a href="#cb35-45" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(caret)</span>
+<span id="cb35-46"><a href="#cb35-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-47"><a href="#cb35-47" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb35-48"><a href="#cb35-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-49"><a href="#cb35-49" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb35-50"><a href="#cb35-50" aria-hidden="true" tabindex="-1"></a><span class="in">````</span></span>
+<span id="cb35-51"><a href="#cb35-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-52"><a href="#cb35-52" aria-hidden="true" tabindex="-1"></a><span class="fu">### 1 Load the cleaned data and convert it into a modeling object</span></span>
+<span id="cb35-53"><a href="#cb35-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-54"><a href="#cb35-54" aria-hidden="true" tabindex="-1"></a>This section imports and organizes the data. Check dimensions and variable coding before continuing.</span>
+<span id="cb35-55"><a href="#cb35-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-56"><a href="#cb35-56" aria-hidden="true" tabindex="-1"></a><span class="in">````{r}</span></span>
+<span id="cb35-57"><a href="#cb35-57" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: module2-quickstart-02</span></span>
+<span id="cb35-58"><a href="#cb35-58" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb35-59"><a href="#cb35-59" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb35-60"><a href="#cb35-60" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
+<span id="cb35-61"><a href="#cb35-61" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-show: hold</span></span>
+<span id="cb35-62"><a href="#cb35-62" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: '100%'</span></span>
+<span id="cb35-63"><a href="#cb35-63" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Load the cleaned data and convert it into a modeling object</span></span>
+<span id="cb35-64"><a href="#cb35-64" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb35-65"><a href="#cb35-65" aria-hidden="true" tabindex="-1"></a>stat_obj  <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"stat_obj.rds"</span>)</span>
+<span id="cb35-66"><a href="#cb35-66" aria-hidden="true" tabindex="-1"></a>model_obj <span class="ot">&lt;-</span> <span class="fu">ConvertObject</span>(stat_obj, <span class="at">to =</span> <span class="st">"Train_Model"</span>)</span>
+<span id="cb35-67"><a href="#cb35-67" aria-hidden="true" tabindex="-1"></a>model_obj<span class="sc">@</span>clean.df[[model_obj<span class="sc">@</span>group_col]] <span class="ot">&lt;-</span> <span class="fu">factor</span>(model_obj<span class="sc">@</span>clean.df[[model_obj<span class="sc">@</span>group_col]])</span>
+<span id="cb35-68"><a href="#cb35-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-69"><a href="#cb35-69" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb35-70"><a href="#cb35-70" aria-hidden="true" tabindex="-1"></a><span class="in">````</span></span>
+<span id="cb35-71"><a href="#cb35-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-72"><a href="#cb35-72" aria-hidden="true" tabindex="-1"></a><span class="fu">### 2 Quick feature selection (built-in importance from a couple of models)</span></span>
+<span id="cb35-73"><a href="#cb35-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-74"><a href="#cb35-74" aria-hidden="true" tabindex="-1"></a>This section selects candidate features. Consider effect size, stability, and biological plausibility rather than a single significance measure.</span>
+<span id="cb35-75"><a href="#cb35-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-76"><a href="#cb35-76" aria-hidden="true" tabindex="-1"></a><span class="in">````{r}</span></span>
+<span id="cb35-77"><a href="#cb35-77" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: module2-quickstart-03</span></span>
+<span id="cb35-78"><a href="#cb35-78" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb35-79"><a href="#cb35-79" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb35-80"><a href="#cb35-80" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
+<span id="cb35-81"><a href="#cb35-81" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-show: hold</span></span>
+<span id="cb35-82"><a href="#cb35-82" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: '100%'</span></span>
+<span id="cb35-83"><a href="#cb35-83" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Quick feature selection (built-in importance from a couple of models)</span></span>
+<span id="cb35-84"><a href="#cb35-84" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb35-85"><a href="#cb35-85" aria-hidden="true" tabindex="-1"></a>builtin <span class="ot">&lt;-</span> <span class="fu">FeatureSelectBuiltin</span>(</span>
+<span id="cb35-86"><a href="#cb35-86" aria-hidden="true" tabindex="-1"></a>  <span class="at">object =</span> model_obj,</span>
+<span id="cb35-87"><a href="#cb35-87" aria-hidden="true" tabindex="-1"></a>  <span class="at">models =</span> <span class="fu">c</span>(<span class="st">"rf"</span>, <span class="st">"glm"</span>),</span>
+<span id="cb35-88"><a href="#cb35-88" aria-hidden="true" tabindex="-1"></a>  <span class="at">top_n  =</span> <span class="dv">15</span>,</span>
+<span id="cb35-89"><a href="#cb35-89" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed   =</span> <span class="dv">123</span></span>
+<span id="cb35-90"><a href="#cb35-90" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-91"><a href="#cb35-91" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(builtin<span class="sc">$</span>importance_table)</span>
+<span id="cb35-92"><a href="#cb35-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-93"><a href="#cb35-93" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep only the top features identified above.</span></span>
+<span id="cb35-94"><a href="#cb35-94" aria-hidden="true" tabindex="-1"></a>model_obj <span class="ot">&lt;-</span> <span class="fu">ApplyFeatureSelection</span>(model_obj,builtin<span class="sc">$</span>importance_table<span class="sc">$</span>Feature[<span class="dv">1</span><span class="sc">:</span><span class="dv">15</span>])</span>
+<span id="cb35-95"><a href="#cb35-95" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(model_obj<span class="sc">@</span>clean.df)</span>
+<span id="cb35-96"><a href="#cb35-96" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb35-97"><a href="#cb35-97" aria-hidden="true" tabindex="-1"></a><span class="in">````</span></span>
+<span id="cb35-98"><a href="#cb35-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-99"><a href="#cb35-99" aria-hidden="true" tabindex="-1"></a><span class="fu">### 3 Split into training/testing sets and scale the predictors</span></span>
+<span id="cb35-100"><a href="#cb35-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-101"><a href="#cb35-101" aria-hidden="true" tabindex="-1"></a>This section creates training and validation sets. Restrict feature selection and parameter estimation to the training set to prevent leakage.</span>
+<span id="cb35-102"><a href="#cb35-102" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-103"><a href="#cb35-103" aria-hidden="true" tabindex="-1"></a><span class="in">````{r}</span></span>
+<span id="cb35-104"><a href="#cb35-104" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: module2-quickstart-04</span></span>
+<span id="cb35-105"><a href="#cb35-105" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb35-106"><a href="#cb35-106" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb35-107"><a href="#cb35-107" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
+<span id="cb35-108"><a href="#cb35-108" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-show: hold</span></span>
+<span id="cb35-109"><a href="#cb35-109" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: '100%'</span></span>
+<span id="cb35-110"><a href="#cb35-110" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Split into training/testing sets and scale the predictors</span></span>
+<span id="cb35-111"><a href="#cb35-111" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb35-112"><a href="#cb35-112" aria-hidden="true" tabindex="-1"></a><span class="co"># Stratified split: create 70% training indices while preserving</span></span>
+<span id="cb35-113"><a href="#cb35-113" aria-hidden="true" tabindex="-1"></a><span class="co">#    the distribution of the grouping variable (e.g., response class)</span></span>
+<span id="cb35-114"><a href="#cb35-114" aria-hidden="true" tabindex="-1"></a><span class="co">#    using caret's createDataPartition.</span></span>
+<span id="cb35-115"><a href="#cb35-115" aria-hidden="true" tabindex="-1"></a><span class="co">#    - model_obj@clean.df: the cleaned data frame</span></span>
+<span id="cb35-116"><a href="#cb35-116" aria-hidden="true" tabindex="-1"></a><span class="co">#    - model_obj@group_col: name of the column used for stratification</span></span>
+<span id="cb35-117"><a href="#cb35-117" aria-hidden="true" tabindex="-1"></a><span class="co">#    - p = 0.7: proportion for training</span></span>
+<span id="cb35-118"><a href="#cb35-118" aria-hidden="true" tabindex="-1"></a><span class="co">#    - list = FALSE: returns a vector of indices instead of a list</span></span>
+<span id="cb35-119"><a href="#cb35-119" aria-hidden="true" tabindex="-1"></a>idx <span class="ot">&lt;-</span> <span class="fu">createDataPartition</span>(model_obj<span class="sc">@</span>clean.df[[model_obj<span class="sc">@</span>group_col]], <span class="at">p =</span> <span class="fl">0.7</span>, <span class="at">list =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb35-120"><a href="#cb35-120" aria-hidden="true" tabindex="-1"></a><span class="co"># Split the original clean data into training and testing sets</span></span>
+<span id="cb35-121"><a href="#cb35-121" aria-hidden="true" tabindex="-1"></a><span class="co">#    based on the indices, and store them in the 'split.data' slot</span></span>
+<span id="cb35-122"><a href="#cb35-122" aria-hidden="true" tabindex="-1"></a><span class="co">#    of the S4 object.</span></span>
+<span id="cb35-123"><a href="#cb35-123" aria-hidden="true" tabindex="-1"></a>model_obj<span class="sc">@</span>split.data <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb35-124"><a href="#cb35-124" aria-hidden="true" tabindex="-1"></a>  <span class="at">training =</span> model_obj<span class="sc">@</span>clean.df[idx, ],</span>
+<span id="cb35-125"><a href="#cb35-125" aria-hidden="true" tabindex="-1"></a>  <span class="at">testing  =</span> model_obj<span class="sc">@</span>clean.df[<span class="sc">-</span>idx, ]</span>
+<span id="cb35-126"><a href="#cb35-126" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-127"><a href="#cb35-127" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute pre-processing parameters (center and scale) from the</span></span>
+<span id="cb35-128"><a href="#cb35-128" aria-hidden="true" tabindex="-1"></a><span class="co">#    training set, but ONLY on feature columns (exclude the grouping</span></span>
+<span id="cb35-129"><a href="#cb35-129" aria-hidden="true" tabindex="-1"></a><span class="co">#    column to avoid leaking the target/label information).</span></span>
+<span id="cb35-130"><a href="#cb35-130" aria-hidden="true" tabindex="-1"></a><span class="co">#    - setdiff() removes the group column from the feature set.</span></span>
+<span id="cb35-131"><a href="#cb35-131" aria-hidden="true" tabindex="-1"></a><span class="co">#    - method = c("center", "scale") standardises each feature to</span></span>
+<span id="cb35-132"><a href="#cb35-132" aria-hidden="true" tabindex="-1"></a><span class="co">#      mean = 0 and sd = 1.</span></span>
+<span id="cb35-133"><a href="#cb35-133" aria-hidden="true" tabindex="-1"></a>preProc <span class="ot">&lt;-</span> <span class="fu">preProcess</span>(</span>
+<span id="cb35-134"><a href="#cb35-134" aria-hidden="true" tabindex="-1"></a>  model_obj<span class="sc">@</span>split.data<span class="sc">$</span>training[, <span class="fu">setdiff</span>(<span class="fu">colnames</span>(model_obj<span class="sc">@</span>split.data<span class="sc">$</span>training), model_obj<span class="sc">@</span>group_col)],</span>
+<span id="cb35-135"><a href="#cb35-135" aria-hidden="true" tabindex="-1"></a>  <span class="at">method =</span> <span class="fu">c</span>(<span class="st">"center"</span>, <span class="st">"scale"</span>))</span>
+<span id="cb35-136"><a href="#cb35-136" aria-hidden="true" tabindex="-1"></a><span class="co">#  Apply the same pre-processing parameters (estimated from the</span></span>
+<span id="cb35-137"><a href="#cb35-137" aria-hidden="true" tabindex="-1"></a><span class="co">#    training data) to BOTH training and testing sets, ensuring</span></span>
+<span id="cb35-138"><a href="#cb35-138" aria-hidden="true" tabindex="-1"></a><span class="co">#    that the testing data is transformed using the training</span></span>
+<span id="cb35-139"><a href="#cb35-139" aria-hidden="true" tabindex="-1"></a><span class="co">#    statistics (no data leakage). The results are stored in the</span></span>
+<span id="cb35-140"><a href="#cb35-140" aria-hidden="true" tabindex="-1"></a><span class="co">#    'split.scale.data' slot as a list.</span></span>
+<span id="cb35-141"><a href="#cb35-141" aria-hidden="true" tabindex="-1"></a>model_obj<span class="sc">@</span>split.scale.data <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb35-142"><a href="#cb35-142" aria-hidden="true" tabindex="-1"></a>  <span class="at">training =</span> <span class="fu">predict</span>(preProc, model_obj<span class="sc">@</span>split.data<span class="sc">$</span>training),</span>
+<span id="cb35-143"><a href="#cb35-143" aria-hidden="true" tabindex="-1"></a>  <span class="at">testing  =</span> <span class="fu">predict</span>(preProc, model_obj<span class="sc">@</span>split.data<span class="sc">$</span>testing)</span>
+<span id="cb35-144"><a href="#cb35-144" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-145"><a href="#cb35-145" aria-hidden="true" tabindex="-1"></a><span class="co"># Assign the scaled datasets to the 'filtered.set' slot.</span></span>
+<span id="cb35-146"><a href="#cb35-146" aria-hidden="true" tabindex="-1"></a><span class="co">#    This step may be used for subsequent modelling or further</span></span>
+<span id="cb35-147"><a href="#cb35-147" aria-hidden="true" tabindex="-1"></a><span class="co">#    feature filtering (e.g., removing near-zero variance predictors).</span></span>
+<span id="cb35-148"><a href="#cb35-148" aria-hidden="true" tabindex="-1"></a>model_obj<span class="sc">@</span>filtered.set <span class="ot">&lt;-</span> model_obj<span class="sc">@</span>split.scale.data</span>
+<span id="cb35-149"><a href="#cb35-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-150"><a href="#cb35-150" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb35-151"><a href="#cb35-151" aria-hidden="true" tabindex="-1"></a><span class="in">````</span></span>
+<span id="cb35-152"><a href="#cb35-152" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-153"><a href="#cb35-153" aria-hidden="true" tabindex="-1"></a><span class="fu">### 4 Train a handful of common algorithms and compare them</span></span>
+<span id="cb35-154"><a href="#cb35-154" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-155"><a href="#cb35-155" aria-hidden="true" tabindex="-1"></a>This section trains and compares candidate models. Select models using discrimination, calibration, stability, and clinical utility together.</span>
+<span id="cb35-156"><a href="#cb35-156" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-157"><a href="#cb35-157" aria-hidden="true" tabindex="-1"></a><span class="in">````{r}</span></span>
+<span id="cb35-158"><a href="#cb35-158" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: module2-quickstart-05</span></span>
+<span id="cb35-159"><a href="#cb35-159" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb35-160"><a href="#cb35-160" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb35-161"><a href="#cb35-161" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
+<span id="cb35-162"><a href="#cb35-162" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-show: hold</span></span>
+<span id="cb35-163"><a href="#cb35-163" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: '100%'</span></span>
+<span id="cb35-164"><a href="#cb35-164" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Train a handful of common algorithms and compare them</span></span>
+<span id="cb35-165"><a href="#cb35-165" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb35-166"><a href="#cb35-166" aria-hidden="true" tabindex="-1"></a>model_obj <span class="ot">&lt;-</span> <span class="fu">ModelTrainAnalysis</span>(</span>
+<span id="cb35-167"><a href="#cb35-167" aria-hidden="true" tabindex="-1"></a>  <span class="at">object   =</span> model_obj,</span>
+<span id="cb35-168"><a href="#cb35-168" aria-hidden="true" tabindex="-1"></a>  <span class="at">methods  =</span> <span class="fu">c</span>(<span class="st">"glmnet"</span>, <span class="st">"rf"</span>, <span class="st">"gbm"</span>),</span>
+<span id="cb35-169"><a href="#cb35-169" aria-hidden="true" tabindex="-1"></a>  <span class="at">save_plots =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb35-170"><a href="#cb35-170" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed     =</span> <span class="dv">123</span>,<span class="at">save_dir =</span> <span class="st">"."</span></span>
+<span id="cb35-171"><a href="#cb35-171" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-172"><a href="#cb35-172" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-173"><a href="#cb35-173" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb35-174"><a href="#cb35-174" aria-hidden="true" tabindex="-1"></a><span class="in">````</span></span>
+<span id="cb35-175"><a href="#cb35-175" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-176"><a href="#cb35-176" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5 Pick the best model (by AUC) and look at its performance</span></span>
+<span id="cb35-177"><a href="#cb35-177" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-178"><a href="#cb35-178" aria-hidden="true" tabindex="-1"></a>This section trains and compares candidate models. Select models using discrimination, calibration, stability, and clinical utility together.</span>
+<span id="cb35-179"><a href="#cb35-179" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-180"><a href="#cb35-180" aria-hidden="true" tabindex="-1"></a><span class="in">````{r}</span></span>
+<span id="cb35-181"><a href="#cb35-181" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: module2-quickstart-06</span></span>
+<span id="cb35-182"><a href="#cb35-182" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb35-183"><a href="#cb35-183" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb35-184"><a href="#cb35-184" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
+<span id="cb35-185"><a href="#cb35-185" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-show: hold</span></span>
+<span id="cb35-186"><a href="#cb35-186" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: '100%'</span></span>
+<span id="cb35-187"><a href="#cb35-187" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Pick the best model (by AUC) and look at its performance</span></span>
+<span id="cb35-188"><a href="#cb35-188" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb35-189"><a href="#cb35-189" aria-hidden="true" tabindex="-1"></a>model_obj <span class="ot">&lt;-</span> <span class="fu">SelectBestModel</span>(model_obj, <span class="at">metric =</span> <span class="st">"auc"</span>)</span>
+<span id="cb35-190"><a href="#cb35-190" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Best model:"</span>, model_obj<span class="sc">@</span>best.model.result<span class="sc">$</span>model_type, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb35-191"><a href="#cb35-191" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotMultiROC</span>(model_obj, <span class="at">test_data =</span> model_obj<span class="sc">@</span>split.scale.data<span class="sc">$</span>testing, <span class="at">save_plot =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb35-192"><a href="#cb35-192" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotConfusionMatrix</span>(model_obj, <span class="at">test_data =</span> model_obj<span class="sc">@</span>split.scale.data<span class="sc">$</span>testing,</span>
+<span id="cb35-193"><a href="#cb35-193" aria-hidden="true" tabindex="-1"></a>                    <span class="at">model_name =</span> model_obj<span class="sc">@</span>best.model.result<span class="sc">$</span>model_type,</span>
+<span id="cb35-194"><a href="#cb35-194" aria-hidden="true" tabindex="-1"></a>                    <span class="at">threshold =</span> <span class="fl">0.5</span>, <span class="at">save_plot =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb35-195"><a href="#cb35-195" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotFeatureImportance</span>(model_obj, <span class="at">top_n =</span> <span class="dv">15</span>, <span class="at">save_plot =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb35-196"><a href="#cb35-196" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-197"><a href="#cb35-197" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb35-198"><a href="#cb35-198" aria-hidden="true" tabindex="-1"></a><span class="in">````</span></span>
+<span id="cb35-199"><a href="#cb35-199" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-200"><a href="#cb35-200" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6 Save your trained model</span></span>
+<span id="cb35-201"><a href="#cb35-201" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-202"><a href="#cb35-202" aria-hidden="true" tabindex="-1"></a>This section trains and compares candidate models. Select models using discrimination, calibration, stability, and clinical utility together.</span>
+<span id="cb35-203"><a href="#cb35-203" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-204"><a href="#cb35-204" aria-hidden="true" tabindex="-1"></a><span class="in">````{r}</span></span>
+<span id="cb35-205"><a href="#cb35-205" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: module2-quickstart-07</span></span>
+<span id="cb35-206"><a href="#cb35-206" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb35-207"><a href="#cb35-207" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb35-208"><a href="#cb35-208" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
+<span id="cb35-209"><a href="#cb35-209" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-show: hold</span></span>
+<span id="cb35-210"><a href="#cb35-210" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: '100%'</span></span>
+<span id="cb35-211"><a href="#cb35-211" aria-hidden="true" tabindex="-1"></a><span class="co"># 6. Save your trained model</span></span>
+<span id="cb35-212"><a href="#cb35-212" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb35-213"><a href="#cb35-213" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(model_obj, <span class="at">file =</span> <span class="st">"model_obj.rds"</span>)</span>
+<span id="cb35-214"><a href="#cb35-214" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-215"><a href="#cb35-215" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Done! model_obj.rds saved.</span><span class="sc">\n</span><span class="st">"</span>,</span>
+<span id="cb35-216"><a href="#cb35-216" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Want ensembles, tuning, SHAP explanations, or clinical thresholds?"</span>,</span>
+<span id="cb35-217"><a href="#cb35-217" aria-hidden="true" tabindex="-1"></a>    <span class="st">"See the ADVANCED version of this script.</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb35-218"><a href="#cb35-218" aria-hidden="true" tabindex="-1"></a><span class="in">````</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 <footer class="footer">
