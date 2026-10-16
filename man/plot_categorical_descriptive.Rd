@@ -47,7 +47,9 @@ variables and their percentages across different groups. It handles both
 }
 \examples{
 if (interactive()) {
-  stat <- CreateStatObject(raw.data = mtcars, group_col = "cyl")
+  info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+  stat <- CreateStatObject(raw.data = subset(mtcars, select = -cyl),
+                             info.data = info, group_col = "cyl")
   plot_categorical_descriptive(stat, save_plots = FALSE)
 }
 }

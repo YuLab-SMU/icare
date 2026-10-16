@@ -33,7 +33,9 @@ stat_normalize_process(
 Normalize Data in Stat Object
 }
 \examples{
-stat <- CreateStatObject(clean.data = mtcars, group_col = "cyl")
+info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+stat <- CreateStatObject(clean.data = subset(mtcars, select = -cyl),
+                           info.data = info, group_col = "cyl")
 stat <- stat_normalize_process(stat, method = "z_score")
 head(stat@scale.data)
 }

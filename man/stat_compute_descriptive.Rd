@@ -37,7 +37,9 @@ data("mtcars")
 mtcars$cyl <- factor(mtcars$cyl)
 mtcars$vs  <- factor(mtcars$vs, labels = c("V-shaped", "Straight"))
 # Create a Stat object with "vs" as the grouping variable
-stat_obj <- CreateStatObject(raw.data = mtcars, group_col = "vs")
+info <- data.frame(vs = mtcars$vs, row.names = rownames(mtcars))
+stat_obj <- CreateStatObject(raw.data = subset(mtcars, select = -vs),
+                               info.data = info, group_col = "vs")
 #Compute descriptive statistics for a 'Stat' object
 updated_stat <- stat_compute_descriptive(object = stat_obj, 
 count_feature = TRUE, group_col = "group")

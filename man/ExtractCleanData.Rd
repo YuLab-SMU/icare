@@ -19,7 +19,9 @@ or `NULL` if extraction fails.
 This function extracts the `clean.data` slot from an object of class `Stat`.
 }
 \examples{
-stat <- CreateStatObject(clean.data = mtcars, group_col = "cyl")
+info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+stat <- CreateStatObject(clean.data = subset(mtcars, select = -cyl),
+                           info.data = info, group_col = "cyl")
 clean <- ExtractCleanData(stat)
 head(clean)
 }

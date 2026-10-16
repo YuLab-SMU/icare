@@ -21,7 +21,9 @@ If the object is not of class 'Stat' or does not contain a 'raw.data' slot,
 it will return NULL.
 }
 \examples{
-stat <- CreateStatObject(raw.data = mtcars, group_col = "cyl")
+info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+stat <- CreateStatObject(raw.data = subset(mtcars, select = -cyl),
+                           info.data = info, group_col = "cyl")
 raw <- ExtractRawData(stat)
 head(raw)
 }

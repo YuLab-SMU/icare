@@ -30,7 +30,9 @@ stat_handle_outliers(
 Handle Outliers in Stat Object
 }
 \examples{
-stat <- CreateStatObject(clean.data = mtcars, group_col = "cyl")
+info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+stat <- CreateStatObject(clean.data = subset(mtcars, select = -cyl),
+                           info.data = info, group_col = "cyl")
 stat <- stat_detect_and_mark_outliers(stat)
 stat <- stat_handle_outliers(stat, method = "remove", save_data = FALSE)
 head(stat@clean.data)

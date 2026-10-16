@@ -398,7 +398,9 @@ normalize_data <- function(data,
 #' @param csv_filename Filename.
 #' @export
 #' @examples
-#' stat <- CreateStatObject(clean.data = mtcars, group_col = "cyl")
+#' info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+#' stat <- CreateStatObject(clean.data = subset(mtcars, select = -cyl),
+#'                            info.data = info, group_col = "cyl")
 #' stat <- stat_normalize_process(stat, method = "z_score")
 #' head(stat@scale.data)
 stat_normalize_process <- function(object,
@@ -458,7 +460,9 @@ stat_normalize_process <- function(object,
 #' @param object Stat object.
 #' @export
 #' @examples
-#' stat <- CreateStatObject(clean.data = mtcars, group_col = "cyl")
+#' info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+#' stat <- CreateStatObject(clean.data = subset(mtcars, select = -cyl),
+#'                            info.data = info, group_col = "cyl")
 #' stat <- stat_normalize_process(stat, method = "z_score")
 #' scaled <- ExtractScaleData(stat)
 #' head(scaled)
@@ -475,7 +479,9 @@ ExtractScaleData <- function(object) {
 #' @param object Stat object.
 #' @export
 #' @examples
-#' stat <- CreateStatObject(clean.data = mtcars, group_col = "cyl")
+#' info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+#' stat <- CreateStatObject(clean.data = subset(mtcars, select = -cyl),
+#'                            info.data = info, group_col = "cyl")
 #' clean <- ExtractCleanData(stat)
 #' head(clean)
 ExtractCleanData <- function(object) {

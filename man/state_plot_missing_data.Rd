@@ -53,7 +53,9 @@ and returns the object or the missing data summary, depending on the input type.
 }
 \examples{
 if (interactive()) {
-  stat <- CreateStatObject(raw.data = mtcars, group_col = "cyl")
+  info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+  stat <- CreateStatObject(raw.data = subset(mtcars, select = -cyl),
+                             info.data = info, group_col = "cyl")
   state_plot_missing_data(stat, save_plots = FALSE)
 }
 }

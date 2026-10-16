@@ -107,7 +107,9 @@ detect_and_mark_outliers <- function(data,
 #' @param csv_filename Filename.
 #' @export
 #' @examples
-#' stat <- CreateStatObject(clean.data = mtcars, group_col = "cyl")
+#' info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+#' stat <- CreateStatObject(clean.data = subset(mtcars, select = -cyl),
+#'                            info.data = info, group_col = "cyl")
 #' stat <- stat_detect_and_mark_outliers(stat, method = "zscore", threshold = 3)
 #' print(stat@process.info$outlier_detection)
 stat_detect_and_mark_outliers <- function(object,
@@ -163,7 +165,9 @@ stat_detect_and_mark_outliers <- function(object,
 #' @param object Stat object.
 #' @export
 #' @examples
-#' stat <- CreateStatObject(raw.data = mtcars, group_col = "cyl")
+#' info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+#' stat <- CreateStatObject(raw.data = subset(mtcars, select = -cyl),
+#'                            info.data = info, group_col = "cyl")
 #' stat <- stat_detect_and_mark_outliers(stat)
 #' out <- extract_outlier_data(stat)
 #' print(out)
@@ -263,7 +267,9 @@ handle_outliers <- function(data,
 #' @param csv_filename Filename.
 #' @export
 #' @examples
-#' stat <- CreateStatObject(clean.data = mtcars, group_col = "cyl")
+#' info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+#' stat <- CreateStatObject(clean.data = subset(mtcars, select = -cyl),
+#'                            info.data = info, group_col = "cyl")
 #' stat <- stat_detect_and_mark_outliers(stat)
 #' stat <- stat_handle_outliers(stat, method = "remove", save_data = FALSE)
 #' head(stat@clean.data)

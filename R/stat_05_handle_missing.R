@@ -161,7 +161,9 @@ impute_missing_values <- function(data,
 #' @param csv_filename Filename.
 #' @export
 #' @examples
-#' stat <- CreateStatObject(raw.data = mtcars, group_col = "cyl")
+#' info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+#' stat <- CreateStatObject(raw.data = subset(mtcars, select = -cyl),
+#'                            info.data = info, group_col = "cyl")
 #' stat <- stat_miss_processed(stat, impute_method = "median_mode", return_imputation_info = FALSE)
 #' head(stat@clean.data)
 stat_miss_processed <- function(object,

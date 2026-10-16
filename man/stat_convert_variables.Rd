@@ -46,7 +46,9 @@ conversion will update its \code{clean.data} slot. If the input is a data frame,
 it will directly return the converted data frame.
 }
 \examples{
-stat <- CreateStatObject(raw.data = mtcars, group_col = "cyl")
+info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+stat <- CreateStatObject(raw.data = subset(mtcars, select = -cyl),
+                           info.data = info, group_col = "cyl")
 stat <- stat_convert_variables(stat, save_data = FALSE)
 str(stat@clean.data)
 }

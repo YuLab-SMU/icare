@@ -108,6 +108,7 @@ Subtyping <- setClass(
 #' @param clean.data Clean data.
 #' @param info.data Info data.
 #' @param scale.data Scale data.
+#' @param group_col Name of the group/label column in `info.data`.
 #' @param Optimal.cluster Optimal cluster.
 #' @param cluster.results Cluster results.
 #' @param visualization.results Visualization results.

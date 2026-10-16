@@ -13,7 +13,9 @@ extract_outlier_data(object)
 Extract Outlier Data
 }
 \examples{
-stat <- CreateStatObject(raw.data = mtcars, group_col = "cyl")
+info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+stat <- CreateStatObject(raw.data = subset(mtcars, select = -cyl),
+                           info.data = info, group_col = "cyl")
 stat <- stat_detect_and_mark_outliers(stat)
 out <- extract_outlier_data(stat)
 print(out)

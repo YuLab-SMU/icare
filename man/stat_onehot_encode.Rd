@@ -46,7 +46,9 @@ or a regular `data.frame`, using `one_hot_encode()`. If a `Stat` object is provi
 the encoded result will be updated in its `clean.data` slot.
 }
 \examples{
-stat <- CreateStatObject(clean.data = mtcars, group_col = "cyl")
+info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+stat <- CreateStatObject(clean.data = subset(mtcars, select = -cyl),
+                           info.data = info, group_col = "cyl")
 stat <- stat_onehot_encode(stat, save_data = FALSE,group_col = "cyl")
 head(stat@clean.data)
 }

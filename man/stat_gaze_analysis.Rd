@@ -53,7 +53,9 @@ mtcars$cyl <- factor(mtcars$cyl)
 mtcars$vs  <- factor(mtcars$vs, labels = c("V-shaped", "Straight"))
 
 # Create a Stat object with "vs" as the grouping variable
-stat_obj <- CreateStatObject(raw.data = mtcars, group_col = "vs")
+info <- data.frame(vs = mtcars$vs, row.names = rownames(mtcars))
+stat_obj <- CreateStatObject(raw.data = subset(mtcars, select = -vs),
+                               info.data = info, group_col = "vs")
 
 # --- Example 1: Basic usage with 2 groups (automatic formula) ---
 stat_obj <- stat_gaze_analysis(stat_obj,

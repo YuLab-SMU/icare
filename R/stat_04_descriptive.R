@@ -162,7 +162,9 @@ compute_descriptive_stats <- function(data,
 #' mtcars$cyl <- factor(mtcars$cyl)
 #' mtcars$vs  <- factor(mtcars$vs, labels = c("V-shaped", "Straight"))
 #' # Create a Stat object with "vs" as the grouping variable
-#' stat_obj <- CreateStatObject(raw.data = mtcars, group_col = "vs")
+#' info <- data.frame(vs = mtcars$vs, row.names = rownames(mtcars))
+#' stat_obj <- CreateStatObject(raw.data = subset(mtcars, select = -vs),
+#'                                info.data = info, group_col = "vs")
 #' #Compute descriptive statistics for a 'Stat' object
 #' updated_stat <- stat_compute_descriptive(object = stat_obj, 
 #' count_feature = TRUE, group_col = "group")
@@ -245,7 +247,9 @@ stat_compute_descriptive <- function(
 #' @export
 #' @examples
 #' if (interactive()) {
-#'   stat <- CreateStatObject(raw.data = mtcars, group_col = "cyl")
+#'   info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+#'   stat <- CreateStatObject(raw.data = subset(mtcars, select = -cyl),
+#'                              info.data = info, group_col = "cyl")
 #'   plot_categorical_descriptive(stat, save_plots = FALSE)
 #' }
 plot_categorical_descriptive <- function(
@@ -761,7 +765,9 @@ density_ridge_plots <- function(data,
 #'
 #' @examples
 #' if (interactive()) {
-#'   stat <- CreateStatObject(raw.data = mtcars, group_col = "cyl")
+#'   info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+#'   stat <- CreateStatObject(raw.data = subset(mtcars, select = -cyl),
+#'                              info.data = info, group_col = "cyl")
 #'   plot_numeric_descriptive(stat, save_plots = FALSE,group_col = "cyl")
 #' }
 plot_numeric_descriptive <- function(object,
@@ -957,7 +963,9 @@ convert_variables <- function(data,
 #' @export
 #'
 #' @examples
-#' stat <- CreateStatObject(raw.data = mtcars, group_col = "cyl")
+#' info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+#' stat <- CreateStatObject(raw.data = subset(mtcars, select = -cyl),
+#'                            info.data = info, group_col = "cyl")
 #' stat <- stat_convert_variables(stat, save_data = FALSE)
 #' str(stat@clean.data)
 stat_convert_variables <- function(object,
@@ -1112,7 +1120,9 @@ one_hot_encode <- function(data,
 #' @export
 #'
 #' @examples
-#' stat <- CreateStatObject(clean.data = mtcars, group_col = "cyl")
+#' info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+#' stat <- CreateStatObject(clean.data = subset(mtcars, select = -cyl),
+#'                            info.data = info, group_col = "cyl")
 #' stat <- stat_onehot_encode(stat, save_data = FALSE,group_col = "cyl")
 #' head(stat@clean.data)
 stat_onehot_encode <- function(object, 

@@ -26,6 +26,8 @@ CreateSubtypingObject(
 
 \item{scale.data}{Scale data.}
 
+\item{group_col}{Name of the group/label column in `info.data`.}
+
 \item{Optimal.cluster}{Optimal cluster.}
 
 \item{cluster.results}{Cluster results.}

@@ -191,7 +191,9 @@ plot_missing_data <- function(data,
 #'
 #' @examples
 #' if (interactive()) {
-#'   stat <- CreateStatObject(raw.data = mtcars, group_col = "cyl")
+#'   info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+#'   stat <- CreateStatObject(raw.data = subset(mtcars, select = -cyl),
+#'                              info.data = info, group_col = "cyl")
 #'   state_plot_missing_data(stat, save_plots = FALSE)
 #' }
 state_plot_missing_data <- function(
@@ -258,7 +260,9 @@ state_plot_missing_data <- function(
 #' @export
 #'
 #' @examples
-#' stat <- CreateStatObject(raw.data = mtcars, group_col = "cyl")
+#' info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+#' stat <- CreateStatObject(raw.data = subset(mtcars, select = -cyl),
+#'                            info.data = info, group_col = "cyl")
 #' raw <- ExtractRawData(stat)
 #' head(raw)
 ExtractRawData <- function(object) {
@@ -412,7 +416,9 @@ diagnose_variable_type <- function(data,
 #' @export
 #'
 #' @examples
-#' stat <- CreateStatObject(raw.data = mtcars, group_col = "cyl")
+#' info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+#' stat <- CreateStatObject(raw.data = subset(mtcars, select = -cyl),
+#'                            info.data = info, group_col = "cyl")
 #' stat <- stat_diagnose_variable_type(stat)
 #' print(stat@variable.types)
 stat_diagnose_variable_type <- function(object,
@@ -612,7 +618,9 @@ gaze_analysis <- function(data,
 #' mtcars$vs  <- factor(mtcars$vs, labels = c("V-shaped", "Straight"))
 #' 
 #' # Create a Stat object with "vs" as the grouping variable
-#' stat_obj <- CreateStatObject(raw.data = mtcars, group_col = "vs")
+#' info <- data.frame(vs = mtcars$vs, row.names = rownames(mtcars))
+#' stat_obj <- CreateStatObject(raw.data = subset(mtcars, select = -vs),
+#'                                info.data = info, group_col = "vs")
 #' 
 #' # --- Example 1: Basic usage with 2 groups (automatic formula) ---
 #' stat_obj <- stat_gaze_analysis(stat_obj,

@@ -36,7 +36,9 @@ stat_detect_and_mark_outliers(
 Detect and Mark Outliers in Stat Object
 }
 \examples{
-stat <- CreateStatObject(clean.data = mtcars, group_col = "cyl")
+info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+stat <- CreateStatObject(clean.data = subset(mtcars, select = -cyl),
+                           info.data = info, group_col = "cyl")
 stat <- stat_detect_and_mark_outliers(stat, method = "zscore", threshold = 3)
 print(stat@process.info$outlier_detection)
 }

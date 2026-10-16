@@ -36,7 +36,11 @@ evaluation functions receive a well-formed task.
 \examples{
 \dontrun{
 veteran <- survival::veteran
-stat <- CreateStatObject(raw.data = veteran, clean.data = veteran,
+# The label lives in info.data; the feature frames hold features only.
+veteran_feats <- subset(veteran, select = -status)
+stat <- CreateStatObject(raw.data = veteran_feats, clean.data = veteran_feats,
+                         info.data = data.frame(status = veteran$status,
+                                                row.names = rownames(veteran)),
                          group_col = "status", na.action = "allow")
 prog <- Stat_to_PrognosiX(stat, "time", "status", na_action = "omit",
                           min_events = 10, verbose = FALSE)

@@ -49,7 +49,9 @@ If the input is a data frame, it directly uses the provided data for diagnosis.
 It updates the "Stat" object with the diagnosed variable types.
 }
 \examples{
-stat <- CreateStatObject(raw.data = mtcars, group_col = "cyl")
+info <- data.frame(cyl = mtcars$cyl, row.names = rownames(mtcars))
+stat <- CreateStatObject(raw.data = subset(mtcars, select = -cyl),
+                           info.data = info, group_col = "cyl")
 stat <- stat_diagnose_variable_type(stat)
 print(stat@variable.types)
 }
