@@ -62,8 +62,21 @@ sub_obj@clean.data <- sub_obj@clean.data[, features, drop = FALSE]
 # parameters on the full data (train+validation combined) and only THEN
 # splitting would let validation-set values leak into the scaling applied to
 # the validation set itself — the opposite of what we want.
+#
+# stratify_by resolves the outcome in info.data and splits WITHIN each level,
+# so both splits keep the cohort's case/control ratio. The stratifier is
+# coerced to a factor internally, so the partition depends on the LABELS only:
+# re-labelling the outcome from 0/1 to "Case"/"Healthy Control" does not move
+# any sample between train and validation. (This matters — caret bins a NUMERIC
+# stratifier instead of splitting by level, and a 0/1 label collapses to a
+# single bin, so a numeric outcome used to silently produce an UNSTRATIFIED
+# split and a different partition than the equivalent factor labels.)
 set.seed(SEED)
 split <- SplitSubtypingObject(sub_obj, p = 0.7, stratify_by = GROUP_COL)
+cat("Train:", nrow(split$train@clean.data),
+    " Validation:", nrow(split$test@clean.data), "\n")
+cat("Train levels:\n");       print(table(split$train@info.data[[GROUP_COL]]))
+cat("Validation levels:\n"); print(table(split$test@info.data[[GROUP_COL]]))
 
 # min-max scaling keeps all features non-negative, which NMF requires.
 # Fit normalization on the TRAINING split only.
@@ -145,9 +158,22 @@ nmf_dir <- sub_dir("03_nmf")
 sub_train <- Sub_nmf_estimate(sub_train, rank_range = 2:6, nrun = 5,
                               method = "brunet", save_dir = nmf_dir, seed = SEED)
 # 3.3b Pick the best rank from the estimation above.
+# The chosen K is the one with the highest cophenetic correlation, but the
+# whole sweep is printed so the choice can be judged. When several ranks are
+# within `tie_tol` (default 0.02) of the best value, the data do not separate
+# them -- the smallest such rank is taken (parsimony) and a message names every
+# candidate. This is deliberate: cophenetic curves are near-flat across ranks
+# on real cohorts, and reading a flat curve as evidence for a large K is how a
+# one-sample change in the training set ends up redefining the subtypes.
+# rank_selection keeps the sweep and the margin for the report.
 sub_train <- Sub_nmf_best_rank(sub_train, nrun = 5, method = "brunet",
                                palette_name = "Zissou1", save_dir = nmf_dir)
 cat("NMF optimal rank =", sub_train@Optimal.cluster, "\n")
+sel <- sub_train@cluster.results[["nmf.result"]][["rank_selection"]]
+cat(sprintf("  chosen by %s (value %.4f, margin %.4f); tied ranks: %s%s\n",
+            sel$metric, sel$best_value, sel$margin,
+            paste(sel$tied, collapse = ", "),
+            if (isTRUE(sel$ambiguous)) " -- resolved to smallest K" else ""))
 # 3.3c Assign each training sample to a subtype.
 sub_train <- Sub_nmf_assign_subtypes(sub_train)
 print(table(sub_train@info.data$cluster_nmf))

@@ -11,7 +11,9 @@ Sub_nmf_best_rank(
   nmf_shift = 0,
   method = "brunet",
   palette_name = "Zissou1",
-  save_dir = file.path(get_output_dir("Subtyping", "cluster_results"), "nmf_results")
+  save_dir = file.path(get_output_dir("Subtyping", "cluster_results"), "nmf_results"),
+  metric = "cophenetic",
+  tie_tol = 0.02
 )
 }
 \arguments{
@@ -28,11 +30,26 @@ Sub_nmf_best_rank(
 \item{palette_name}{wesanderson palette.}
 
 \item{save_dir}{Output directory.}
+
+\item{metric}{Rank-sweep metric to maximise (default
+`"cophenetic"`).}
+
+\item{tie_tol}{Margin below which tied ranks are resolved toward the
+smallest K (default `0.02`).}
 }
 \description{
 Identifies optimal rank by cophenetic correlation, re-runs NMF at that
 rank, and produces consensus heatmap, basis heatmap, coefficient heatmap,
 and silhouette plot.
+}
+\details{
+## Rank selection
+The rank with the highest cophenetic correlation is used, but the margin
+over the runner-up is reported alongside it. When several ranks fall within
+`tie_tol` (default 0.02) of the best cophenetic value the sweep does not
+distinguish them, and the SMALLEST such rank is taken -- the parsimonious
+choice -- with a message naming every tied candidate. This prevents a
+near-flat cophenetic curve from being read as evidence for a large K.
 }
 \examples{
 \dontrun{
