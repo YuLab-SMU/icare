@@ -489,11 +489,106 @@ nmf_silhouette_plot <- function(fit,
   return(list(plot = p, avg_width = avg_sil, silhouette = sil))
 }
 
+# =============================================================================
+# SECTION 2b: Rank selection
+# =============================================================================
+# `which.max(cophenetic)` alone is not a defensible selection rule: the
+# cophenetic curve is non-monotone and, on real cohorts, near-flat across
+# several ranks. Concretely, re-splitting one cohort with one sample moved
+# between train and test flipped the choice from K=2 to K=5 (cophenetic
+# 0.970 -> 0.914 at K=2 while K=4/K=5 rose to 0.94). A single-sample change
+# should not redefine the subtypes, so the argmax is reported together with
+# how much of a margin it actually has.
+#
+# `margin` is the gap between the best value and the best value at any OTHER
+# rank. When it is below `tie_tol`, the data do not distinguish the candidates
+# and the tie is resolved deterministically toward the SMALLEST rank (the
+# parsimonious choice), with a message saying so. That keeps the pipeline
+# reproducible and stops a flat curve from being read as evidence for a
+# particular K.
+
+#' Choose the best rank from an NMF rank sweep
+#'
+#' @param ms A `data.frame` as returned by `summary()` on an `NMF.rank`
+#'   object: must contain `rank` and the metric named by `metric`.
+#' @param metric Which column to maximise. Default `"cophenetic"`.
+#' @param tie_tol Non-negative margin below which two ranks count as
+#'   indistinguishable (default `0.02`). Cophenetic correlation lives on
+#'   \[0, 1\], so 0.02 is ~2% of its range -- larger than run-to-run noise, far
+#'   smaller than a real signal. A negative tolerance is rejected: it would
+#'   leave the tie set EMPTY and the returned `best_rank` would contradict it.
+#' @return A list with `best_rank`, `metric_value`, `margin`, `tied` (the
+#'   candidate ranks inside `tie_tol`), and `ambiguous` (logical). Always
+#'   contains `best_rank`, so a caller never has to fall back to the argmax.
+#' @keywords internal
+#' @noRd
+.nmf_select_rank <- function(ms, metric = "cophenetic", tie_tol = 0.02) {
+  if (is.null(ms) || is.null(nrow(ms)) || nrow(ms) == 0)
+    stop("No measures found in NMF estimate.")
+  if (!all(c("rank", metric) %in% colnames(ms)))
+    stop("summary() output must contain 'rank' and '", metric, "'.")
+
+  vals <- ms[[metric]]
+  if (!is.numeric(vals) || all(is.na(vals)))
+    stop("Metric '", metric, "' is not usable (non-numeric or all NA).")
+  if (!is.numeric(tie_tol) || length(tie_tol) != 1L || is.na(tie_tol) || tie_tol < 0)
+    stop("'tie_tol' must be a single non-negative number.", call. = FALSE)
+
+  ok <- !is.na(vals)
+  # Row of the argmax. `which.max` on the full vector would return NA for an
+  # all-NA metric, so index within the usable rows and map back.
+  best_i <- which(ok)[which.max(vals[ok])]
+  best_rank <- ms$rank[best_i]
+  best_val  <- vals[best_i]
+  # Margin over the best of the OTHER ranks; Inf when only one rank was swept.
+  others <- vals[setdiff(which(ok), best_i)]
+  margin <- if (length(others) == 0L) Inf else best_val - max(others)
+
+  # Candidate ranks within tolerance of the best value, INCLUDING the best
+  # itself. unique() collapses a duplicated rank row so `tied` describes
+  # RANKS, not rows; sort() makes the "smallest rank wins" tie-break stable.
+  tied <- sort(unique(ms$rank[ok & vals >= best_val - tie_tol]))
+  ambiguous <- length(tied) > 1L
+
+  # Value at a given rank, guaranteed scalar even if that rank appears twice
+  # in the sweep (defensive: NMF's own summary() never repeats a rank).
+  .val_at <- function(k) {
+    v <- vals[ok & ms$rank == k]
+    if (length(v) == 0L) NA_real_ else max(v)
+  }
+
+  if (ambiguous) {
+    # Re-resolve deterministically: never let argmax order decide when the
+    # data cannot separate the candidates.
+    chosen <- tied[1]
+    # `margin` in a tie is the cost of choosing parsimony over the argmax:
+    # NEGATIVE by construction (the chosen rank scores lower, or equal).
+    list(best_rank = chosen,
+         metric_value = .val_at(chosen),
+         margin = .val_at(chosen) - best_val,
+         best_overall = best_rank, best_overall_value = best_val,
+         tied = tied, ambiguous = TRUE,
+         metric = metric, tie_tol = tie_tol)
+  } else {
+    list(best_rank = best_rank, metric_value = best_val, margin = margin,
+         tied = tied, ambiguous = FALSE, metric = metric, tie_tol = tie_tol)
+  }
+}
+
 #' NMF Best Rank Analysis
 #'
 #' Identifies optimal rank by cophenetic correlation, re-runs NMF at that
 #' rank, and produces consensus heatmap, basis heatmap, coefficient heatmap,
 #' and silhouette plot.
+#'
+#' @details
+#' ## Rank selection
+#' The rank with the highest cophenetic correlation is used, but the margin
+#' over the runner-up is reported alongside it. When several ranks fall within
+#' `tie_tol` (default 0.02) of the best cophenetic value the sweep does not
+#' distinguish them, and the SMALLEST such rank is taken -- the parsimonious
+#' choice -- with a message naming every tied candidate. This prevents a
+#' near-flat cophenetic curve from being read as evidence for a large K.
 #'
 #' @param object        Subtyping object (or NMF.rank estimate list).
 #' @param nrun          Number of NMF runs.
@@ -502,6 +597,10 @@ nmf_silhouette_plot <- function(fit,
 #' @param method        NMF algorithm.
 #' @param palette_name  wesanderson palette.
 #' @param save_dir      Output directory.
+#' @param metric        Rank-sweep metric to maximise (default
+#'   `"cophenetic"`).
+#' @param tie_tol       Margin below which tied ranks are resolved toward the
+#'   smallest K (default `0.02`).
 #' @examples
 #' \dontrun{
 #'   # Assuming 'obj' is a Subtyping object with nmf.result already computed
@@ -514,7 +613,9 @@ Sub_nmf_best_rank <- function(object,
                               nmf_shift   =  0,
                               method       = "brunet",
                               palette_name = "Zissou1",
-                              save_dir     = file.path(get_output_dir("Subtyping", "cluster_results"), "nmf_results")) {
+                              save_dir     = file.path(get_output_dir("Subtyping", "cluster_results"), "nmf_results"),
+                              metric       = "cophenetic",
+                              tie_tol      = 0.02) {
 
   if (inherits(object, "Subtyping")) {
     data     <- .extract_data(object, scaled = TRUE)
@@ -536,10 +637,39 @@ Sub_nmf_best_rank <- function(object,
     data <- data + nmf_shift
   }
 
-  ms         <- summary(estimate)
-  best_idx   <- which.max(ms$cophenetic)
-  best_k     <- ms$rank[best_idx]
-  cat("Best rank (max cophenetic):", best_k, "\n")
+  ms   <- summary(estimate)
+  # Validate BEFORE anything indexes the metric column, so a bad `metric`
+  # surfaces as the helper's actionable message rather than a subscript error.
+  sel  <- .nmf_select_rank(ms, metric = metric, tie_tol = tie_tol)
+  ok   <- !is.na(ms[[metric]])
+  best_k <- sel$best_rank
+
+  cat("Best rank (max ", metric, "):", best_k,
+      " [", metric, " = ", format(sel$metric_value, digits = 4),
+      ", margin over runner-up = ", format(sel$margin, digits = 4),
+      if (sel$ambiguous) " -- tie resolved to smallest K" else "", "]\n", sep = "")
+  # Print the whole curve so the choice can be judged, not just taken on trust.
+  cat("  rank sweep:\n")
+  print(data.frame(rank = ms$rank,
+                   value = round(ms[[metric]], 4),
+                   stringsAsFactors = FALSE), row.names = FALSE)
+
+  if (sel$ambiguous) {
+    # Name the runner-up so the message states the real gap instead of the
+    # chosen rank's own value. `tied` holds >1 rank whenever we get here, so
+    # the setdiff is non-empty by construction.
+    runner_up <- max(ms[[metric]][ok & ms$rank %in% setdiff(sel$tied, best_k)])
+    message(
+      "Ranks ", paste(sel$tied, collapse = ", "),
+      " are within ", tie_tol, " in ", metric,
+      " (best = ", format(max(ms[[metric]][ok]), digits = 4),
+      ", chosen K = ", best_k, " at ", format(sel$metric_value, digits = 4),
+      ", next candidate ", format(runner_up, digits = 4), "); ",
+      "the data do not separate them. Taking the smallest rank (K = ", best_k,
+      ") as the parsimonious choice. Pass a larger `tie_tol` to widen the tie ",
+      "set, or a different `metric` to re-rank."
+    )
+  }
 
   cat("Re-running NMF at K =", best_k, "for final model...\n")
   # NMF requires features x samples -> transpose
@@ -552,17 +682,39 @@ Sub_nmf_best_rank <- function(object,
   sil_info <- nmf_silhouette_plot(fit, save_dir = save_dir,
                                   palette_name = palette_name, k = best_k)
 
+  # Build the selection record ONCE so the Subtyping and plain-list returns
+  # describe the choice identically. (They used to differ, which made
+  # `rank_selection$best_overall` silently NULL for the non-S4 caller.)
+  rank_selection <- list(
+    metric     = metric,
+    values     = stats::setNames(as.numeric(ms[[metric]]), as.character(ms$rank)),
+    best_rank  = best_k,
+    best_value = sel$metric_value,
+    margin     = sel$margin,
+    tied       = sel$tied,
+    ambiguous  = sel$ambiguous,
+    tie_tol    = tie_tol,
+    best_overall       = if (isTRUE(sel$ambiguous)) sel$best_overall else best_k,
+    best_overall_value = if (isTRUE(sel$ambiguous)) sel$best_overall_value else sel$metric_value
+  )
+
   if (inherits(object, "Subtyping")) {
     object@cluster.results[["nmf.result"]][["best_estimate"]] <- fit
     object@cluster.results[["nmf.result"]][["best_rank"]]     <- best_k
     object@cluster.results[["nmf.result"]][["silhouette"]]    <- sil_info
+    # Keep the whole sweep and how K was chosen, so a report can state the
+    # margin instead of just the answer.
+    object@cluster.results[["nmf.result"]][["rank_selection"]] <- rank_selection
     object@Optimal.cluster <- best_k
     cat("Updating 'Subtyping' object...\n")
     cat("- best_estimate, best_rank, silhouette updated\n")
+    cat("- rank_selection updated (metric: ", metric,
+        ", margin: ", format(sel$margin, digits = 4), ")\n", sep = "")
     cat("- Optimal.cluster:", best_k, "\n")
     return(object)
   }
-  return(list(best_estimate = fit, best_rank = best_k, silhouette = sil_info))
+  return(list(best_estimate = fit, best_rank = best_k, silhouette = sil_info,
+              rank_selection = rank_selection))
 }
 
 # =============================================================================

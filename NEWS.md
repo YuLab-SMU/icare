@@ -1,5 +1,62 @@
 # Icare 1.1.0
 
+### Bug Fixes (post-release, found in user reports)
+
+*   **`SplitSubtypingObject()` silently discarded `scale.data`.** The splits
+    were built with `CreateSubtypingObject(clean.data =, info.data =)` and no
+    `scale.data`, so the slot came back `0x0` every time. Splitting an
+    already-normalised object therefore lost the scaling with no message, and
+    because `.extract_data()` falls back to `clean.data` when `scale.data` is
+    empty, the downstream K-means/LPA/NMF quietly ran on UNSCALED features.
+    `scale.data` is now subset by row name alongside the other frames (and a
+    `scale.data` that does not cover `clean.data` is an error rather than a
+    silent short frame). `group_col` is carried onto both splits, so the label
+    stays reachable after a split.
+*   **`SplitSubtypingObject()` coerced only `numeric` stratifiers to a factor.**
+    `caret::createDataPartition()` branches on `is.numeric(y)`: a numeric
+    stratifier is binned with `cut(y, unique(quantile(...)))`, and a `0`/`1`
+    label collapses to a *single* bin, so the "stratified" split silently
+    degenerated into one random sample of the whole cohort. A factor stratifier
+    splits by level, which is what `stratify_by` means -- so the same cohort
+    gave `421/180` with a `0`/`1` outcome and `422/179` with
+    `"Case"`/`"Healthy Control"`, neither of them stratified. Re-running a
+    saved script after re-labelling the outcome therefore did not reproduce its
+    own numbers, and the difference was large enough to move one sample, which
+    moved the downstream NMF rank choice from K=2 to K=5. Every non-factor
+    stratifier is now coerced, including `Date`/`POSIXt` -- those are not
+    numeric, so they previously reached caret's factor branch as dates and got
+    stratified on every distinct value (typically one sample per level). A
+    stratifier with a single distinct value still falls back to an
+    unstratified split, but now says so in a warning instead of silently
+    sampling.
+*   **`SplitSubtypingObject()` surfaced caret's raw error for a too-small
+    cohort.** `caret::createDataPartition()` stops with
+    `y must have at least 2 data points`, which names neither icare nor the
+    object. A sub-2-sample object now reports its own row count.
+*   **`Sub_nmf_best_rank()` picked rank by bare `which.max(cophenetic)`.**
+    The cophenetic curve is non-monotone and, on this cohort, near-flat across
+    K=4/K=5 (0.9429 vs 0.9478) -- so a one-sample change in the training set
+    redefined the subtypes. The sweep is now selected through
+    `.nmf_select_rank()`, which reports the margin over the runner-up and, when
+    several ranks fall within `tie_tol` (default `0.02`) of the best value,
+    takes the **smallest** such rank -- the parsimonious choice -- with a
+    message naming every tied candidate. New `metric` and `tie_tol` arguments
+    let a caller widen the tie set or re-rank on a different criterion, and the
+    full sweep plus the selection rationale are recorded in
+    `object@cluster.results[["nmf.result"]][["rank_selection"]]`. The record is
+    identical on the Subtyping and plain-list return paths, so a non-S4 caller
+    reads the same fields.
+*   **Tests.** `tests/testthat/test-split-stratify.R` pins the partition against
+    three storage classes of the *same* labels (identity of sample sets, not
+    just counts -- the old bug produced equal counts with a different
+    partition), asserts that stratification really balances both levels, and
+    pins the `scale.data`/`group_col` preservation, the `Date` path, the
+    sub-2-sample error, and the `scale.data` coverage error.
+    `test-nmf-rank-selection.R` pins the tie resolution, margin reporting,
+    NA/single-rank sweeps, duplicated-rank rows, sweep row order, the
+    non-negative `tie_tol` validation, and the loud failure on an unusable
+    metric.
+
 ### Breaking change: the group label lives in `info.data` only
 
 `CreateStatObject()` no longer accepts the group/outcome column inside `raw.data`

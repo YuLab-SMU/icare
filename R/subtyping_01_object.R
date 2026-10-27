@@ -477,7 +477,45 @@ SplitSubtypingObject <- function(object, p = 0.7, stratify_by = NULL, seed = 123
       strat_var <- object@info.data[rownames(object@clean.data), stratify_by]
     }
   }
+
+  # Force the stratifier to a factor BEFORE handing it to caret.
+  #
+  # WHY: caret::createDataPartition() branches on `is.numeric(y)`. For a numeric
+  # stratifier it bins the values with cut(y, unique(quantile(...))) and then
+  # samples within each bin -- but a 0/1 (or any low-cardinality integer) label
+  # collapses to a SINGLE bin, because unique(quantile(y)) of two distinct
+  # values yields only two break points. The stratified split then degenerates
+  # into one plain random sample of the whole cohort: stratification was asked
+  # for and silently not delivered. For a factor it splits by level, which is
+  # what "stratify by outcome" means.
+  #
+  # The type is also user-visible: the same cohort yields different train/test
+  # partitions depending on whether the outcome was stored as 0/1 or as
+  # "Case"/"Healthy Control", so a re-run of an older script does not reproduce
+  # its own numbers. Normalising here makes the split a function of the LABELS,
+  # never of their storage class.
+  #
+  # Date/POSIXt are coerced too: they are not numeric, so they would otherwise
+  # reach caret's factor branch as dates, and caret would stratify on every
+  # distinct date -- typically one sample per level, which is not a usable
+  # split. Coercing to factor keeps them out of that path and yields the same
+  # "split within each level" behaviour as any other label.
+  if (!is.null(strat_var)) {
+    n_level <- length(unique(na.omit(strat_var)))
+    if (n_level < 2L) {
+      warning("stratify_by '", stratify_by, "' has ", n_level,
+              " distinct value(s); splitting WITHOUT stratification.",
+              call. = FALSE)
+      strat_var <- NULL
+    } else if (!is.factor(strat_var)) {
+      strat_var <- factor(strat_var)
+    }
+  }
+
   if (is.null(strat_var)) {
+    if (n < 2L)
+      stop("Cannot split: 'object@clean.data' has ", n, " sample(s); at least 2 ",
+           "are needed for a train/test split.", call. = FALSE)
     train_idx <- caret::createDataPartition(seq_len(n), p = p, list = FALSE)[, 1]
   } else {
     train_idx <- caret::createDataPartition(strat_var, p = p, list = FALSE)[, 1]
@@ -487,15 +525,40 @@ SplitSubtypingObject <- function(object, p = 0.7, stratify_by = NULL, seed = 123
   train_rows <- rownames(object@clean.data)[train_idx]
   test_rows  <- rownames(object@clean.data)[test_idx]
 
+  # Subset every frame the caller supplied, BY ROW NAME, so a split of an
+  # already-normalised object keeps its scale.data. CreateSubtypingObject()
+  # takes clean.data/info.data only, so passing the frames through it is what
+  # silently reset scale.data to 0x0 -- a split after normalisation lost the
+  # scaling with no message, and the downstream clustering then ran on
+  # clean.data instead of scale.data.
+  sub_rows <- function(rows, frame) {
+    if (is.null(frame) || !is.data.frame(frame) || nrow(frame) == 0) return(data.frame())
+    frame[intersect(rows, rownames(frame)), , drop = FALSE]
+  }
+
+  # Rows that clean.data covers must also be covered by scale.data, or the two
+  # splits would describe different feature sets.
+  if (nrow(object@scale.data) > 0) {
+    missing <- setdiff(rownames(object@clean.data), rownames(object@scale.data))
+    if (length(missing) > 0)
+      stop("Cannot split: 'scale.data' does not cover ", length(missing),
+           " sample(s) of 'clean.data' (e.g. ",
+           paste(head(missing, 3), collapse = ", "), ").", call. = FALSE)
+  }
+
   train_obj <- CreateSubtypingObject(
     clean.data = object@clean.data[train_rows, , drop = FALSE],
-    info.data  = if (nrow(object@info.data) > 0) object@info.data[train_rows, , drop = FALSE] else data.frame()
+    info.data  = if (nrow(object@info.data) > 0) object@info.data[train_rows, , drop = FALSE] else data.frame(),
+    scale.data = sub_rows(train_rows, object@scale.data),
+    group_col  = tryCatch(object@group_col, error = function(e) NULL)
   )
   test_obj <- CreateSubtypingObject(
     clean.data = object@clean.data[test_rows, , drop = FALSE],
-    info.data  = if (nrow(object@info.data) > 0) object@info.data[test_rows, , drop = FALSE] else data.frame()
+    info.data  = if (nrow(object@info.data) > 0) object@info.data[test_rows, , drop = FALSE] else data.frame(),
+    scale.data = sub_rows(test_rows, object@scale.data),
+    group_col  = tryCatch(object@group_col, error = function(e) NULL)
   )
-  
+
   cat("Split completed: training (", length(train_idx), "), test (", length(test_idx), ")\n")
   return(list(train = train_obj, test = test_obj))
 }
