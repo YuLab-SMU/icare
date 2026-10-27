@@ -45,7 +45,7 @@ This section defines seeds, output paths, and dependencies. Update these paths a
 #| out-width: '100%'
 # 0. Environment and configuration
 # ---------------------------------------------------------------------------
-set.seed(2025)
+set.seed(42)
 
 # Version and output root
 VERSION <- "Advanced_extensions"
@@ -186,7 +186,7 @@ This section selects candidate features. Consider effect size, stability, and bi
 task_full <- surv_extract_task(prog)
 n <- task_full$nrow
 train_idx <- caret::createDataPartition(task_full$data()[[task_full$target_names[2]]],
-                                        p = 0.7, list = FALSE)
+                                        p = 0.5, list = FALSE)
 val_idx <- setdiff(seq_len(n), train_idx)
 
 train_task <- task_full$clone()$filter(train_idx)
