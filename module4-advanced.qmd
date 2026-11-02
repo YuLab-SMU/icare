@@ -358,8 +358,8 @@ auc_cmp   <- surv_plot_comparison_auc(best_lrn, train_task, val_task)
 ggsave(file.path(sub_dir("03_evaluation"), "AUC_comparison.pdf"), auc_cmp, width = 8, height = 5)
 
 # ---- 4.4 Calibration ----
-cal_train <- surv_plot_calibration(best_lrn, train_task, time_point = 200)
-cal_cmp   <- surv_plot_comparison_calibration(best_lrn, train_task, val_task, time_point = 200)
+cal_train <- surv_plot_calibration(best_lrn, train_task, time_point = 50)
+cal_cmp   <- surv_plot_comparison_calibration(best_lrn, train_task, val_task, time_point = 50)
 ggsave(file.path(sub_dir("03_evaluation"), "Calibration_train.pdf"), cal_train, width = 8, height = 6)
 ggsave(file.path(sub_dir("03_evaluation"), "Calibration_comparison.pdf"), cal_cmp, width = 8, height = 6)
 
