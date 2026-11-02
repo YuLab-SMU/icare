@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.10.19">
+<meta name="generator" content="quarto-1.10.20">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -79,10 +79,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-17888a1159294d3eb470f19f6f52f5a5.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-e3a23bfa6ccb1daf9cef9ac297b852a0.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-2f98abdca29eb688a20622f5ddcf57b7.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -850,32 +850,32 @@ $ticks_digits
 <span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="fu">file.path</span>(<span class="fu">sub_dir</span>(<span class="st">"03_evaluation"</span>), <span class="st">"AUC_comparison.pdf"</span>), auc_cmp, <span class="at">width =</span> <span class="dv">8</span>, <span class="at">height =</span> <span class="dv">5</span>)</span>
 <span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- 4.4 Calibration ----</span></span>
-<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>cal_train <span class="ot">&lt;-</span> <span class="fu">surv_plot_calibration</span>(best_lrn, train_task, <span class="at">time_point =</span> <span class="dv">200</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>cal_train <span class="ot">&lt;-</span> <span class="fu">surv_plot_calibration</span>(best_lrn, train_task, <span class="at">time_point =</span> <span class="dv">50</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-========== Calibration Metrics at t = 200 ==========
+========== Calibration Metrics at t = 50 ==========
 ** APPARENT (training-set) calibration -- interpret with caution **
-Calibration slope    (ideal 1): 2.8391
-Calibration intercept (ideal 0): -0.9941
-R-squared:                       0.8876
-Mean Absolute Error (MAE):       0.2860
-Integrated Calibration Index:    0.2169
-E50 (median abs error):          0.3076
-E90 (90th pct abs error):        0.3788
+Calibration slope    (ideal 1): 2.9167
+Calibration intercept (ideal 0): -1.1597
+R-squared:                       0.8649
+Mean Absolute Error (MAE):       0.2516
+Integrated Calibration Index:    0.2073
+E50 (median abs error):          0.2691
+E90 (90th pct abs error):        0.4184
 ====================================================</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>cal_cmp   <span class="ot">&lt;-</span> <span class="fu">surv_plot_comparison_calibration</span>(best_lrn, train_task, val_task, <span class="at">time_point =</span> <span class="dv">200</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>cal_cmp   <span class="ot">&lt;-</span> <span class="fu">surv_plot_comparison_calibration</span>(best_lrn, train_task, val_task, <span class="at">time_point =</span> <span class="dv">50</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-========== Calibration Metrics at t = 200 ==========
+========== Calibration Metrics at t = 50 ==========
 ** TRAINING (apparent -- optimistic for flexible learners): **
-  Slope=2.8391 | Intercept=-0.9941 | R2=0.8876 | MAE=0.2860 | ICI=0.2169
+  Slope=2.9167 | Intercept=-1.1597 | R2=0.8649 | MAE=0.2516 | ICI=0.2073
 ** VALIDATION (unbiased estimate): **
-  Slope=1.7591 | Intercept=-0.3089 | R2=0.3952 | MAE=0.2291 | ICI=0.1049
+  Slope=1.0508 | Intercept=0.1170 | R2=0.5182 | MAE=0.1509 | ICI=0.1498
   Note: Training calibration is always expected to be more optimistic.
 =================================================================</code></pre>
 </div>
@@ -2138,8 +2138,8 @@ GLOBAL                   7.05073  5 0.217
 <span id="cb62-358"><a href="#cb62-358" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="fu">file.path</span>(<span class="fu">sub_dir</span>(<span class="st">"03_evaluation"</span>), <span class="st">"AUC_comparison.pdf"</span>), auc_cmp, <span class="at">width =</span> <span class="dv">8</span>, <span class="at">height =</span> <span class="dv">5</span>)</span>
 <span id="cb62-359"><a href="#cb62-359" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb62-360"><a href="#cb62-360" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- 4.4 Calibration ----</span></span>
-<span id="cb62-361"><a href="#cb62-361" aria-hidden="true" tabindex="-1"></a>cal_train <span class="ot">&lt;-</span> <span class="fu">surv_plot_calibration</span>(best_lrn, train_task, <span class="at">time_point =</span> <span class="dv">200</span>)</span>
-<span id="cb62-362"><a href="#cb62-362" aria-hidden="true" tabindex="-1"></a>cal_cmp   <span class="ot">&lt;-</span> <span class="fu">surv_plot_comparison_calibration</span>(best_lrn, train_task, val_task, <span class="at">time_point =</span> <span class="dv">200</span>)</span>
+<span id="cb62-361"><a href="#cb62-361" aria-hidden="true" tabindex="-1"></a>cal_train <span class="ot">&lt;-</span> <span class="fu">surv_plot_calibration</span>(best_lrn, train_task, <span class="at">time_point =</span> <span class="dv">50</span>)</span>
+<span id="cb62-362"><a href="#cb62-362" aria-hidden="true" tabindex="-1"></a>cal_cmp   <span class="ot">&lt;-</span> <span class="fu">surv_plot_comparison_calibration</span>(best_lrn, train_task, val_task, <span class="at">time_point =</span> <span class="dv">50</span>)</span>
 <span id="cb62-363"><a href="#cb62-363" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="fu">file.path</span>(<span class="fu">sub_dir</span>(<span class="st">"03_evaluation"</span>), <span class="st">"Calibration_train.pdf"</span>), cal_train, <span class="at">width =</span> <span class="dv">8</span>, <span class="at">height =</span> <span class="dv">6</span>)</span>
 <span id="cb62-364"><a href="#cb62-364" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="fu">file.path</span>(<span class="fu">sub_dir</span>(<span class="st">"03_evaluation"</span>), <span class="st">"Calibration_comparison.pdf"</span>), cal_cmp, <span class="at">width =</span> <span class="dv">8</span>, <span class="at">height =</span> <span class="dv">6</span>)</span>
 <span id="cb62-365"><a href="#cb62-365" aria-hidden="true" tabindex="-1"></a></span>
