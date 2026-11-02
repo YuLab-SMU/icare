@@ -1,35 +1,27 @@
-# =============================================================================
-# icare Package Vignette — Module 4: Survival / Prognosis Modeling (PrognosiX)
-# ADVANCED / PUBLICATION EDITION — STRICT TRAIN/VALIDATION SPLIT
-# =============================================================================
-# Audience : Advanced users building and validating a clinical survival model
-#            with all diagnostic and explanatory tools.
-# Dataset  : Custom Excel file from PMID37633276_DIA_plasmaproomic.xlsx.
-#            Replace the file path with your own data.
-# Pipeline (all steps performed on TRAINING set, except final validation):
-#   1) Build Stat object with time/status in info.data, convert to PrognosiX
-#   2) Feature selection (multi-method, ONLY on training set)
-#   3) Train/Validation split, algorithm benchmarking, hyperparameter tuning
-#   4) Model evaluation: KM curves, subgroup forest, time‑dependent AUC,
-#      calibration, nomogram, external validation
-#   5) Robustness checks: stability, ablation, sensitivity
-#   6) Decision curve analysis (DCA) and SHAP explanations (on validation set)
-#   7) Save final PrognosiX object
-#   8) Deployment: prediction functions + interactive Shiny app
-# =============================================================================
-#devtools::document("../../icare-git/")
-#devtools::install("../../icare-git/")
-library(icare)
-# ---------------------------------------------------------------------------
 # 0. CONFIG & Environment Setup
 # ---------------------------------------------------------------------------
-set.seed(2025)
+set.seed(42)
 
 # Define version and output root
 VERSION <- "Advanced"
 OUTPUT_ROOT <- "./PrognosiX_Output"
 OUTPUT_DIR <- file.path(OUTPUT_ROOT, VERSION)
 
+# Load required packages
+library(icare)
+required_pkgs <- c("mlr3", "mlr3proba", "mlr3viz", "mlr3learners", 
+                   "survival", "survminer", "ggplot2", "caret", "dplyr",
+                   "tidyr", "rms", "risksetROC", "survex", "dcurves",
+                   "readxl", "patchwork", "ggrepel", "maxstat")
+missing_pkgs <- required_pkgs[!sapply(required_pkgs, requireNamespace, quietly = TRUE)]
+if (length(missing_pkgs)) install.packages(missing_pkgs)
+invisible(lapply(required_pkgs, library, character.only = TRUE))
+
+# Register OUTPUT_DIR with the package rather than defining a local sub_dir().
+# icare already ships sub_dir(); a local definition shadows it only inside this
+# script, so functions INSIDE the package that call sub_dir() themselves (e.g.
+# plot_tdROC_comparison(), plot_multitime_calibration()) would still resolve it
+# in the icare namespace and write to a session-temp directory. Calling
 # set_output_root() points both this script and the package at the same tree.
 set_output_root(OUTPUT_DIR)
 
@@ -42,20 +34,11 @@ sub_dir("03_evaluation")
 sub_dir("04_robustness")
 sub_dir("05_xai")
 
-# Load required packages
-library(icare)
-required_pkgs <- c("mlr3", "mlr3proba", "mlr3viz", "mlr3learners", 
-                   "survival", "survminer", "ggplot2", "caret", "dplyr",
-                   "tidyr", "rms", "risksetROC", "survex", "dcurves",
-                   "readxl", "patchwork", "ggrepel", "maxstat")
-missing_pkgs <- required_pkgs[!sapply(required_pkgs, requireNamespace, quietly = TRUE)]
-if (length(missing_pkgs)) install.packages(missing_pkgs)
-invisible(lapply(required_pkgs, library, character.only = TRUE))
-
 # ---------------------------------------------------------------------------
+
 # 1. Data Preparation (custom Excel data)
 # ---------------------------------------------------------------------------
-raw_dis <- as.data.frame(read_excel("../PMID37633276_DIA_plasmaproomic.xlsx", sheet = 3))
+raw_dis <- as.data.frame(read_excel("data/PMID37633276_DIA_plasmaproomic.xlsx", sheet = "Table S1B"))
 raw_dis <- raw_dis[!grepl(x = raw_dis$`Case ID`, pattern = "^KC"), ]
 
 # Extract numeric features
@@ -78,8 +61,9 @@ inf <- raw_dis[, c("Case ID", "Sample type", "Plasma proteome ID", "Tissue prote
                    "T-category", "Lymph node involvement", "Distant metastasis", 
                    "TNM Stage", "Grade", "Morphology")]
 
-# The group label lives in `inf` ONLY -- see Module 1 for why. Readable labels
-# are fine here and make downstream outputs easier to interpret.
+# The group label lives in `inf` ONLY -- see the Module 1 chapter for why.
+# Keeping it out of the feature matrix also frees its type: readable labels are
+# fine, and they become the Table 1 column headers.
 inf$group <- factor(ifelse(index, "Healthy Control", "Case"),
                     levels = c("Healthy Control", "Case"))
 mat <- as.matrix(mat)
@@ -95,8 +79,8 @@ inf$time <- inf$`Combined days to last followup or death`
 inf$event <- inf$`Vital status`
 inf$event <- ifelse(inf$event == "Dead", 1, 0)
 
-# Keep only disease samples (compare the label text, not a code -- the group
-# column is a factor, so `== 1` would silently match nothing)
+# Keep only disease samples (comparing against the label text, not a code --
+# the group column is a factor, so `== 1` would silently match nothing)
 inf <- inf[inf$group == "Case", ]
 mat <- mat[rownames(inf), ]
 mat$time <- inf$time
@@ -116,12 +100,13 @@ prog <- Stat_to_PrognosiX(stat_obj, "time", "status",
                           verbose = TRUE)
 
 # ---------------------------------------------------------------------------
+
 # 2. Feature Selection (ONLY on training set)
 # ---------------------------------------------------------------------------
 task_full <- surv_extract_task(prog)
 n <- task_full$nrow
 train_idx <- caret::createDataPartition(task_full$data()[[task_full$target_names[2]]],
-                                        p = 0.7, list = FALSE)
+                                        p = 0.5, list = FALSE)
 val_idx <- setdiff(seq_len(n), train_idx)
 
 train_task <- task_full$clone()$filter(train_idx)
@@ -152,6 +137,7 @@ write.csv(train_data, file = file.path(sub_dir("data"), "training_data.csv"), ro
 write.csv(val_data,   file = file.path(sub_dir("data"), "validation_data.csv"), row.names = FALSE)
 
 # ---------------------------------------------------------------------------
+
 # 3. Algorithm Benchmarking & Hyperparameter Tuning
 # ---------------------------------------------------------------------------
 learners_list <- list(
@@ -172,6 +158,7 @@ cv_cindex <- tune$cv_performance
 cat("CV C-index after tuning:", round(cv_cindex, 4), "\n")
 
 # ---------------------------------------------------------------------------
+
 # 4. Model Evaluation
 # ---------------------------------------------------------------------------
 best_lrn$predict_type <- "distr"
@@ -223,16 +210,15 @@ km_maxstat   <- surv_plot_risk_km(best_lrn, train_task, "maxstat",
                                   n_boot = 100, minprop = 0.3)
 
 # Save training KM plots
-pdf(file.path(sub_dir("03_evaluation"), "KM_train_median.pdf"), width = 8, height = 7)
-print(km_median); dev.off()
-pdf(file.path(sub_dir("03_evaluation"), "KM_train_tertile.pdf"), width = 8, height = 7)
-print(km_tertile); dev.off()
-pdf(file.path(sub_dir("03_evaluation"), "KM_train_quartile.pdf"), width = 8, height = 7)
-print(km_quartile); dev.off()
-pdf(file.path(sub_dir("03_evaluation"), "KM_train_p_optimize.pdf"), width = 8, height = 7)
-print(km_p_optimize); dev.off()
-pdf(file.path(sub_dir("03_evaluation"), "KM_train_maxstat.pdf"), width = 8, height = 7)
-print(km_maxstat); dev.off()
+print(km_median)
+
+print(km_tertile)
+
+print(km_quartile)
+
+print(km_p_optimize)
+
+print(km_maxstat)
 
 # Apply a fixed cutoff (here we use the median from training) to the validation set
 train_cutoff <- get_cf(km_median)
@@ -241,8 +227,8 @@ km_val_fixed <- surv_plot_risk_km(best_lrn, val_task,
                                   cutoff_method = "custom",
                                   custom_cutoffs = train_cutoff,
                                   risk_table = TRUE)
-pdf(file.path(sub_dir("03_evaluation"), "KM_val_using_train_cutoff.pdf"), width = 8, height = 7)
-print(km_val_fixed); dev.off()
+
+print(km_val_fixed)
 
 # ---- 4.2 Subgroup Forest (FIXED: use subsetted prog) ----
 # Subset prog to training samples to match train_task rows
@@ -252,6 +238,9 @@ train_prog@info.data <- prog@info.data[train_idx, , drop = FALSE]
 train_prog@survival.data <- prog@survival.data[train_idx, , drop = FALSE]
 
 clinical_cols <- colnames(train_prog@info.data)
+# info.data names are normalised by CreateStatObject(): spaces and dots become
+# underscores. Passing the dotted spelling would make intersect() drop
+# everything except "Gender" and silently shrink the subgroup forest.
 candidate_vars <- c("Gender", "Tobacco_smoking_history", "Drinking_history", "TNM_Stage")
 subgroup_vars <- intersect(candidate_vars, clinical_cols)
 
@@ -274,8 +263,8 @@ auc_cmp   <- surv_plot_comparison_auc(best_lrn, train_task, val_task)
 ggsave(file.path(sub_dir("03_evaluation"), "AUC_comparison.pdf"), auc_cmp, width = 8, height = 5)
 
 # ---- 4.4 Calibration ----
-cal_train <- surv_plot_calibration(best_lrn, train_task, time_point = 200)
-cal_cmp   <- surv_plot_comparison_calibration(best_lrn, train_task, val_task, time_point = 200)
+cal_train <- surv_plot_calibration(best_lrn, train_task, time_point = 50)
+cal_cmp   <- surv_plot_comparison_calibration(best_lrn, train_task, val_task, time_point = 50)
 ggsave(file.path(sub_dir("03_evaluation"), "Calibration_train.pdf"), cal_train, width = 8, height = 6)
 ggsave(file.path(sub_dir("03_evaluation"), "Calibration_comparison.pdf"), cal_cmp, width = 8, height = 6)
 
@@ -298,6 +287,7 @@ nom <- surv_generate_nomogram(train_task,
 # Nomogram is drawn; optionally save via pdf().
 
 # ---------------------------------------------------------------------------
+
 # 5. Robustness Analysis
 # ---------------------------------------------------------------------------
 stab <- surv_analyze_feature_stability(train_task, "time", "status", n_repeat = 20, alpha = 1)
@@ -317,6 +307,7 @@ write.csv(sens_sample$results, file.path(sub_dir("04_robustness"), "sensitivity_
 write.csv(sens_censor$results, file.path(sub_dir("04_robustness"), "sensitivity_censor.csv"), row.names = FALSE)
 
 # ---------------------------------------------------------------------------
+
 # 6. DCA & SHAP
 # ---------------------------------------------------------------------------
 val_time <- val_task$data()[[val_task$target_names[1]]]
@@ -359,6 +350,7 @@ beeswarm_plot <- surv_plot_shap_beeswarm(shap_global, top_n = 6, method = "beesw
 ggsave(file.path(sub_dir("05_xai"), "shap_beeswarm.pdf"), beeswarm_plot, width = 9, height = 6)
 
 # ---------------------------------------------------------------------------
+
 # 7. Save Final PrognosiX Object
 # ---------------------------------------------------------------------------
 prog@best.model <- list(
@@ -381,38 +373,36 @@ prog@split.data <- list(train_idx = train_idx, val_idx = val_idx)
 saveRDS(prog, file = file.path(sub_dir("data"), "prog_obj_final.rds"))
 
 # ---------------------------------------------------------------------------
-# 8. Deployment
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
+
 # 8. Deployment: Prediction for New Samples
 # ---------------------------------------------------------------------------
 # Instead of the veteran example, use actual rows from your training data
 # (or real new data) that contain all selected features.
 # For demonstration, we take the first 2 rows of the original feature matrix.
-new_patients <- data.frame(
-  Mean_corpuscular_hemoglobin_concentration = c(33, 34),
-  Basophil_count = c(0.02, 0.03),
-  Monocytes = c(0.6, 0.7),
-  Neutrophilic_granulocyte = c(4.2, 5.1),
-  Red_blood_cell_distribution_width_CV = c(12.3, 11.8),
-  Mean_red_blood_cell_volume = c(89, 92),
-  Lymphocytes_count = c(1.8, 2.1),
-  Platelet_volume_distribution_width = c(12.0, 13.1),
-  Lymphocytes = c(1.8, 2.1),   # note: this may be same as Lymphocytes_count? check your data
-  Monocytes_count = c(0.6, 0.7),
-  Neutrophilic_granulocyte_count = c(4.2, 5.1),
-  Mean_platelet_volume = c(10.5, 11.0),
-  row.names = c("patient_1", "patient_2")
-)
+#new_patients <- data.frame(
+#  Mean_corpuscular_hemoglobin_concentration = c(33, 34),
+#  Basophil_count = c(0.02, 0.03),
+#  Monocytes = c(0.6, 0.7),
+#  Neutrophilic_granulocyte = c(4.2, 5.1),
+#  Red_blood_cell_distribution_width_CV = c(12.3, 11.8),
+#  Mean_red_blood_cell_volume = c(89, 92),
+#  Lymphocytes_count = c(1.8, 2.1),
+#  Platelet_volume_distribution_width = c(12.0, 13.1),
+#  Lymphocytes = c(1.8, 2.1),   # note: this may be same as Lymphocytes_count? check your data
+#  Monocytes_count = c(0.6, 0.7),
+#  Neutrophilic_granulocyte_count = c(4.2, 5.1),
+#  Mean_platelet_volume = c(10.5, 11.0),
+#  row.names = c("patient_1", "patient_2")
+#)
 
-risk_scores <- predict_prognosix(prog, new_patients, impute = TRUE)
-pred_groups_med <- predict_risk_groups(prog, new_patients, cutoff_method = "median")
-pred_groups_cus <- predict_risk_groups(prog, new_patients,
-                                       cutoff_method = "custom",
-                                       custom_cutoffs = opt_cutoff)
-cat("Risk scores:\n"); print(risk_scores)
-cat("Median groups:\n"); print(pred_groups_med)
-cat("Custom groups:\n"); print(pred_groups_cus)
+#risk_scores <- predict_prognosix(prog, new_patients, impute = TRUE)
+#pred_groups_med <- predict_risk_groups(prog, new_patients, cutoff_method = "median")
+#pred_groups_cus <- predict_risk_groups(prog, new_patients,
+#                                       cutoff_method = "custom",
+#                                       custom_cutoffs = opt_cutoff)
+#cat("Risk scores:\n"); print(risk_scores)
+#cat("Median groups:\n"); print(pred_groups_med)
+#cat("Custom groups:\n"); print(pred_groups_cus)
 
 manager <- New_Prog_Manager(prog)
 
@@ -444,6 +434,7 @@ if (interactive()) {
 }
 
 # ---------------------------------------------------------------------------
+
 # 9. Final Report
 # ---------------------------------------------------------------------------
 cat("\n========================================\n")

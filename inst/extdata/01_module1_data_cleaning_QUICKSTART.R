@@ -15,10 +15,11 @@ options(warn = -1)
 rm(list = ls())
 library(icare)
 # ---------------------------------------------------------------------------
+
 # 1. Load the data
 # ---------------------------------------------------------------------------
 library(readxl)
-raw_dis=as.data.frame(read_excel("./PMID37633276_DIA_plasmaproomic.xlsx",sheet = 3))
+raw_dis=as.data.frame(read_excel("data/PMID37633276_DIA_plasmaproomic.xlsx",sheet = 3))
 raw_dis=raw_dis[!grepl(x = raw_dis$`Case ID`,pattern = "^KC"),]
 dput(colnames(raw_dis))
 mat=raw_dis[,c( "White blood cell count", 
@@ -38,11 +39,12 @@ inf=raw_dis[,c("Case ID", "Sample type", "Plasma proteome ID", "Tissue proteome 
       "T-category", "Lymph node involvement", "Distant metastasis", 
       "TNM Stage", "Grade", "Morphology")]
 # The group label goes in `inf` ONLY. icare stores the label in info.data and
-# keeps it out of the feature matrix entirely: a label sitting among the features
-# is indistinguishable from a feature to any code that selects columns by type,
-# and a numeric 0/1 label would silently be fed into PCA and the correlation
-# heatmap. Because the label never enters `mat`, its R type is free -- labels can
-# be readable strings, which is what you want in the Table 1 column headers.
+# keeps it out of the feature matrix entirely: a label sitting among the
+# features is indistinguishable from a feature to any code that selects columns
+# by type, and a numeric 0/1 label would silently be fed into PCA and the
+# correlation heatmap. Because the label never enters `mat`, its R type is free
+# -- labels can be readable strings, which is what you want in the Table 1
+# column headers.
 inf$group = factor(ifelse(index, "Healthy Control", "Case"),
                    levels = c("Healthy Control", "Case"))
 
@@ -54,11 +56,11 @@ storage.mode(mat) <- "numeric"
 rownames(mat)=inf$`Case ID`
 rownames(inf)=inf$`Case ID`
 # ---------------------------------------------------------------------------
+
 # 2. Create the Stat object
 # ---------------------------------------------------------------------------
 # This is the container icare uses to track your data through cleaning.
-# group_col names a column of info.data (never of raw.data) -- the outcome you
-# want to compare groups on.
+# group_col tells icare which column is the outcome you want to compare groups on.
 stat_obj <- CreateStatObject(
   raw.data  = mat,info.data = inf,
   group_col = "group",
@@ -66,6 +68,7 @@ stat_obj <- CreateStatObject(
 )
 
 # ---------------------------------------------------------------------------
+
 # 3. Clean the data (one line per step, sensible defaults)
 # ---------------------------------------------------------------------------
 stat_obj <- stat_diagnose_variable_type(stat_obj)          # detect numeric vs. categorical
@@ -80,6 +83,7 @@ cat("Clean data ready:", nrow(stat_obj@clean.data), "rows x",
     ncol(stat_obj@clean.data), "columns\n")
 
 # ---------------------------------------------------------------------------
+
 # 4. Two quick summary plots
 # ---------------------------------------------------------------------------
 # A) How do the groups differ across a few key numeric variables?
@@ -101,15 +105,18 @@ PlotPCA(
 )
 
 # ---------------------------------------------------------------------------
+
 # 5. Which features differ most between groups?
 # ---------------------------------------------------------------------------
 stat_obj <- stat_var_feature(stat_obj, p_threshold = 0.05)
 deg_result <- ExtractLastTestSig(stat_obj)
 # ---------------------------------------------------------------------------
+
 # 6. Baseline characteristics table ("Table 1")
 # ---------------------------------------------------------------------------
 stat_obj <- stat_gaze_analysis(stat_obj, save_word = TRUE)
 # ---------------------------------------------------------------------------
+
 # 7. Save your work
 # ---------------------------------------------------------------------------
 # Module 2 (modeling) and Module 3 (subtyping) both can start by loading this file.
@@ -117,4 +124,3 @@ saveRDS(stat_obj, file = "stat_obj.rds")
 
 cat("\nDone! stat_obj.rds saved — you're ready for Module 2 (modeling)",
     "or Module 3 (subtyping).\n")
-

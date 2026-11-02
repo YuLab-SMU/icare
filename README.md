@@ -443,6 +443,8 @@ launch_prog_deploy_app(prog_manager)
 
 ## Quick start
 
+For package versions that include the tutorial dataset, its source location is `icare/inst/extdata/PMID37633276_DIA_plasmaproomic.xlsx`; after installation, locate it with `system.file("extdata", "PMID37633276_DIA_plasmaproomic.xlsx", package = "icare")` (an empty string means the installed version does not include the file).
+
 The fastest way to see the whole pipeline end-to-end is the QUICKSTART
 vignette for each module, in order:
 

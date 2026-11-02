@@ -21,6 +21,7 @@ library(caret)
 set.seed(123)
 
 # ---------------------------------------------------------------------------
+
 # 1. Load the cleaned data and convert it into a modeling object
 # ---------------------------------------------------------------------------
 stat_obj  <- readRDS("stat_obj.rds")
@@ -28,6 +29,7 @@ model_obj <- ConvertObject(stat_obj, to = "Train_Model")
 model_obj@clean.df[[model_obj@group_col]] <- factor(model_obj@clean.df[[model_obj@group_col]])
 
 # ---------------------------------------------------------------------------
+
 # 2. Quick feature selection (built-in importance from a couple of models)
 # ---------------------------------------------------------------------------
 builtin <- FeatureSelectBuiltin(
@@ -42,6 +44,7 @@ print(builtin$importance_table)
 model_obj <- ApplyFeatureSelection(model_obj,builtin$importance_table$Feature[1:15])
 colnames(model_obj@clean.df)
 # ---------------------------------------------------------------------------
+
 # 3. Split into training/testing sets and scale the predictors
 # ---------------------------------------------------------------------------
 # Stratified split: create 70% training indices while preserving
@@ -83,6 +86,7 @@ model_obj@split.scale.data <- list(
 model_obj@filtered.set <- model_obj@split.scale.data
 
 # ---------------------------------------------------------------------------
+
 # 4. Train a handful of common algorithms and compare them
 # ---------------------------------------------------------------------------
 model_obj <- ModelTrainAnalysis(
@@ -93,6 +97,7 @@ model_obj <- ModelTrainAnalysis(
 )
 
 # ---------------------------------------------------------------------------
+
 # 5. Pick the best model (by AUC) and look at its performance
 # ---------------------------------------------------------------------------
 model_obj <- SelectBestModel(model_obj, metric = "auc")
@@ -104,6 +109,7 @@ PlotConfusionMatrix(model_obj, test_data = model_obj@split.scale.data$testing,
 PlotFeatureImportance(model_obj, top_n = 15, save_plot = TRUE)
 
 # ---------------------------------------------------------------------------
+
 # 6. Save your trained model
 # ---------------------------------------------------------------------------
 saveRDS(model_obj, file = "model_obj.rds")

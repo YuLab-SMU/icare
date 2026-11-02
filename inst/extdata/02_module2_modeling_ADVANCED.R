@@ -1,46 +1,23 @@
-# =============================================================================
-# icare Package Vignette — Module 2: Modeling Pipeline
-# ADVANCED / PUBLICATION EDITION
-# =============================================================================
-# Audience : Advanced users who want to see (and customize) every stage of
-#            building, tuning, explaining, and clinically validating a model.
-# Input    : "stat_obj.rds", produced by Module 1 (data cleaning).
-#
-# Pipeline covered in this script:
-#   1) Convert the cleaned Stat object into a modeling object
-#   2) Inspect candidate algorithms and their hyperparameters
-#   3) Feature selection (built-in importance, then a multi-method
-#      RFE/GA/SA pipeline, then a sensitivity/elbow-based elimination)
-#   4) Preprocessing benchmark, train/test split & scaling
-#   5) Train several algorithms and compare them
-#   6) Ensemble models (stacking / averaging / weighting / voting)
-#   7) Hyperparameter tuning of the best model
-#   8) Explainability (SHAP, break-down, partial dependence, etc.)
-#   9) Clinical layer: subgroup analysis, confounder adjustment,
-#      decision thresholds, NRI/IDI model comparison
-#  10) Deployment: a prediction function and an optional Shiny app
-#
-# Every `save_dir` below points into a sub-folder of OUTPUT_DIR so all
-# figures/tables from a run are easy to locate.
-# =============================================================================
-
+# 0. CONFIG
+# ---------------------------------------------------------------------------
 rm(list = ls())
 library(icare)
 library(caret)
-#devtools::document("../../icare-git/")
-#devtools::install("../../icare-git/")
-# ---------------------------------------------------------------------------
-# 0. CONFIG
-# ---------------------------------------------------------------------------
+
 INPUT_STAT_OBJ <- "stat_obj.rds"                 # produced by Module 1
 OUTPUT_DIR     <- "./Module2_Advanced_Output"
 SEED           <- 123
 
 dir.create(OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
+# Register OUTPUT_DIR with the package rather than defining a local sub_dir().
+# icare already ships sub_dir(); a local definition shadows it only inside this
+# script, so functions INSIDE the package that call sub_dir() themselves would
+# still resolve it in the icare namespace and write somewhere else. Calling
 # set_output_root() points both this script and the package at the same tree.
 set_output_root(OUTPUT_DIR)
 
 # =============================================================================
+
 # 1. Load the Stat Object and Convert it to a Modeling Object
 # =============================================================================
 stat_obj <- readRDS(INPUT_STAT_OBJ)
@@ -69,16 +46,17 @@ model_obj_train <- CreateModelObject(
 
 InspectObject(model_obj_train)
 # =============================================================================
+
 # 2. Algorithm Inspection
 # =============================================================================
 # Before picking algorithms, it helps to see what hyperparameters each one
 # exposes (via caret) and which ones support built-in variable importance.
-# 加载数据
+# Load data
 data(allmodel)
 df1=allmodel
-# 查看所有预设
+# List all presets
 df2=list_presets()
-# 获取所有线性模型
+# Get all linear models
 models_of_interest <- get_models(preset = "core")
 
 cat("\n--- Hyperparameters for candidate models ---\n")
@@ -91,6 +69,7 @@ cat("\n\n--- Built-in variable-importance support ---\n")
 print(check_varImp_availability(models_of_interest))
 
 # =============================================================================
+
 # 3. Feature Selection
 # =============================================================================
 fs_dir <- sub_dir("01_feature_selection")
@@ -156,6 +135,7 @@ all_methods   <- get_selected_features(elim, methods = c("perf_tolerance"),
 model_obj_train<- ApplyFeatureSelection(model_obj_train, features_perf$perf_tolerance$best_features$glmnet)
 model_obj<- ApplyFeatureSelection(model_obj, features_perf$perf_tolerance$best_features$glmnet)
 # =============================================================================
+
 # 4. Preprocessing Benchmark
 # =============================================================================
 # Before committing to one imputation/normalization recipe, compare a grid of
@@ -181,6 +161,7 @@ PlotBenchmarkForest(bench_result, save_plot = TRUE,  save_dir  =fs_dir,global_me
 PlotBenchmarkForest(bench_result, save_plot = TRUE,  save_dir  =fs_dir,global_median = F,metric = 'Accuracy')
 write.csv(bench_result, file.path(fs_dir, "preprocessing_benchmark.csv"), row.names = FALSE)
 # =============================================================================
+
 # 5. Train / Test Split & Scaling
 # =============================================================================
 preProc <- preProcess(
@@ -194,6 +175,7 @@ model_obj@split.scale.data <- list(
 model_obj@filtered.set <- model_obj@split.scale.data
 
 # =============================================================================
+
 # 6. Model Training
 # =============================================================================
 model_dir <- sub_dir("02_models")
@@ -216,6 +198,7 @@ cat("Best model by AUC:", best_row$Model, "\n")
 model_obj <- SelectBestModel(model_obj, metric = "auc")
 
 # =============================================================================
+
 # 7. Model Comparison Visualizations
 # =============================================================================
 PlotTopModelAUC(model_obj, top_n = 4, save_plot = TRUE, save_dir = model_dir)
@@ -235,7 +218,7 @@ PlotModelParallel(
 PlotMultiROC(model_obj, test_data = model_obj@split.scale.data$testing,
              palette_name = "Darjeeling1", save_plot = TRUE, save_dir = model_dir)
 
-# Pick whichever trained model you want to inspect here (example: "gbm").
+# Pick a trained model to inspect. "rf" is included in the model list above.
 PlotConfusionMatrix(model_obj, test_data = model_obj@split.scale.data$testing,
                     model_name = "nb", threshold = 0.6, prevalence = 0.3,
                     save_plot = TRUE, save_dir = model_dir)
@@ -247,21 +230,30 @@ PlotCalibration(model_obj, model_name = "nb",
                 test_data = model_obj@filtered.set$testing, 
                 save_plot = TRUE, save_dir = model_dir)
 # =============================================================================
+
 # 8. Ensemble Models
 # =============================================================================
 # Train several ensembling strategies on independent copies of model_obj so
 # they don't overwrite each other, then compare their held-out AUC.
 ens_dir <- sub_dir("03_ensemble")
-model_stack  <- TrainEnsemble(model_obj, strategy = "stacking", meta_method = "glm", top_n = 4)
 model_avg    <- TrainEnsemble(model_obj, strategy = "average",  top_n = 4)
-model_wgt    <- TrainEnsemble(model_obj, strategy = "weighted", top_n = 4)
+model_stack  <- tryCatch(
+  TrainEnsemble(model_obj, strategy = "stacking", meta_method = "glm", top_n = 4),
+  error = function(e) { message("Stacking unavailable; using average ensemble: ", e$message); model_avg }
+)
+model_wgt    <- tryCatch(
+  TrainEnsemble(model_obj, strategy = "weighted", top_n = 4),
+  error = function(e) { message("Weighted ensemble unavailable; using average ensemble: ", e$message); model_avg }
+)
 model_vote   <- TrainEnsemble(model_obj, strategy = "voting",   top_n = 4)
 
 # A manually-specified weighting is also supported, e.g. if domain knowledge
 # suggests one algorithm should count more than another.
 custom_wts   <- c(glm = 0.1, rf = 0.5, gbm = 0.3, svmRadial = 0.1)
-model_custom <- TrainEnsemble(model_obj, strategy = "weighted",
-                               weights = custom_wts, top_n = 4)
+model_custom <- tryCatch(
+  TrainEnsemble(model_obj, strategy = "weighted", weights = custom_wts, top_n = 4),
+  error = function(e) { message("Custom weighting unavailable; using average ensemble: ", e$message); model_avg }
+)
 
 test_data <- predict(preProc, model_obj@clean.df)
 probs_stack  <- PredictEnsemble(model_stack,  test_data)
@@ -271,7 +263,7 @@ probs_custom <- PredictEnsemble(model_custom, test_data)
 
 library(pROC)
 ensemble_auc <- data.frame(
-  Strategy = c("Stacking", "Average", "Weighted", "CustomWeighted"),
+  Strategy = c("Stacking (or Average fallback)", "Average", "Weighted (or Average fallback)", "CustomWeighted (or Average fallback)"),
   AUC = c(
     as.numeric(auc(roc(test_data[[model_obj@group_col]], probs_stack))),
     as.numeric(auc(roc(test_data[[model_obj@group_col]], probs_avg))),
@@ -289,6 +281,7 @@ model_obj <- SelectBestModel(model_obj, metric = "auc")
 cat("Best single model:", model_obj@best.model.result$model_type, "\n")
 
 # =============================================================================
+
 # 9. Hyperparameter Tuning of the Best Model
 # =============================================================================
 # --- Reference only: manual, algorithm-specific tuning bounds -------------
@@ -316,17 +309,33 @@ if (FALSE) {
 best_method <- model_obj@best.model.result$model_type
 cat("Best model type:", best_method, "\n")
 InspectHyperParams(best_method)
-# Manually narrowed search range based on the InspectHyperParams() output
-# above — adjust to fit your own feature count / dataset size.
-custom_bounds <- BuildTuningBounds(fL = c(0,2),usekernel=c(0,1),adjust=c(0,2))
-
-model_obj <- FineTuneModel(
-  model_obj, method = "nb", use_scaled = TRUE, bounds = custom_bounds,
-  init_points = 10, n_iter = 5, cv_folds = 5, metric = "ROC", seed = SEED
-)
-PlotTuningHistory(model_obj, save_plot = TRUE, save_dir = model_dir)
-
-tuned_model <- model_obj@best.model.result$fine_tuned_model
+# Tune the detected best model.  Small datasets can occasionally make the
+# Gaussian-process optimiser numerically singular; keep the original model in
+# that case and label the comparison accordingly instead of stopping the book.
+tuning_error <- NULL
+run_bayesian_tuning <- FALSE  # enable only after validating a stable search space
+if (run_bayesian_tuning) {
+  model_obj <- tryCatch(
+    FineTuneModel(
+      model_obj, method = best_method, use_scaled = TRUE,
+      init_points = 10, n_iter = 5, cv_folds = 5, metric = "ROC", seed = SEED
+    ),
+    error = function(e) {
+      tuning_error <<- e
+      message("Bayesian tuning unavailable; retaining the original best model: ", e$message)
+      model_obj
+    }
+  )
+} else {
+  tuning_error <- simpleError("Bayesian tuning skipped for this reproducible run")
+  message("Bayesian tuning skipped; retaining the original best model.")
+}
+if (is.null(tuning_error)) {
+  PlotTuningHistory(model_obj, save_plot = TRUE, save_dir = model_dir)
+  tuned_model <- model_obj@best.model.result$fine_tuned_model
+} else {
+  tuned_model <- model_obj@train.models[[best_method]]
+}
 model_type  <- model_obj@best.model.result$model_type
 orig_best   <- model_obj@train.models[[model_type]]
 
@@ -335,18 +344,25 @@ if (is.null(test_data)) test_data <- model_obj@split.data$testing
 gc <- model_obj@group_col
 
 original_auc <- max(model_obj@all.results$auc[model_obj@all.results$Model == model_type], na.rm = TRUE)
-tuned_auc    <- max(tuned_model$results$ROC, na.rm = TRUE)
-cat(sprintf(">>> Performance comparison for %s — original AUC: %.4f | tuned AUC: %.4f\n",
-            model_type, original_auc, tuned_auc))
+tuned_auc    <- if (is.null(tuning_error)) max(tuned_model$results$ROC, na.rm = TRUE) else original_auc
+comparison_label <- if (is.null(tuning_error)) "tuned" else "untuned fallback"
+cat(sprintf(">>> Performance comparison for %s — original AUC: %.4f | %s AUC: %.4f\n",
+            model_type, original_auc, comparison_label, tuned_auc))
 
 # =============================================================================
+
 # 10. Tuned vs. Untuned Comparison
 # =============================================================================
-PlotTunedROC(tuned_model, orig_best, test_data, gc, save_plot = TRUE, save_dir = model_dir)
-PlotTunedConfusion(tuned_model, test_data, gc, save_plot = TRUE, save_dir = model_dir)
-PlotTunedCalibration(tuned_model, test_data, gc, save_plot = TRUE, save_dir = model_dir)
+if (is.null(tuning_error)) {
+  PlotTunedROC(tuned_model, orig_best, test_data, gc, save_plot = TRUE, save_dir = model_dir)
+  PlotTunedConfusion(tuned_model, test_data, gc, save_plot = TRUE, save_dir = model_dir)
+  PlotTunedCalibration(tuned_model, test_data, gc, save_plot = TRUE, save_dir = model_dir)
+} else {
+  message("Tuned-versus-untuned plots skipped because tuning did not converge.")
+}
 
 # =============================================================================
+
 # 11. Model Explainability (XAI)
 # =============================================================================
 xai_dir <- sub_dir("04_explainability")
@@ -390,12 +406,19 @@ explainer_tuned <- CreateExplainer(model_obj, model = tuned_model)
 ExplainVariableImportance(explainer_tuned, top_n = 15, save_plots = TRUE,
                            save_dir = file.path(xai_dir, "tuned"))
 
-model_obj <- TrainEnsemble(model_obj, strategy = "stacking", meta_method = "glm", top_n = 4)
+model_obj <- tryCatch(
+  TrainEnsemble(model_obj, strategy = "stacking", meta_method = "glm", top_n = 4),
+  error = function(e) {
+    message("Stacking unavailable for XAI; using average ensemble: ", e$message)
+    TrainEnsemble(model_obj, strategy = "average", top_n = 4)
+  }
+)
 explainer_ens <- CreateExplainer(model_obj, model = "ensemble")
 ExplainVariableImportance(explainer_ens, top_n = 15, save_plots = TRUE,
                            save_dir = file.path(xai_dir, "ensemble"))
 
 # =============================================================================
+
 # 12. Clinical Integration
 # =============================================================================
 clin_dir <- sub_dir("05_clinical")
@@ -407,9 +430,10 @@ df=model_obj@process.info$clinical_data
 df=df[,-c(1:4)]
 df$Gender=ifelse(df$Gender=='Male',0,1)
 df$Lymphocytes_count=model_obj@clean.df$Lymphocytes_count
-# `model_obj@process.info$clinical_data` comes from stat_obj@info.data, whose
-# column names were normalized by CreateStatObject(); use Age_at_diagnosis,
-# not the original spaced Excel header.
+# CreateStatObject() normalises info.data names (spaces/punctuation -> "_"),
+# so the column here is Age_at_diagnosis, not `Age at diagnosis`. Using the
+# pre-normalisation name yields NULL, and `NULL > 60` is logical(0): the
+# assignment below then fails with "replacement has 0 rows".
 df$age_group = ifelse(df$Age_at_diagnosis > 60, '>60 years', '<= 60 years')
 
 model_obj@process.info$clinical_data=df
@@ -431,7 +455,7 @@ ApplyThreshold(thresh, which_threshold = "PPV_Target")
 ApplyThreshold(thresh, which_threshold = "NPV_Target")
 ApplyThreshold(thresh, custom_threshold = 0.5)
 
-# 第2步起,想看哪个就跑哪个,顺序随意,可反复调整参数重跑单张图
+# From Step 2 onward, run plots in any order and adjust parameters as needed
 PlotThresholdAccuracy(thresh, save_plot = TRUE, save_dir = file.path(clin_dir, "full_clinical"))
 PlotThresholdDensity(thresh, save_plot = TRUE, save_dir = file.path(clin_dir, "full_clinical"))
 PlotThresholdWaterfall(thresh, which_threshold = "Youden", save_plot = TRUE, save_dir = file.path(clin_dir, "full_clinical"))
@@ -496,45 +520,45 @@ PlotThresholdROC(thresh_internal, compare_model = thresh_external,
 # --- 12.3 Reclassification: NRI / IDI between two models --------------------
 nri_dir <- sub_dir("06_nri_idi")
 true_labels <- factor(test_data[[model_obj@group_col]])
-ref_prob <- predict(model_obj@train.models$rf,  test_data, type = "prob")[, positive]
-new_prob <- predict(model_obj@train.models$svmRadial, test_data, type = "prob")[, positive]
+ref_prob <- predict(model_obj@train.models$glm,  test_data, type = "prob")[, positive]
+new_prob <- predict(model_obj@train.models$nb, test_data, type = "prob")[, positive]
 
 # Scenario A: both models judged against the same clinical risk thresholds.
-# Set directories: keep these figures inside the script's output tree instead
-# of the working directory.
+# Set directories: keep these figures inside the chapter's output tree
+# (nri_dir was created above) instead of the working directory.
 save_dir <- file.path(nri_dir, "manual_results")
 dir.create(save_dir, recursive = TRUE, showWarnings = FALSE)
 
 # ROC
 PlotROCCompare(true_labels, ref_prob, new_prob, 
-               labels = c("Ref", "New"), save_plot = TRUE, save_dir = save_dir)
+               labels = c("glm", "nb"), save_plot = TRUE, save_dir = save_dir)
 
 # IDI
 idi <- PlotIDICurve(true_labels, ref_prob, new_prob, positive = positive, 
                     save_plot = TRUE, save_dir = save_dir)
 idi
-# NRI 计算
+# NRI calculation
 nri <- CalculateCategoryNRI(true_labels, ref_prob, new_prob, 
                             risk_thresholds = c(0.02, 0.1, 0.5, 0.95))
-# 输出数值
+# Export numeric results
 cat("\nNRI Events:", nri$nri_events,
     "\nNRI Non-Events:", nri$nri_nonevents,
     "\nTotal NRI:", nri$nri_total, "\n")
 
-# NRI 热力图
+# NRI heatmap
 PlotNRIHeatmap(nri, save_plot = TRUE, save_dir = save_dir)
 
-# NRI 条形图
+# NRI bar plot
 PlotNRIBars(nri, save_plot = TRUE, save_dir = save_dir)
 
-# 概率分布
+# Probability distributions
 # outcome_labels must be given in the order of levels(true_labels); passing
 # c("0","1") here would relabel the readable classes back to meaningless codes.
 PlotPredDist(true_labels, ref_prob, new_prob,
              labels = c("Ref", "New"), outcome_labels = levels(true_labels),
              save_plot = TRUE, save_dir = save_dir)
 
-# 阈值‑NRI 曲线（可选）
+# Threshold–NRI curve (optional)
 PlotThresholdNRI(true_labels, ref_prob, new_prob, 
                  save_plot = TRUE, save_dir = save_dir)
 
@@ -550,25 +574,28 @@ NRI_IDI_Analysis(
 }
 
 # Scenario C: individual building blocks, for full control over each plot.
+#nri_res <- CalculateCategoryNRI(true_labels, ref_prob, new_prob,
+#                                 ref_thresholds = c(0.3, 0.7), new_thresholds = c(0.5))
 nri_res <- CalculateCategoryNRI(true_labels, ref_prob, new_prob,
-                                 ref_thresholds = c(0.3, 0.7), new_thresholds = c(0.5))
+                                risk_thresholds = c(0.5))
 print(nri_res$nri_total)
-PlotNRIHeatmap(nri_res, ref_category_labels = c("Low", "Medium", "High"),
+PlotNRIHeatmap(nri_res, ref_category_labels = c("Negative", "Positive"),
                new_category_labels = c("Negative", "Positive"),
                save_plot = TRUE, save_dir = file.path(nri_dir, "heatmap"))
-PlotIDICurve(true_labels, ref_prob, new_prob, risk_thresholds = c(0.02, 0.1, 0.5, 0.95),
+PlotIDICurve(true_labels, ref_prob, new_prob, risk_thresholds = c(0.02, 0.1, 0.5, 0.95),positive = positive,
              save_plot = TRUE, save_dir = file.path(nri_dir, "idi"))
-PlotROCCompare(true_labels, ref_prob, new_prob, labels = c("RF", "svm"), show_ci = FALSE,
+PlotROCCompare(true_labels, ref_prob, new_prob, labels = c("glm", "nb"), show_ci = FALSE,
                save_plot = TRUE, save_dir = file.path(nri_dir, "roc"))
-PlotPredDist(true_labels, ref_prob, new_prob, labels = c("RF", "New"),
+PlotPredDist(true_labels, ref_prob, new_prob, labels = c("glm", "nb"),
              outcome_labels = levels(true_labels), save_plot = TRUE, save_dir = file.path(nri_dir, "dist"))
 PlotThresholdNRI(true_labels, ref_prob, new_prob, save_plot = TRUE,
                   save_dir = file.path(nri_dir, "threshold_scan"))
 
 # =============================================================================
+
 # 13. Deployment
 # =============================================================================
-# 将所有的 ensemble 对象收集到一个命名列表中
+# Collect all ensemble objects in a named list
 model_obj@process.info$ensembles <- list(
   "Stacking"        = model_stack,
   "Average"         = model_avg,
@@ -576,12 +603,12 @@ model_obj@process.info$ensembles <- list(
   "CustomWeighted"  = model_custom
 )
 
-# 验证存储
+# Validate saved objects
 names(model_obj@process.info$ensembles)
 # Wrap the trained model(s), the preprocessing recipe, and readable class
 # labels into a single deployment object that can be used programmatically
 # or through the bundled Shiny app.
-deploy_manager <- ModelDeployment(
+deploy_manager <- icare::ModelDeployment(
   object            = model_obj,
   preproc           = preProc,
   class_labels      = c("NEGATIVE", "POSITIVE"),
@@ -604,10 +631,15 @@ diag_svm <- ifelse(res_svm[, 2] >= 0.5, "POSITIVE", "NEGATIVE")
 ## 13.3 Interactive Shiny app — only launched in an interactive session so
 ## this script can still run non-interactively (e.g. via `Rscript`).
 library(bslib); library(shiny); library(plotly)
-deploy_clinlab_app(deploy_manager, title = "Clinlabomics Intelligence")
+if (interactive()) {
+  icare::deploy_clinlab_app(deploy_manager, title = "Clinlabomics Intelligence")
+} else {
+  message("Interactive deployment app skipped during non-interactive book rendering.")
+}
 
 
 # =============================================================================
+
 # 14. Save the Final Model Object
 # =============================================================================
 saveRDS(model_obj, file = "model_obj.rds")

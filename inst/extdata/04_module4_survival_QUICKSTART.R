@@ -4,13 +4,14 @@
 # =============================================================================
 # Audience : Users who want a trained, evaluated survival model without
 #            extensive benchmarking, SHAP, or DCA.
-# Dataset  : survival::veteran (built-in lung cancer trial). Replace Section 1
+# Dataset  : Replace Section 1
 #            with your own data.frame (time, status, predictors).
 # For advanced features (tuning, benchmarking, DCA, Shiny app), see
 # "04_module4_survival_ADVANCED.R".
 # =============================================================================
 
 # ---------------------------------------------------------------------------
+
 # 0. Setup
 # ---------------------------------------------------------------------------
 set.seed(2025)
@@ -26,6 +27,7 @@ library(survminer)
 library(ggplot2)
 
 # ---------------------------------------------------------------------------
+
 # 1. Data Preparation
 # ---------------------------------------------------------------------------
 # Use the built-in veteran dataset
@@ -53,6 +55,7 @@ prog <- Stat_to_PrognosiX(stat, "time", "status",
                           verbose = TRUE)
 
 # ---------------------------------------------------------------------------
+
 # 2. Feature Selection (Univariate + LASSO)
 # ---------------------------------------------------------------------------
 feat_sel <- surv_feature_selection_multi(
@@ -69,6 +72,7 @@ cat("Selected features:", paste(selected_feats, collapse = ", "), "\n")
 prog@survival.var <- list(selected = selected_feats)
 
 # ---------------------------------------------------------------------------
+
 # 3. Train/Validation Split
 # ---------------------------------------------------------------------------
 task_full <- surv_extract_task(prog)$select(selected_feats)
@@ -80,12 +84,14 @@ train_task <- task_full$clone()$filter(train_idx)
 val_task   <- task_full$clone()$filter(val_idx)
 
 # ---------------------------------------------------------------------------
+
 # 4. Train a Survival Random Forest
 # ---------------------------------------------------------------------------
 learner <- surv_get_learner("surv.ranger", train_task)
 learner$train(train_task)
 
 # ---------------------------------------------------------------------------
+
 # 5. Evaluate on Validation Set
 # ---------------------------------------------------------------------------
 # Apparent (training) performance
@@ -98,6 +104,7 @@ val_cindex <- val_pred$score(msr("surv.cindex"))
 cat("Validation C-index:", round(val_cindex, 4), "\n")
 
 # ---------------------------------------------------------------------------
+
 # 6. Risk Stratification and Kaplan‑Meier Plot
 # ---------------------------------------------------------------------------
 # Determine optimal cutoff from training set
@@ -118,15 +125,14 @@ km_val <- surv_plot_risk_km(learner, val_task,
 print(km_val)
 
 # Save KM plots
-pdf(file.path(OUTPUT_DIR, "KM_train_median.pdf"), width = 8, height = 7)
 print(km_median)
-dev.off()
 
-pdf(file.path(OUTPUT_DIR, "KM_val_median.pdf"), width = 8, height = 7)
+
 print(km_val)
-dev.off()
+
 
 # ---------------------------------------------------------------------------
+
 # 7. Predict Risk for New Patients
 # ---------------------------------------------------------------------------
 # Store the best model in prog@best.model for deployment
@@ -156,6 +162,7 @@ cat("Risk scores:\n"); print(risk_scores)
 cat("Risk groups:\n"); print(pred_groups)
 
 # ---------------------------------------------------------------------------
+
 # 8. Save the Model
 # ---------------------------------------------------------------------------
 saveRDS(prog, file = file.path(OUTPUT_DIR, "prog_obj_quickstart.rds"))

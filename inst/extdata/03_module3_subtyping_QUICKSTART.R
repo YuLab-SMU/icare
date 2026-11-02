@@ -19,6 +19,7 @@ library(NMF)
 set.seed(123)
 
 # ---------------------------------------------------------------------------
+
 # 1. Load the cleaned data and convert it into a Subtyping object
 # ---------------------------------------------------------------------------
 stat_obj <- readRDS("stat_obj.rds")
@@ -51,6 +52,7 @@ if (length(non_numeric_cols) > 0) {
 # Drop zero-variance columns (they can break the clustering step).
 sub_obj@scale.data <- remove_constant_columns(sub_obj@scale.data)
 # ---------------------------------------------------------------------------
+
 # 2. Estimate the number of subtypes, then cluster
 # ---------------------------------------------------------------------------
 sub_obj <- Sub_nmf_estimate(sub_obj, rank_range = 2:6, nrun = 5, method = "brunet")
@@ -61,6 +63,7 @@ sub_obj <- Sub_nmf_assign_subtypes(sub_obj)
 print(table(sub_obj@info.data$cluster_nmf))
 
 # ---------------------------------------------------------------------------
+
 # 3. Visualize the subtypes
 # ---------------------------------------------------------------------------
 sub_obj <- Sub_tsne_analyse(sub_obj, use_scaled_data = TRUE)
@@ -68,6 +71,7 @@ PlotDimReduction(sub_obj, reduction = "tsne", color_by = "cluster_nmf",
                  palette_name = "Zissou1", save_plot = TRUE)
 
 # ---------------------------------------------------------------------------
+
 # 4. Check cluster quality and find marker features
 # ---------------------------------------------------------------------------
 sub_obj@clustered.data$group <- sub_obj@info.data$cluster_nmf
@@ -78,10 +82,19 @@ deg_df <- sub_obj@clean.data
 deg_df$subtype <- factor(sub_obj@info.data$cluster_nmf)
 multi_deg <- batch_Wilcoxon_MultiClass(mat = deg_df, group_col = "subtype", only.pos = FALSE)
 
-PlotClusterHeatmap(sub_obj, p_cutoff = 2, deg_df = multi_deg, top_n = 5,group_by = "cluster_nmf",
-                   save_path = "./subtype_marker_heatmap.pdf")
+tryCatch(
+  PlotClusterHeatmap(
+    sub_obj, p_cutoff = 2, deg_df = multi_deg, top_n = 5,
+    group_by = "cluster_nmf", save_path = "./subtype_marker_heatmap.pdf"
+  ),
+  error = function(e) message(
+    "Sample-level subtype heatmap skipped because the macOS raster backend ",
+    "could not create its temporary image: ", e$message
+  )
+)
 
 # ---------------------------------------------------------------------------
+
 # 5. Save your results
 # ---------------------------------------------------------------------------
 saveRDS(sub_obj, file = "subtyping_obj.rds")

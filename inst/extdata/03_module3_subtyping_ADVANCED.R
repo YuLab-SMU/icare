@@ -1,46 +1,23 @@
-# =============================================================================
-# icare Package Vignette — Module 3: Subtyping / Unsupervised Clustering
-# ADVANCED / PUBLICATION EDITION
-# =============================================================================
-# Audience : Advanced users who want to compare multiple clustering methods,
-#            validate them, and produce publication-style figures.
-# Input    : "stat_obj.rds", produced by Module 1 (data cleaning).
-#
-# Pipeline covered in this script:
-#   1) Convert the cleaned Stat object into a Subtyping object
-#   2) Normalize data and split into train/validation sets
-#   3) Cluster with three complementary methods: K-means, LPA (Gaussian
-#      mixture), and NMF (the primary method, since it also yields a
-#      re-usable model for predicting subtypes in new data)
-#   4) Reduce dimensions (t-SNE / UMAP) for visualization
-#   5) Evaluate and cross-compare the three clustering solutions
-#   6) Find subtype-specific marker features and visualize them
-#      (heatmaps, silhouette plot, alluvial diagram)
-#   7) Deploy the trained NMF model for predicting subtypes in new samples
-#
-# All figures are written into structured sub-folders of OUTPUT_DIR.
-# =============================================================================
-# NOTE: the previous first line here was `load("../all_model.csv")`, which
-# is a bug -- load() only reads .RData/.rds binary files, not CSV, and would
-# error immediately (before rm(list=ls()) even runs). Removed as apparent
-# leftover debug code; if you need to load model presets from a CSV, use
-# read.csv() instead, or icare's own data(allmodel)/list_presets().
+# 0. CONFIG
+# ---------------------------------------------------------------------------
 rm(list = ls())
 library(icare)
 
-# ---------------------------------------------------------------------------
-# 0. CONFIG
-# ---------------------------------------------------------------------------
 INPUT_STAT_OBJ  <- "stat_obj.rds"
 OUTPUT_DIR      <- "./Module3_Advanced_Output"
 GROUP_COL       <- "group"   # the outcome/group column carried over from Module 1
 SEED            <- 123
 
 dir.create(OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
+# Register OUTPUT_DIR with the package rather than defining a local sub_dir().
+# icare already ships sub_dir(); a local definition shadows it only inside this
+# script, so functions INSIDE the package that call sub_dir() themselves would
+# still resolve it in the icare namespace and write somewhere else. Calling
 # set_output_root() points both this script and the package at the same tree.
 set_output_root(OUTPUT_DIR)
 
 # =============================================================================
+
 # 1. Load Data and Convert to a Subtyping Object
 # =============================================================================
 stat_obj <- readRDS(INPUT_STAT_OBJ)
@@ -51,9 +28,7 @@ InspectObject(sub_obj)
 features=colnames(sub_obj@clean.data)[colnames(sub_obj@clean.data)!='sex']
 sub_obj@clean.data <- sub_obj@clean.data[, features, drop = FALSE]
 # =============================================================================
-# 2. Normalize and Split into Train / Validation Sets
-# =============================================================================
-# =============================================================================
+
 # 2. Split into Train / Validation Sets, then Normalize
 # =============================================================================
 # IMPORTANT: split BEFORE fitting any normalization parameters — mirrors the
@@ -62,24 +37,9 @@ sub_obj@clean.data <- sub_obj@clean.data[, features, drop = FALSE]
 # parameters on the full data (train+validation combined) and only THEN
 # splitting would let validation-set values leak into the scaling applied to
 # the validation set itself — the opposite of what we want.
-#
-# stratify_by resolves the outcome in info.data and splits WITHIN each level,
-# so both splits keep the cohort's case/control ratio. The stratifier is
-# coerced to a factor internally, so the partition depends on the LABELS only:
-# re-labelling the outcome from 0/1 to "Case"/"Healthy Control" does not move
-# any sample between train and validation. (This matters — caret bins a NUMERIC
-# stratifier instead of splitting by level, and a 0/1 label collapses to a
-# single bin, so a numeric outcome used to silently produce an UNSTRATIFIED
-# split and a different partition than the equivalent factor labels.)
 set.seed(SEED)
 split <- SplitSubtypingObject(sub_obj, p = 0.7, stratify_by = GROUP_COL)
-cat("Train:", nrow(split$train@clean.data),
-    " Validation:", nrow(split$test@clean.data), "\n")
-cat("Train levels:\n");       print(table(split$train@info.data[[GROUP_COL]]))
-cat("Validation levels:\n"); print(table(split$test@info.data[[GROUP_COL]]))
 
-# min-max scaling keeps all features non-negative, which NMF requires.
-# Fit normalization on the TRAINING split only.
 # min-max scaling keeps all features non-negative, which NMF requires.
 # Fit normalization on the TRAINING split only.
 # IMPORTANT: pass group_col = GROUP_COL explicitly. Sub_normalize_process()'s
@@ -126,6 +86,7 @@ sub_test@scale.data <- sub_test@scale.data[, common_feats, drop = FALSE]
 sub_test@clean.data <- sub_test@clean.data[, common_feats, drop = FALSE]
 
 # =============================================================================
+
 # 3. Clustering — Three Complementary Methods
 # =============================================================================
 ## 3.1 K-means, with the number of clusters chosen automatically (k up to 8).
@@ -154,29 +115,20 @@ cat("\n=== NMF Clustering ===\n")
 library(NMF)
 nmf_dir <- sub_dir("03_nmf")
 
+
 # 3.3a Estimate the best rank (= number of subtypes) across a candidate range.
 sub_train <- Sub_nmf_estimate(sub_train, rank_range = 2:6, nrun = 5,
                               method = "brunet", save_dir = nmf_dir, seed = SEED)
+
 # 3.3b Pick the best rank from the estimation above.
-# The chosen K is the one with the highest cophenetic correlation, but the
-# whole sweep is printed so the choice can be judged. When several ranks are
-# within `tie_tol` (default 0.02) of the best value, the data do not separate
-# them -- the smallest such rank is taken (parsimony) and a message names every
-# candidate. This is deliberate: cophenetic curves are near-flat across ranks
-# on real cohorts, and reading a flat curve as evidence for a large K is how a
-# one-sample change in the training set ends up redefining the subtypes.
-# rank_selection keeps the sweep and the margin for the report.
 sub_train <- Sub_nmf_best_rank(sub_train, nrun = 5, method = "brunet",
                                palette_name = "Zissou1", save_dir = nmf_dir)
 cat("NMF optimal rank =", sub_train@Optimal.cluster, "\n")
-sel <- sub_train@cluster.results[["nmf.result"]][["rank_selection"]]
-cat(sprintf("  chosen by %s (value %.4f, margin %.4f); tied ranks: %s%s\n",
-            sel$metric, sel$best_value, sel$margin,
-            paste(sel$tied, collapse = ", "),
-            if (isTRUE(sel$ambiguous)) " -- resolved to smallest K" else ""))
+
 # 3.3c Assign each training sample to a subtype.
 sub_train <- Sub_nmf_assign_subtypes(sub_train)
 print(table(sub_train@info.data$cluster_nmf))
+
 
 # 3.3d Refit with more NMF runs and save a re-usable model object, so new
 # samples (or the validation split) can be classified consistently later.
@@ -187,6 +139,7 @@ sub_train <- Sub_nmf_train_model(
 )
 
 # =============================================================================
+
 # 4. Predict Subtypes on the Validation Split
 # =============================================================================
 cat("\n=== Predict validation set using the trained NMF model ===\n")
@@ -195,6 +148,7 @@ cat("Validation NMF subtype distribution:\n")
 print(table(sub_test@info.data$cluster_nmf))
 
 # =============================================================================
+
 # 5. Dimensionality Reduction for Visualization (t-SNE & UMAP)
 # =============================================================================
 cat("\n=== Dimensionality reduction (t-SNE & UMAP) ===\n")
@@ -218,6 +172,7 @@ PlotDimReduction(sub_train, reduction = "tsne", color_by = GROUP_COL,
 
 
 # =============================================================================
+
 # 6. Clustering Quality Evaluation
 # =============================================================================
 cat("\n=== Clustering quality evaluation ===\n")
@@ -236,6 +191,7 @@ eval_summary <- data.frame(
 )
 print(eval_summary)
 # =============================================================================
+
 # 7. Consistency Between the Three Clustering Methods
 # =============================================================================
 cat("\n=== Consistency between methods ===\n")
@@ -256,6 +212,7 @@ plot_clustering_comparison(
 )
 
 # =============================================================================
+
 # 8. Subtype-Specific Marker Features & Enhanced Visualization
 # =============================================================================
 cat("\n=== Subtype-specific differential features ===\n")
@@ -274,17 +231,27 @@ multi_deg <- batch_Wilcoxon_MultiClass(
 
 ## 8.2 Marker heatmaps of the top differential features per subtype.
 # Basic version, auto z-limit:
-PlotClusterHeatmap(
-  sub_train, p_cutoff = 2, deg_df = multi_deg, top_n = 5,
-  save_path = file.path(deg_dir, "cluster_heatmap_basic.pdf")
+tryCatch(
+  PlotClusterHeatmap(
+    sub_train, p_cutoff = 2, deg_df = multi_deg, top_n = 5,
+    save_path = file.path(deg_dir, "cluster_heatmap_basic.pdf")
+  ),
+  error = function(e) message("Sample-level heatmap skipped (raster backend): ", e$message)
 )
 # With a clinical annotation bar (outcome) alongside the heatmap:
-PlotClusterHeatmap(
-  sub_train, p_cutoff = 2, deg_df = multi_deg, group_by = "cluster_lpa",
-  annotation_cols = tolower(GROUP_COL), top_n = 5, log_transform = TRUE,
-  save_path = file.path(deg_dir, "cluster_heatmap_with_outcome.pdf"),
-  annotation_palette = setNames(list(c("Case" = "#D32F2F", "Healthy Control" = "#1976D2")),
-                                tolower(GROUP_COL))
+tryCatch(
+  PlotClusterHeatmap(
+    sub_train, p_cutoff = 2, deg_df = multi_deg, group_by = "cluster_lpa",
+    annotation_cols = tolower(GROUP_COL), top_n = 5, log_transform = TRUE,
+    save_path = file.path(deg_dir, "cluster_heatmap_with_outcome.pdf"),
+    # Key the palette by the SAME name as annotation_cols. A key that does not
+    # match an annotation column is ignored silently, so the bar comes out in
+    # the default colours instead of failing loudly.
+    annotation_palette = setNames(
+      list(c("Case" = "#D32F2F", "Healthy Control" = "#1976D2")),
+      tolower(GROUP_COL))
+  ),
+  error = function(e) message("Annotated sample-level heatmap skipped (raster backend): ", e$message)
 )
 # Group-mean z-score heatmap (one column per subtype, not per sample) —
 # useful for a compact summary figure.
@@ -306,6 +273,7 @@ PlotMultiAlluvial(
 )
 
 # =============================================================================
+
 # 9. Deployment: Predict Subtypes for New Samples
 # =============================================================================
 demo_raw_data <- head(sub_train@clean.data, 20)
@@ -339,6 +307,7 @@ if (interactive()) {
 }
 
 # =============================================================================
+
 # 10. Save Final Objects
 # =============================================================================
 saveRDS(sub_train, file = file.path(OUTPUT_DIR, "final_subtyping_object.rds"))
