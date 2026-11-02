@@ -1,27 +1,3 @@
-# =============================================================================
-# icare Package — Module 4: Survival / Prognosis Modeling (PrognosiX)
-# ADVANCED / PUBLICATION EDITION — STRICT TRAIN/VALIDATION SPLIT
-# =============================================================================
-#
-# This is a complete, production‑ready pipeline for developing and validating
-# a clinical survival model. It includes 10 advanced extensions covering
-# model comparison, competing risks, multi‑time calibration, Bayesian tuning,
-# clinical impact, and more – suitable for high‑impact journals.
-#
-# Pipeline structure:
-#   0. Environment setup and path management
-#   1. Data preparation (split time/status into info.data)
-#   2. Feature selection (multi‑method, training set only)
-#   3. Algorithm benchmarking and hyperparameter tuning
-#   4. Core model evaluation (KM, forest, time‑dependent AUC, calibration, nomogram)
-#   5. Robustness analysis (stability, ablation, sensitivity)
-#   6. Decision curve analysis (DCA) and SHAP explanations
-#   7. Ten advanced extensions (all executed sequentially)
-#   8. Save final model and deployment (prediction + Shiny app)
-#   9. Final report summary
-# =============================================================================
-
-# ---------------------------------------------------------------------------
 # 0. Environment and configuration
 # ---------------------------------------------------------------------------
 set.seed(2025)
@@ -31,6 +7,21 @@ VERSION <- "Advanced_extensions"
 OUTPUT_ROOT <- "./PrognosiX_Output"
 OUTPUT_DIR <- file.path(OUTPUT_ROOT, VERSION)
 
+# Load required packages
+library(icare)
+required_pkgs <- c("mlr3", "mlr3proba", "mlr3viz", "mlr3learners", 
+                   "survival", "survminer", "ggplot2", "caret", "dplyr",
+                   "tidyr", "rms", "risksetROC", "survex", "dcurves",
+                   "readxl", "patchwork", "ggrepel", "maxstat")
+missing_pkgs <- required_pkgs[!sapply(required_pkgs, requireNamespace, quietly = TRUE)]
+if (length(missing_pkgs)) install.packages(missing_pkgs)
+invisible(lapply(required_pkgs, library, character.only = TRUE))
+
+# Register OUTPUT_DIR with the package rather than defining a local sub_dir().
+# icare already ships sub_dir(); a local definition shadows it only inside this
+# script, so functions INSIDE the package that call sub_dir() themselves (e.g.
+# plot_tdROC_comparison(), plot_multitime_calibration(), plot_clinical_impact())
+# would still resolve it in the icare namespace and write to a session-temp
 # directory. Calling set_output_root() points both at the same tree.
 set_output_root(OUTPUT_DIR)
 
@@ -43,16 +34,6 @@ sub_dir("03_evaluation")
 sub_dir("04_robustness")
 sub_dir("05_xai")
 
-# Load required packages
-library(icare)
-required_pkgs <- c("mlr3", "mlr3proba", "mlr3viz", "mlr3learners", 
-                   "survival", "survminer", "ggplot2", "caret", "dplyr",
-                   "tidyr", "rms", "risksetROC", "survex", "dcurves",
-                   "readxl", "patchwork", "ggrepel", "maxstat")
-missing_pkgs <- required_pkgs[!sapply(required_pkgs, requireNamespace, quietly = TRUE)]
-if (length(missing_pkgs)) install.packages(missing_pkgs)
-invisible(lapply(required_pkgs, library, character.only = TRUE))
-
 # Additional packages for extensions (checked inside each function)
 ext_pkgs <- c("mlr3extralearners", "survcomp", "mlr3mbo", "bbotk", "MASS", "glmnet")
 for (pkg in ext_pkgs) {
@@ -62,9 +43,10 @@ for (pkg in ext_pkgs) {
 }
 
 # ---------------------------------------------------------------------------
+
 # 1. Data preparation (move time/status to info.data)
 # ---------------------------------------------------------------------------
-raw_dis <- as.data.frame(read_excel("../PMID37633276_DIA_plasmaproomic.xlsx", sheet = 3))
+raw_dis <- as.data.frame(read_excel("data/PMID37633276_DIA_plasmaproomic.xlsx", sheet = "Table S1B"))
 raw_dis <- raw_dis[!grepl(x = raw_dis$`Case ID`, pattern = "^KC"), ]
 
 # Extract numeric features (laboratory parameters)
@@ -88,7 +70,7 @@ inf <- raw_dis[, c("Case ID", "Sample type", "Plasma proteome ID", "Tissue prote
                    "T-category", "Lymph node involvement", "Distant metastasis", 
                    "TNM Stage", "Grade", "Morphology")]
 
-# The group label lives in `inf` ONLY -- see Module 1 for why.
+# The group label lives in `inf` ONLY -- see the Module 1 chapter for why.
 inf$group <- factor(ifelse(index, "Healthy Control", "Case"),
                     levels = c("Healthy Control", "Case"))
 mat <- as.matrix(mat)
@@ -127,6 +109,7 @@ prog <- Stat_to_PrognosiX(stat_obj, "time", "status",
                           verbose = TRUE)
 
 # ---------------------------------------------------------------------------
+
 # 2. Feature selection (ONLY on training set)
 # ---------------------------------------------------------------------------
 task_full <- surv_extract_task(prog)
@@ -164,6 +147,7 @@ write.csv(train_data, file = file.path(sub_dir("data"), "training_data.csv"), ro
 write.csv(val_data,   file = file.path(sub_dir("data"), "validation_data.csv"), row.names = FALSE)
 
 # ---------------------------------------------------------------------------
+
 # 3. Algorithm benchmarking and hyperparameter tuning
 # ---------------------------------------------------------------------------
 # Compare Cox, LASSO, and Random Survival Forest (Ranger)
@@ -188,6 +172,7 @@ cat("CV C-index after tuning:", round(cv_cindex, 4), "\n")
 cox_lrn <- surv_get_learner("surv.coxph", train_task)$train(train_task)
 
 # ---------------------------------------------------------------------------
+
 # 4. Core model evaluation
 # ---------------------------------------------------------------------------
 # Warning: if no independent validation data is provided, some metrics are apparent
@@ -249,16 +234,12 @@ km_maxstat   <- surv_plot_risk_km(best_lrn, train_task, "maxstat",
                                   n_boot = 100, minprop = 0.3)
 
 # Save training KM plots
-pdf(file.path(sub_dir("03_evaluation"), "KM_train_median.pdf"), width = 8, height = 7)
-print(km_median); dev.off()
-pdf(file.path(sub_dir("03_evaluation"), "KM_train_tertile.pdf"), width = 8, height = 7)
-print(km_tertile); dev.off()
-pdf(file.path(sub_dir("03_evaluation"), "KM_train_quartile.pdf"), width = 8, height = 7)
-print(km_quartile); dev.off()
-pdf(file.path(sub_dir("03_evaluation"), "KM_train_p_optimize.pdf"), width = 8, height = 7)
-print(km_p_optimize); dev.off()
-pdf(file.path(sub_dir("03_evaluation"), "KM_train_maxstat.pdf"), width = 8, height = 7)
-print(km_maxstat); dev.off()
+
+print(km_median)
+print(km_tertile)
+print(km_quartile)
+print(km_p_optimize)
+print(km_maxstat)
 
 # Apply the training median cutoff to the validation set (fixed threshold)
 train_cutoff <- get_cf(km_median)
@@ -267,8 +248,7 @@ km_val_fixed <- surv_plot_risk_km(best_lrn, val_task,
                                   cutoff_method = "custom",
                                   custom_cutoffs = train_cutoff,
                                   risk_table = TRUE)
-pdf(file.path(sub_dir("03_evaluation"), "KM_val_using_train_cutoff.pdf"), width = 8, height = 7)
-print(km_val_fixed); dev.off()
+print(km_val_fixed)
 
 # ---- 4.2 Subgroup forest plot (using training set) ----
 # Subset prog to training samples to ensure row consistency
@@ -278,6 +258,9 @@ train_prog@info.data <- prog@info.data[train_idx, , drop = FALSE]
 train_prog@survival.data <- prog@survival.data[train_idx, , drop = FALSE]
 
 clinical_cols <- colnames(train_prog@info.data)
+# info.data names are normalised by CreateStatObject(): spaces and dots become
+# underscores. Passing the dotted spelling would make intersect() drop
+# everything except "Gender" and silently shrink the subgroup forest.
 candidate_vars <- c("Gender", "Tobacco_smoking_history", "Drinking_history", "TNM_Stage")
 subgroup_vars <- intersect(candidate_vars, clinical_cols)
 
@@ -320,18 +303,19 @@ nom <- surv_generate_nomogram(train_task,
 # The nomogram plot is drawn; PH test results are printed to console.
 
 # ---------------------------------------------------------------------------
-# 5. Robustness analysis
-# ---------------------------------------------------------------------------
+
 # 5.1 Feature stability (LASSO bootstrapping)
 stab <- surv_analyze_feature_stability(train_task, "time", "status", n_repeat = 20, alpha = 1)
 cat("Stability index:", round(stab$stability_index, 4), "\n")
 ggsave(file.path(sub_dir("04_robustness"), "stability_plot.pdf"), stab$plot, width = 8, height = 6)
 write.csv(stab$frequencies, file.path(sub_dir("04_robustness"), "stability_frequencies.csv"), row.names = FALSE)
 
+
 # 5.2 Feature ablation (drop each feature and measure C-index drop)
 abl <- surv_analyze_feature_ablation(train_task, best_id, selected_feats)
 ggsave(file.path(sub_dir("04_robustness"), "ablation_plot.pdf"), abl$plot, width = 8, height = 6)
 write.csv(abl$results, file.path(sub_dir("04_robustness"), "ablation_results.csv"), row.names = FALSE)
+
 
 # 5.3 Model sensitivity (sample size and censoring rate)
 sens_sample <- surv_analyze_model_sensitivity(train_task, best_id, analysis_type = "sample_size")
@@ -342,6 +326,7 @@ write.csv(sens_sample$results, file.path(sub_dir("04_robustness"), "sensitivity_
 write.csv(sens_censor$results, file.path(sub_dir("04_robustness"), "sensitivity_censor.csv"), row.names = FALSE)
 
 # ---------------------------------------------------------------------------
+
 # 6. Decision curve analysis (DCA) and SHAP explanations (on validation set)
 # ---------------------------------------------------------------------------
 # Determine a valid evaluation time from validation event times
@@ -387,6 +372,7 @@ beeswarm_plot <- surv_plot_shap_beeswarm(shap_global, top_n = 6, method = "beesw
 ggsave(file.path(sub_dir("05_xai"), "shap_beeswarm.pdf"), beeswarm_plot, width = 9, height = 6)
 
 # =============================================================================
+
 # 7. Ten advanced extensions (all executed sequentially)
 # =============================================================================
 cat("\n========== Running 10 advanced extensions ==========\n")
@@ -559,6 +545,7 @@ tryCatch({
 cat("\n========== All advanced extensions completed ==========\n")
 
 # ---------------------------------------------------------------------------
+
 # 8. Save final PrognosiX object and deploy
 # ---------------------------------------------------------------------------
 prog@best.model <- list(
@@ -581,32 +568,32 @@ prog@split.data <- list(train_idx = train_idx, val_idx = val_idx)
 saveRDS(prog, file = file.path(sub_dir("data"), "prog_obj_final.rds"))
 
 # ---- 8.1 Predict risk for new patients ----
-new_patients <- data.frame(
-  Mean_corpuscular_hemoglobin_concentration = c(33, 34),
-  Basophil_count = c(0.02, 0.03),
-  Monocytes = c(0.6, 0.7),
-  Eosinophil_count=c(0.02, 0.03),
-  Basophil=c(0.6, 0.7),
-  Neutrophilic_granulocyte = c(4.2, 5.1),
-  Red_blood_cell_distribution_width_CV = c(12.3, 11.8),
-  Mean_red_blood_cell_volume = c(89, 92),
-  Lymphocytes_count = c(1.8, 2.1),
-  Platelet_volume_distribution_width = c(12.0, 13.1),
-  Lymphocytes = c(1.8, 2.1),
-  Monocytes_count = c(0.6, 0.7),
-  Neutrophilic_granulocyte_count = c(4.2, 5.1),
-  Mean_platelet_volume = c(10.5, 11.0),
-  row.names = c("patient_1", "patient_2")
-)
+#new_patients <- data.frame(
+#  Mean_corpuscular_hemoglobin_concentration = c(33, 34),
+#  Basophil_count = c(0.02, 0.03),
+#  Monocytes = c(0.6, 0.7),
+#  Eosinophil_count=c(0.02, 0.03),
+#  Basophil=c(0.6, 0.7),
+#  Neutrophilic_granulocyte = c(4.2, 5.1),
+#  Red_blood_cell_distribution_width_CV = c(12.3, 11.8),
+#  Mean_red_blood_cell_volume = c(89, 92),
+#  Lymphocytes_count = c(1.8, 2.1),
+#  Platelet_volume_distribution_width = c(12.0, 13.1),
+#  Lymphocytes = c(1.8, 2.1),
+#  Monocytes_count = c(0.6, 0.7),
+#  Neutrophilic_granulocyte_count = c(4.2, 5.1),
+#  Mean_platelet_volume = c(10.5, 11.0),
+#  row.names = c("patient_1", "patient_2")
+#)
 
-risk_scores <- predict_prognosix(prog, new_patients, impute = TRUE)
-pred_groups_med <- predict_risk_groups(prog, new_patients, cutoff_method = "median")
-pred_groups_cus <- predict_risk_groups(prog, new_patients,
-                                       cutoff_method = "custom",
-                                       custom_cutoffs = opt_cutoff)
-cat("Risk scores:\n"); print(risk_scores)
-cat("Median groups:\n"); print(pred_groups_med)
-cat("Custom groups:\n"); print(pred_groups_cus)
+#risk_scores <- predict_prognosix(prog, new_patients, impute = TRUE)
+#pred_groups_med <- predict_risk_groups(prog, new_patients, cutoff_method = "median")
+#pred_groups_cus <- predict_risk_groups(prog, new_patients,
+#                                       cutoff_method = "custom",
+#                                       custom_cutoffs = opt_cutoff)
+#cat("Risk scores:\n"); print(risk_scores)
+#cat("Median groups:\n"); print(pred_groups_med)
+#cat("Custom groups:\n"); print(pred_groups_cus)
 
 # ---- 8.2 Deployment manager and Shiny app ----
 manager <- New_Prog_Manager(prog)
@@ -639,6 +626,7 @@ if (interactive()) {
 }
 
 # ---------------------------------------------------------------------------
+
 # 9. Final report
 # ---------------------------------------------------------------------------
 cat("\n========================================\n")
