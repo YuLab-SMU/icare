@@ -351,13 +351,13 @@ PlotMultiROC(model_obj, test_data = model_obj@split.scale.data$testing,
 
 # Pick a trained model to inspect. "rf" is included in the model list above.
 PlotConfusionMatrix(model_obj, test_data = model_obj@split.scale.data$testing,
-                    model_name = "rf", threshold = 0.6, prevalence = 0.3,
+                    model_name = "nb", threshold = 0.6, prevalence = 0.3,
                     save_plot = TRUE, save_dir = model_dir)
 PlotFeatureImportance(model_obj, top_n = 20, save_plot = TRUE, save_dir = model_dir)
-PlotCalibration(model_obj, model_name = "rf",
+PlotCalibration(model_obj, model_name = "nb",
                 test_data = model_obj@filtered.set$training,
                 save_plot = TRUE, save_dir = model_dir)
-PlotCalibration(model_obj, model_name = "rf",
+PlotCalibration(model_obj, model_name = "nb",
                 test_data = model_obj@filtered.set$testing, 
                 save_plot = TRUE, save_dir = model_dir)
 # =============================================================================
@@ -711,8 +711,8 @@ PlotThresholdROC(thresh_internal, compare_model = thresh_external,
 # --- 12.3 Reclassification: NRI / IDI between two models --------------------
 nri_dir <- sub_dir("06_nri_idi")
 true_labels <- factor(test_data[[model_obj@group_col]])
-ref_prob <- predict(model_obj@train.models$rf,  test_data, type = "prob")[, positive]
-new_prob <- predict(model_obj@train.models$svmRadial, test_data, type = "prob")[, positive]
+ref_prob <- predict(model_obj@train.models$glm,  test_data, type = "prob")[, positive]
+new_prob <- predict(model_obj@train.models$nb, test_data, type = "prob")[, positive]
 
 # Scenario A: both models judged against the same clinical risk thresholds.
 # Set directories: keep these figures inside the chapter's output tree
@@ -722,7 +722,7 @@ dir.create(save_dir, recursive = TRUE, showWarnings = FALSE)
 
 # ROC
 PlotROCCompare(true_labels, ref_prob, new_prob, 
-               labels = c("Ref", "New"), save_plot = TRUE, save_dir = save_dir)
+               labels = c("glm", "nb"), save_plot = TRUE, save_dir = save_dir)
 
 # IDI
 idi <- PlotIDICurve(true_labels, ref_prob, new_prob, positive = positive, 
@@ -765,17 +765,19 @@ NRI_IDI_Analysis(
 }
 
 # Scenario C: individual building blocks, for full control over each plot.
+#nri_res <- CalculateCategoryNRI(true_labels, ref_prob, new_prob,
+#                                 ref_thresholds = c(0.3, 0.7), new_thresholds = c(0.5))
 nri_res <- CalculateCategoryNRI(true_labels, ref_prob, new_prob,
-                                 ref_thresholds = c(0.3, 0.7), new_thresholds = c(0.5))
+                                risk_thresholds = c(0.5))
 print(nri_res$nri_total)
-PlotNRIHeatmap(nri_res, ref_category_labels = c("Low", "Medium", "High"),
+PlotNRIHeatmap(nri_res, ref_category_labels = c("Negative", "Positive"),
                new_category_labels = c("Negative", "Positive"),
                save_plot = TRUE, save_dir = file.path(nri_dir, "heatmap"))
-PlotIDICurve(true_labels, ref_prob, new_prob, risk_thresholds = c(0.02, 0.1, 0.5, 0.95),
+PlotIDICurve(true_labels, ref_prob, new_prob, risk_thresholds = c(0.02, 0.1, 0.5, 0.95),positive = positive,
              save_plot = TRUE, save_dir = file.path(nri_dir, "idi"))
-PlotROCCompare(true_labels, ref_prob, new_prob, labels = c("RF", "svm"), show_ci = FALSE,
+PlotROCCompare(true_labels, ref_prob, new_prob, labels = c("glm", "nb"), show_ci = FALSE,
                save_plot = TRUE, save_dir = file.path(nri_dir, "roc"))
-PlotPredDist(true_labels, ref_prob, new_prob, labels = c("RF", "New"),
+PlotPredDist(true_labels, ref_prob, new_prob, labels = c("glm", "nb"),
              outcome_labels = levels(true_labels), save_plot = TRUE, save_dir = file.path(nri_dir, "dist"))
 PlotThresholdNRI(true_labels, ref_prob, new_prob, save_plot = TRUE,
                   save_dir = file.path(nri_dir, "threshold_scan"))
