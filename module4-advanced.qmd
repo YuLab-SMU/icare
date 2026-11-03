@@ -1,5 +1,13 @@
 # Module 4: Survival and Prognostic Modeling — Advanced
 
+<!-- icare-review-module4 -->
+::: {.callout-tip}
+## Try the interactive application
+
+[Open the standalone Shiny application](review-apps/module4/index.html). The page includes example inputs and a short guide; no local R installation is required.
+:::
+
+
 Using the PMID37633276 example data, the advanced `PrognosiX` workflow keeps development and validation cohorts separate and covers univariable Cox and LASSO-based feature selection, survival-learner benchmarking, tuning, Kaplan–Meier risk groups, subgroup analysis, time-dependent AUC, calibration, nomograms, robustness checks, decision curves, SHAP, and deployment.
 
 ## Important Notes

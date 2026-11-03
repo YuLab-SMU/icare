@@ -4,6 +4,14 @@ subtitle: "Intelligent ClinlAbomics Research Expedition"
 page-layout: full
 ---
 
+<!-- icare-review-apps -->
+::: {.callout-tip}
+## Interactive applications for reviewers
+
+[Explore the three standalone Shiny applications](review-apps/index.html) for classification, subtyping and survival risk. Each page includes a short guide and example inputs.
+:::
+
+
 ![](assets/icare-logo.png){fig-alt="icare package logo" width=180}
 
 ## About icare

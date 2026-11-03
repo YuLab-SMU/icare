@@ -1,5 +1,13 @@
 # Module 3: Unsupervised Subtyping — Advanced
 
+<!-- icare-review-module3 -->
+::: {.callout-tip}
+## Try the interactive application
+
+[Open the standalone Shiny application](review-apps/module3/index.html). The page includes example inputs and a short guide; no local R installation is required.
+:::
+
+
 The advanced `Subtyping` workflow normalizes independent development and validation sets, compares K-means, latent profile analysis (LPA), and NMF, and evaluates t-SNE/UMAP structure, internal cluster quality, cross-method agreement, marker profiles, silhouettes, alluvial relationships, and deployment to new samples.
 
 ## Preventing Information Leakage

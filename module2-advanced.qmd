@@ -1,5 +1,13 @@
 # Module 2: Classification Modeling — Advanced
 
+<!-- icare-review-module2 -->
+::: {.callout-tip}
+## Try the interactive application
+
+[Open the standalone Shiny application](review-apps/module2/index.html). The page includes example inputs and a short guide; no local R installation is required.
+:::
+
+
 The advanced `Train_Model` workflow covers algorithm availability checks, RFE/GA/SA and built-in feature selection, preprocessing benchmarks, model comparison, ensembles, hyperparameter tuning, SHAP and DALEX explanations, clinically interpretable thresholds, NRI/IDI, deployment, and an optional Shiny interface.
 
 ## Key Configuration
