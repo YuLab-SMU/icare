@@ -9,6 +9,9 @@ page-layout: full
 ## Interactive applications for reviewers
 
 [Explore the three standalone Shiny applications](review-apps/index.html) for classification, subtyping and survival risk. Each page includes a short guide and example inputs.
+
+[Build your own Shiny application](review-apps/build-your-own/index.html): a Chinese step-by-step guide with downloadable templates.
+
 :::
 
 
