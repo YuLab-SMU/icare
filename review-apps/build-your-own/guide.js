@@ -4,18 +4,18 @@ document.querySelectorAll('[data-copy]').forEach(button => {
     const status = document.getElementById('copy-status');
     try {
       await navigator.clipboard.writeText(code.textContent);
-      button.textContent = '已复制';
-      status.textContent = '代码已复制到剪贴板';
+      button.textContent = 'Copied';
+      status.textContent = 'Code copied to clipboard';
     } catch {
       const selection = window.getSelection();
       const range = document.createRange();
       range.selectNodeContents(code);
       selection.removeAllRanges();
       selection.addRange(range);
-      button.textContent = '请手动复制';
-      status.textContent = '代码已选中，请使用系统复制快捷键';
+      button.textContent = 'Copy manually';
+      status.textContent = 'Code selected. Use your system copy shortcut.';
     }
-    setTimeout(() => { button.textContent = '复制代码'; }, 2200);
+    setTimeout(() => { button.textContent = 'Copy code'; }, 2200);
   });
 });
 if ('IntersectionObserver' in window) {

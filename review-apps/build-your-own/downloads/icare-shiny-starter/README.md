@@ -1,25 +1,25 @@
 # ICARE Shiny starter kit
 
-教程：https://leonardfei.github.io/Icare_test/review-apps/build-your-own/
+Guide: https://leonardfei.github.io/Icare_test/review-apps/build-your-own/
 
-此模板不含模型、患者数据或账户凭据，不能在未添加自己的模型时直接预测。
-基于 icare 1.1.0，YuLab-SMU/icare@7ff676a556721affeb6da6c36b3bb60fc24ca468；验证环境为 R 4.5.1。
-在训练这些模型的 R 环境中操作。模型对象和算法后端须与该版本兼容。
+This kit contains no fitted models, patient data or account credentials. Add your own trained objects before running it.
+Reference version: icare 1.1.0, YuLab-SMU/icare@7ff676a556721affeb6da6c36b3bb60fc24ca468; tested with R 4.5.1.
+Use the R environment in which you trained your models. Model objects and learner packages must be compatible with this version.
 
-1. 选择 apps/classification、apps/subtyping 或 apps/survival。
-2. 放入自己的 model.rds，分别要求 Train_Model、Subtyping、PrognosiX 对象。
-   classification 模板使用 caret 的 train.models 训练字段，还需训练阶段保存的 preprocess.rds。
-   未做外部预处理时保存 saveRDS(NULL, "apps/classification/preprocess.rds")。
-3. 根目录运行 Rscript make_example.R survival（可替换类型）。检查生成的人工样例单位与取值。
-4. 编辑 app.R 的标题、研究描述、变量说明和单位；依实际算法添加 library() 声明。
-5. 根目录运行 Rscript check_app.R survival，再用 shiny::runApp("apps/survival") 手工复核。
-   分型默认检查 nmf，可用第三个参数指定 lpa 或 kmeans；只检查自己确实拟合的方法。
-   分类自动检查首个可选模型；公开其他算法前也要逐一测试。
-6. 在本机 R 控制台绑定自己的 shinyapps.io 账户；不要把 token/secret 放进任何共享文件。
-7. 根目录运行 Rscript deploy.R survival YOUR_ACCOUNT my-survival-app。
-8. 发布后重新用浏览器执行预测、上传及下载；查看云端日志。页面可打开不代表预测可用。
+1. Choose apps/classification, apps/subtyping or apps/survival.
+2. Add your own model.rds: a Train_Model, Subtyping or PrognosiX object, respectively.
+   The classification template reads the caret training schema from train.models and also requires preprocess.rds saved during training.
+   If no external preprocessing was used, saveRDS(NULL, "apps/classification/preprocess.rds").
+3. From the kit root, run Rscript make_example.R survival (replace the application type as needed). Review the generated artificial profiles and their units.
+4. Edit the title, study description, variable descriptions, units and citation in app.R. Declare any additional learner packages with library().
+5. Run Rscript check_app.R survival, then manually test shiny::runApp("apps/survival").
+   Subtyping checks nmf by default; use a third argument of lpa or kmeans to test another fitted method.
+   Classification checks the first available model. Test every additional method you intend to expose.
+6. Register your own shinyapps.io account in your local R console. Never include tokens or secrets in shared files.
+7. Run Rscript deploy.R survival YOUR_ACCOUNT my-survival-app.
+8. Open the hosted application and test prediction, supported CSV upload and download. Inspect the server logs. A page loading successfully does not prove prediction works.
 
-模型 RDS 可能包含原始训练记录。先审查数据和使用权限，不要放进 www/ 或公开 GitHub 仓库。
-www/example.csv 是人工分位数组合，供界面测试，不是验证集，也不保证医学上合理。
-生存模板的 ranger 后端适用于示例 surv.ranger 模型；使用其他 learner 时补齐其对应依赖并重新验证。
-训练与预处理应在 app.R 之外完成。不要对每个新输入重新拟合标准化或插补步骤。
+RDS objects may contain training records. Review their contents and data permissions before deployment. Do not put model files in www/ or a public GitHub repository.
+www/example.csv contains artificial marginal-quantile profiles for interface testing. It is not a validation dataset and may contain implausible combinations.
+The survival template includes ranger for the example surv.ranger model. Add the appropriate dependencies and revalidate when using a different learner.
+Train models and fit preprocessing outside app.R. Do not refit scaling or imputation on each new input.
