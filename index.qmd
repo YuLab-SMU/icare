@@ -4,9 +4,9 @@ subtitle: "Intelligent ClinlAbomics Research Expedition"
 page-layout: full
 ---
 
-<!-- icare-review-apps -->
+<!-- icare-interactive-apps -->
 ::: {.callout-tip}
-## Interactive applications for reviewers
+## Interactive applications
 
 [Explore the three standalone Shiny applications](review-apps/index.html) for classification, subtyping and survival risk. Each page includes a short guide and example inputs.
 
