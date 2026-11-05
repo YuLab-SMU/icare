@@ -385,8 +385,8 @@ cat("Validation C-index (alt):", round(val_cindex_alt, 4), "\n")
 # the PH assumption, a warning is shown.
 nom <- surv_generate_nomogram(train_task,
                               selected_features = head(selected_feats, 5),
-                              time_points = c(90, 180, 365),
-                              time_unit = "days")
+                              time_points = c(12, 25, 38),
+                              time_unit = "months")
 # Nomogram is drawn; optionally save via pdf().
 
 # ---------------------------------------------------------------------------
