@@ -734,11 +734,11 @@ PlotROCCompare(true_labels, ref_prob, new_prob,
 
 # IDI
 idi <- PlotIDICurve(true_labels, ref_prob, new_prob, positive = positive, 
-                    save_plot = TRUE, save_dir = save_dir)
+                    save_plot = TRUE, save_dir = save_dir,conf_int = T)
 idi
 # NRI calculation
 nri <- CalculateCategoryNRI(true_labels, ref_prob, new_prob, 
-                            risk_thresholds = c(0.02, 0.1, 0.5, 0.95))
+                            risk_thresholds = c(0.02, 0.1, 0.5, 0.95),conf_int = T)
 # Export numeric results
 cat("\nNRI Events:", nri$nri_events,
     "\nNRI Non-Events:", nri$nri_nonevents,
@@ -776,13 +776,13 @@ NRI_IDI_Analysis(
 #nri_res <- CalculateCategoryNRI(true_labels, ref_prob, new_prob,
 #                                 ref_thresholds = c(0.3, 0.7), new_thresholds = c(0.5))
 nri_res <- CalculateCategoryNRI(true_labels, ref_prob, new_prob,
-                                risk_thresholds = c(0.5))
+                                risk_thresholds = c(0.5),conf_int = T)
 print(nri_res$nri_total)
 PlotNRIHeatmap(nri_res, ref_category_labels = c("Negative", "Positive"),
                new_category_labels = c("Negative", "Positive"),
                save_plot = TRUE, save_dir = file.path(nri_dir, "heatmap"))
 PlotIDICurve(true_labels, ref_prob, new_prob, risk_thresholds = c(0.02, 0.1, 0.5, 0.95),positive = positive,
-             save_plot = TRUE, save_dir = file.path(nri_dir, "idi"))
+             save_plot = TRUE, save_dir = file.path(nri_dir, "idi"),conf_int = T)
 PlotROCCompare(true_labels, ref_prob, new_prob, labels = c("glm", "nb"), show_ci = FALSE,
                save_plot = TRUE, save_dir = file.path(nri_dir, "roc"))
 PlotPredDist(true_labels, ref_prob, new_prob, labels = c("glm", "nb"),
