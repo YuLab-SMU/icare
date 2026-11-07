@@ -1,0 +1,8 @@
+*.rds
+.Rhistory
+.RData
+.Rproj.user/
+**/rsconnect/
+.Rlib/
+.cache/
+reports/

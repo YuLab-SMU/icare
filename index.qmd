@@ -4,6 +4,17 @@ subtitle: "Intelligent ClinlAbomics Research Expedition"
 page-layout: full
 ---
 
+<!-- icare-interactive-apps -->
+::: {.callout-tip}
+## Interactive applications
+
+[Explore the three standalone Shiny applications](review-apps/index.html) for classification, subtyping and survival risk. Each page includes a short guide and example inputs.
+
+[Build your own Shiny application](review-apps/build-your-own/index.html): a step-by-step guide with downloadable templates.
+
+:::
+
+
 ![](assets/icare-logo.png){fig-alt="icare package logo" width=180}
 
 ## About icare

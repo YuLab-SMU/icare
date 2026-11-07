@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Build your own Shiny application with icare: save fitted models, use three app templates, test locally, check dependencies, deploy to shinyapps.io and link from GitHub or Quarto.">
+<title>Build your own Shiny application · ICARE Developer Guide</title><link rel="stylesheet" href="guide.css"></head>
+<body><a class="skip" href="#main">Skip to content</a><header><div class="top"><a class="brand" href="../">icare<span>BUILD WITH ICARE</span></a><nav aria-label="Main navigation"><a href="../">Live examples</a><a href="../../">Quarto tutorial</a><a href="https://github.com/leonardfei/Icare_test/tree/docs/review-apps/build-your-own">Guide source ↗</a></nav></div></header>
+<div class="hero"><div class="eyebrow">ICARE DEVELOPER GUIDE / FROM MODEL TO WEB APP</div><h1>Turn your icare model<br><em>into an interactive Shiny app.</em></h1><p class="lede">Save a validated model, build its input and results interface with icare, and publish a URL others can use. Follow the workflow from local testing to hosting, with complete templates for three application types.</p><div class="actions"><a class="button" href="downloads/icare-shiny-starter.zip" download>Download starter kit ↓</a><a class="button secondary" href="#templates">View app.R templates</a></div><p class="meta">Step-by-step guide · icare 1.1.0 · Updated November 4, 2026<br>No models or credentials are included. Add your own trained objects.</p></div>
+<div class="layout"><aside class="sidebar"><div class="toc-title">On this page</div><nav aria-label="Guide steps"><a href="#architecture"><span>01</span>Understand where your app runs</a><a href="#environment"><span>02</span>Prepare and record your environment</a><a href="#objects"><span>03</span>Save your model and preprocessing</a><a href="#structure"><span>04</span>Arrange files and create example inputs</a><a href="#templates"><span>05</span>Build app.R with icare</a><a href="#local-test"><span>06</span>Test prediction and the interface locally</a><a href="#dependencies"><span>07</span>Check deployment dependencies</a><a href="#deploy"><span>08</span>Deploy to your own shinyapps.io account</a><a href="#github"><span>09</span>Link the application from GitHub or Quarto</a><a href="#troubleshooting"><span>10</span>Troubleshoot by symptom</a></nav><a class="download-small" href="downloads/icare-shiny-starter.zip" download>Get the starter kit ↓</a></aside><main id="main"><section id="architecture" class="chapter"><div class="step">STEP 01</div><h2>Understand where your app runs</h2><p>icare wraps a trained model in a Shiny application. A visitor enters predictors in a browser, an R process calculates predictions, and the application displays the results. Preparing a model, building its interface and hosting the application are separate steps.</p>
+<div class="flow" aria-label="Deployment workflow"><div><b>Train &amp; validate</b><span>Your data · icare</span></div><span aria-hidden="true">→</span><div><b>Save RDS files</b><span>Model · preprocessing</span></div><span aria-hidden="true">→</span><div><b>Build app.R</b><span>Inputs · results · export</span></div><span aria-hidden="true">→</span><div><b>Host Shiny</b><span>Share a browser URL</span></div></div>
+<p><strong>Use GitHub Pages for documentation and links; use shinyapps.io to run R.</strong> Adding <code>app.R</code> to GitHub Pages, or including a local Shiny call in a static Quarto book, does not create a hosted R service. <a href="https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages">About GitHub Pages ↗</a></p>
+<aside class="note"><strong>Before you begin</strong>This guide starts with a trained icare object. If you have not trained a model yet, first follow the book’s <a href="../../module2-advanced.html">classification</a>, <a href="../../module3-advanced.html">subtyping</a> or <a href="../../module4-advanced.html">survival analysis</a> chapter. The application loads the fitted object for prediction.</aside></section><section id="environment" class="chapter"><div class="step">STEP 02</div><h2>Prepare and record your environment</h2><p>Start with the R environment used to train your model. Confirm that prediction works locally before preparing deployment. These templates were checked against a fixed commit of <strong>icare 1.1.0</strong>, using R 4.5.1. This is a reproducibility baseline, not a claim about the latest release.</p><div class="codebox"><div class="codebar"><span>R</span><button class="copy" data-copy="code-1" type="button">Copy code</button></div><pre><code id="code-1" data-language="R">install.packages(&quot;rsconnect&quot;)
+packageVersion(&quot;icare&quot;)
+packageDescription(&quot;icare&quot;)$RemoteSha
+sessionInfo()</code></pre></div><details><summary>Installing the reference icare version in a new environment</summary><p>Follow the package installation instructions to configure R and Bioconductor first. The commands below install icare and its direct dependencies. Install the optional learner packages required by your chosen template separately. Avoid upgrading all packages after fitting a model.</p><div class="codebox"><div class="codebar"><span>R</span><button class="copy" data-copy="code-2" type="button">Copy code</button></div><pre><code id="code-2" data-language="R">install.packages(c(&quot;remotes&quot;, &quot;BiocManager&quot;))
+BiocManager::install(&quot;ComplexHeatmap&quot;, ask = FALSE, update = FALSE)
+remotes::install_github(
+  &quot;YuLab-SMU/icare@7ff676a556721affeb6da6c36b3bb60fc24ca468&quot;,
+  dependencies = NA, upgrade = &quot;never&quot;
+)</code></pre></div><p>Survival packages such as <code>mlr3proba</code> and <code>mlr3extralearners</code> may need to be installed from their upstream GitHub repositories. Preserve the versions and sources used during training; consult <a href="https://github.com/mlr-org/mlr3proba">mlr3proba</a>, <a href="https://github.com/mlr-org/mlr3extralearners">mlr3extralearners</a> and the <a href="https://github.com/YuLab-SMU/icare">icare installation instructions</a>. These commands are not a complete environment lockfile for every operating system.</p></details>
+<p>Use a Bioconductor release compatible with your R version. Run <code>BiocManager::valid()</code> to identify mixed package versions. The S4Vectors 0.46.0 version used in our deployment fix is not a universal requirement for every R installation.</p></section><section id="objects" class="chapter"><div class="step">STEP 03</div><h2>Save your model and preprocessing</h2><div class="table-scroll"><table><thead><tr><th>Application</th><th>Required object</th><th>Application constructors</th></tr></thead><tbody>
+<tr><td>Module 2 · Classification</td><td><code>Train_Model</code> with fitted caret models</td><td><code>ModelDeployment()</code> → <code>deploy_clinlab_app()</code></td></tr>
+<tr><td>Module 3 · Subtyping</td><td><code>Subtyping</code> containing the fitted methods</td><td><code>New_Sub_Manager()</code> → <code>launch_sub_deploy_app()</code></td></tr>
+<tr><td>Module 4 · Survival risk</td><td><code>PrognosiX</code> with best.model and reference data</td><td><code>New_Prog_Manager()</code> → <code>launch_prog_deploy_app()</code></td></tr>
+</tbody></table></div><p>Download and extract the starter kit, then set your working directory to <code>icare-shiny-starter</code>. Choose the application you need. The variable names below are examples: replace them with the fitted objects from your own training session.</p><div class="codebox"><div class="codebar"><span>R</span><button class="copy" data-copy="code-3" type="button">Copy code</button></div><pre><code id="code-3" data-language="R"># Classification: use your fitted model and training-stage preprocessing
+saveRDS(model_obj, &quot;apps/classification/model.rds&quot;)
+saveRDS(preproc, &quot;apps/classification/preprocess.rds&quot;)
+# Only if no external preprocessing was used, save NULL instead:
+# saveRDS(NULL, &quot;apps/classification/preprocess.rds&quot;)
+
+# Subtyping: sub_obj must be a trained Subtyping object
+saveRDS(sub_obj, &quot;apps/subtyping/model.rds&quot;)
+
+# Survival: prog_obj must be a trained PrognosiX object
+saveRDS(prog_obj, &quot;apps/survival/model.rds&quot;)</code></pre></div><aside class="note"><strong>Reuse fitted preprocessing and retain every predictor</strong>If classification used scaling, transformations or imputation, reuse the object fitted during training. Do not fit preprocessing on new inputs or transform already transformed data a second time. Keep categorical predictors, such as sex, even when they are excluded from numeric scaling. Category values must match the training levels.</aside>
+<p>RDS objects may contain training records. Review their contents and data permissions before deployment. <strong>Do not place model files in <code>www/</code> or a public GitHub repository.</strong> The starter kit contains no project models or training data.</p></section><section id="structure" class="chapter"><div class="step">STEP 04</div><h2>Arrange files and create example inputs</h2><p>Use relative paths. Each application has its own directory, and its <code>app.R</code> reads the model from that directory. The survival template runs a prediction check at startup, so generate and review <code>www/example.csv</code> before launching it.</p><div class="codebox"><div class="codebar"><span>Project structure</span><button class="copy" data-copy="code-4" type="button">Copy code</button></div><pre><code id="code-4" data-language="text">icare-shiny-starter/
+├── apps/
+│   ├── classification/
+│   │   ├── app.R
+│   │   ├── model.rds          # Add your fitted model
+│   │   ├── preprocess.rds     # Add fitted preprocessing or NULL
+│   │   └── www/example.csv   # Generate and review artificial inputs
+│   ├── subtyping/            # app.R + model.rds + www/example.csv
+│   └── survival/             # app.R + model.rds + www/example.csv
+├── make_example.R
+├── check_app.R
+└── deploy.R</code></pre></div><p>Run this command in a terminal from the kit root. Replace <code>survival</code> with <code>classification</code> or <code>subtyping</code> as needed.</p><div class="codebox"><div class="codebar"><span>shell</span><button class="copy" data-copy="code-5" type="button">Copy code</button></div><pre><code id="code-5" data-language="shell">Rscript make_example.R survival</code></pre></div><p>The script creates three artificial profiles using marginal quantiles and category values from the reference variables. They are for interface testing, not model validation, and may contain implausible combinations. Check units, ranges and category values. The first CSV column must contain unique <code>SampleID</code> values; the remaining column names must match the model’s predictors exactly.</p>
+<p><strong>Input modes:</strong> the classification template uses manual entry. Its example CSV provides values to copy into the form, not a batch-upload interface. The subtyping and survival templates support both manual entry and CSV batch upload.</p></section><section id="templates" class="chapter"><div class="step">STEP 05</div><h2>Build app.R with icare</h2><p>These are the complete <code>app.R</code> files included in the kit. Expand a template, save it in the matching application directory, and edit its title, description, units and citation. Different fitted algorithms may require additional learner packages.</p><details class="template" open><summary>Module 2 · Classification<span>app.R</span></summary><p>Uses the caret model structure from this tutorial. Predictors are read from the first fitted model; confirm that the input schemas of all exposed models are compatible.</p><div class="codebox"><div class="codebar"><span>apps/classification/app.R</span><button class="copy" data-copy="code-6" type="button">Copy code</button></div><pre><code id="code-6" data-language="R">library(shiny)
+library(icare)
+# Explicit imports also let rsconnect identify packages used by saved models.
+library(caret)
+library(C50)
+library(glmnet)
+library(kernlab)
+library(klaR)
+library(randomForest)
+library(rpart)
+library(MASS)
+library(ipred)
+library(bslib)
+library(plotly)
+library(jsonlite)
+options(shiny.maxRequestSize = 10 * 1024^2)
+
+model &lt;- readRDS(&quot;model.rds&quot;)
+preproc &lt;- readRDS(&quot;preprocess.rds&quot;)
+features &lt;- setdiff(names(model@train.models[[1]]$trainingData), c(&quot;.outcome&quot;, model@group_col))
+stopifnot(inherits(model, &quot;Train_Model&quot;), length(features) &gt; 0)
+deployment &lt;- icare::ModelDeployment(
+  model, preproc = preproc,
+  class_labels = levels(model@split.data$training[[model@group_col]]),
+  model_description = paste(
+    &quot;Describe your classification model and intended research use here.&quot;,
+    &quot;Enter the required predictors, select a model and click INITIATE ANALYSIS.&quot;,
+    &quot;The probability is a model output for research demonstration.&quot;
+  )
+)
+# Include categorical predictors as well as numeric predictors.
+# This template uses the caret training schema from the first fitted model.
+deployment$preprocess_columns &lt;- features
+app &lt;- icare::deploy_clinlab_app(deployment, title = &quot;ICARE | Classification&quot;)
+app</code></pre></div><p><a href="downloads/icare-shiny-starter/apps/classification/app.R" download="app.R">Download this app.R ↓</a></p></details><details class="template" ><summary>Module 3 · Subtyping<span>app.R</span></summary><p>Select only methods that were fitted and saved in the object. Preserve the fitted NMF, LPA or k-means information and its preprocessing parameters.</p><div class="codebox"><div class="codebar"><span>apps/subtyping/app.R</span><button class="copy" data-copy="code-7" type="button">Copy code</button></div><pre><code id="code-7" data-language="R">library(shiny)
+library(icare)
+library(shinydashboard)
+library(DT)
+if (!requireNamespace(&quot;NMF&quot;, quietly = TRUE)) stop(&quot;The NMF package is required.&quot;)
+library(nnls)
+library(mclust)
+options(shiny.maxRequestSize = 10 * 1024^2)
+
+model &lt;- readRDS(&quot;model.rds&quot;)
+stopifnot(inherits(model, &quot;Subtyping&quot;))
+manager &lt;- icare::New_Sub_Manager(model)
+features &lt;- names(model@clean.data)
+var_dict &lt;- data.frame(Feature = features,
+                      Description = gsub(&quot;_&quot;, &quot; &quot;, features),
+                      Units = rep(&quot;Replace with the actual unit&quot;, length(features)))
+app &lt;- icare::launch_sub_deploy_app(
+  manager, title = &quot;ICARE | Subtyping&quot;, var_dict = var_dict,
+  project_info = list(
+    abstract = paste(&quot;Describe your fitted subtyping methods and study here.&quot;,
+                     &quot;Use manual entry or upload a CSV whose first column contains unique sample IDs.&quot;,
+                     &quot;Example CSV profiles are artificial and are provided for interface testing.&quot;),
+    citation = &quot;Replace with your study citation.&quot;
+  )
+)
+app</code></pre></div><p><a href="downloads/icare-shiny-starter/apps/subtyping/app.R" download="app.R">Download this app.R ↓</a></p></details><details class="template" ><summary>Module 4 · Survival risk<span>app.R</span></summary><p>Includes the surv.ranger backend and the prognosis framework dependencies. Add the appropriate backend when using another survival learner. The startup check uses three artificial profiles.</p><div class="codebox"><div class="codebar"><span>apps/survival/app.R</span><button class="copy" data-copy="code-8" type="button">Copy code</button></div><pre><code id="code-8" data-language="R">library(shiny)
+library(icare)
+library(shinydashboard)
+library(DT)
+library(mlr3)
+library(mlr3proba)
+library(mlr3extralearners)
+# icare checks these optional packages dynamically when prediction is requested.
+# Declare them explicitly so rsconnect includes them in the cloud bundle.
+library(mlr3tuning)
+library(mlr3tuningspaces)
+library(paradox)
+library(mlr3learners)
+library(tidyverse)
+library(data.table)
+library(ranger)
+library(survival)
+options(shiny.maxRequestSize = 10 * 1024^2)
+
+model &lt;- readRDS(&quot;model.rds&quot;)
+stopifnot(inherits(model, &quot;PrognosiX&quot;))
+manager &lt;- icare::New_Prog_Manager(model)
+# Exercise the actual prediction path in the deployed runtime before serving UI.
+local({
+  example &lt;- read.csv(&quot;www/example.csv&quot;, row.names = 1, check.names = FALSE)
+  result &lt;- manager$prog_predict(example, cutoff_method = &quot;median&quot;, return_scores = TRUE)
+  stopifnot(nrow(result) == nrow(example), all(is.finite(result$risk_score)),
+            all(!is.na(result$risk_group)))
+  message(&quot;ICARE survival startup prediction PASS: &quot;, nrow(result),
+          &quot; artificial profiles; scores=&quot;, paste(result$risk_score, collapse = &quot;,&quot;))
+})
+features &lt;- model@best.model$features
+icare::use_app_theme_grey()
+icare::set_prog_app_text(
+  title = &quot;ICARE | Survival Risk&quot;,
+  citation_text = &quot;Replace with your study citation.&quot;
+)
+app &lt;- icare::launch_prog_deploy_app(
+  manager, title = &quot;ICARE | Survival Risk&quot;,
+  var_dict = data.frame(Feature = features, Description = gsub(&quot;_&quot;, &quot; &quot;, features),
+                        Units = rep(&quot;Replace with the actual unit&quot;, length(features))),
+  project_info = list(
+    abstract = paste(&quot;Describe your fitted survival model and study here.&quot;,
+                     &quot;Enter the required predictors or upload a batch CSV to obtain risk scores and risk groups.&quot;,
+                     &quot;Example CSV profiles are artificial and are provided for interface testing.&quot;),
+    citation = &quot;Replace with your study citation.&quot;
+  )
+)
+app</code></pre></div><p><a href="downloads/icare-shiny-starter/apps/survival/app.R" download="app.R">Download this app.R ↓</a></p></details><p>The <code>var_dict</code> table uses <code>Feature</code>, <code>Description</code> and <code>Units</code> columns. Keep the real predictor names in Feature and provide clear descriptions and units. For subtyping and survival, use <code>project_info</code> for the study abstract and citation. The survival interface also supports <code>use_app_theme_grey()</code> and <code>set_prog_app_text()</code> for theme and text customization.</p></section><section id="local-test" class="chapter"><div class="step">STEP 06</div><h2>Test prediction and the interface locally</h2><p>Run the automated checks from the kit root, then launch the application in R. <code>check_app.R</code> exercises the actual Shiny server, including prediction, output generation and downloads. Classification checks the first available model; subtyping defaults to NMF. Test every additional method you intend to publish.</p><div class="codebox"><div class="codebar"><span>shell</span><button class="copy" data-copy="code-9" type="button">Copy code</button></div><pre><code id="code-9" data-language="shell">Rscript check_app.R survival
+# Test each subtyping method you have actually fitted:
+Rscript check_app.R subtyping nmf
+Rscript check_app.R subtyping lpa
+Rscript check_app.R subtyping kmeans
+# Classification:
+Rscript check_app.R classification</code></pre></div><div class="codebox"><div class="codebar"><span>R</span><button class="copy" data-copy="code-10" type="button">Copy code</button></div><pre><code id="code-10" data-language="R"># In the R console, launch one application at a time
+shiny::runApp(&quot;apps/survival&quot;)
+# shiny::runApp(&quot;apps/classification&quot;)
+# shiny::runApp(&quot;apps/subtyping&quot;)</code></pre></div><ul class="checklist"><li>Enter one artificial profile, run prediction and check the results for errors.</li><li>For subtyping and survival, also upload a CSV and check sample IDs, row counts and downloaded results.</li><li>Confirm that units, factor levels and missing-value behavior match the training workflow.</li><li>For survival, test median, tertile and custom cutoffs. Custom thresholds must be ordered, distinct numeric values.</li><li>Restart R and repeat the check to detect reliance on global variables or undeclared packages.</li></ul>
+<p>A working page does not prove prediction works. Automated checks also do not replace browser tests of clicking, uploading and downloading. A survival risk score is a model output; it is not automatically an event probability at a specific time.</p></section><section id="dependencies" class="chapter"><div class="step">STEP 07</div><h2>Check deployment dependencies</h2><p>rsconnect scans package calls in application code to construct a dependency manifest. Learner packages referenced by saved RDS models, and optional packages checked dynamically inside icare, may not all be detected from <code>library(icare)</code> alone. <a href="https://rstudio.github.io/rsconnect/reference/appDependencies.html">Dependency discovery reference ↗</a></p><div class="codebox"><div class="codebar"><span>R</span><button class="copy" data-copy="code-11" type="button">Copy code</button></div><pre><code id="code-11" data-language="R">deps &lt;- rsconnect::appDependencies(
+  appDir = &quot;apps/survival&quot;,
+  appFiles = c(&quot;app.R&quot;, &quot;model.rds&quot;, &quot;www/example.csv&quot;),
+  appMode = &quot;shiny&quot;
+)
+deps[, c(&quot;Package&quot;, &quot;Version&quot;, &quot;Source&quot;)]
+required &lt;- c(&quot;mlr3&quot;, &quot;mlr3proba&quot;, &quot;mlr3tuning&quot;, &quot;mlr3tuningspaces&quot;,
+  &quot;mlr3learners&quot;, &quot;mlr3extralearners&quot;, &quot;tidyverse&quot;, &quot;paradox&quot;,
+  &quot;data.table&quot;, &quot;survival&quot;, &quot;ranger&quot;)
+stopifnot(all(required %in% deps$Package))</code></pre></div><aside class="note"><strong>A deployment issue we encountered</strong>Module 4 initially loaded its interface but failed when calculating risk. Successive runtime checks reported missing <code>mlr3tuning</code>, <code>mlr3tuningspaces</code>, <code>mlr3learners</code> and <code>tidyverse</code>. The complete template declares these packages explicitly and runs a startup prediction check. The deployment script also checks that the prognosis dependencies appear in the manifest.</aside>
+<p>Record the R, icare and learner package versions and their installation sources. If you use <code>renv.lock</code>, update it after validation and keep it consistent with the local library. Avoid deploying a new model with a stale lockfile. The kit does not include a universal lockfile for all models.</p></section><section id="deploy" class="chapter"><div class="step">STEP 08</div><h2>Deploy to your own shinyapps.io account</h2><ol><li>Create a shinyapps.io account and note your <strong>account name</strong>.</li><li>Retrieve the account configuration command from the Tokens page and run it only in your local R console. Never put real tokens or secrets in app.R, GitHub, screenshots or documentation.</li><li>Confirm registration, then deploy the selected application from the kit root.</li></ol><div class="codebox"><div class="codebar"><span>R</span><button class="copy" data-copy="code-12" type="button">Copy code</button></div><pre><code id="code-12" data-language="R"># First run the setAccountInfo(...) command provided by your account page
+# in your local R console. This command lists registered accounts:
+rsconnect::accounts()</code></pre></div><div class="codebox"><div class="codebar"><span>shell</span><button class="copy" data-copy="code-13" type="button">Copy code</button></div><pre><code id="code-13" data-language="shell"># Terminal: replace these placeholders with your own account and app name
+Rscript deploy.R survival YOUR_ACCOUNT my-survival-app</code></pre></div><p>The deployment script uploads only <code>app.R</code>, the model, the artificial example CSV and, for classification, the preprocessing file. It requests public access. <strong>Use your own account and a new application name.</strong> Do not reuse this project’s icare01 account name. The first deployment installs R packages on the server; build time depends on the dependencies and service conditions.</p>
+<p>After deployment, open the actual URL returned by the tool in a signed-out browser session. Test manual prediction, supported batch upload and result downloads. An idle application may need time to wake up. Check your account plan for current usage and resource limits. <a href="https://docs.posit.co/shinyapps.io/guide/getting_started/">Posit deployment guide ↗</a></p><div class="codebox"><div class="codebar"><span>R</span><button class="copy" data-copy="code-14" type="button">Copy code</button></div><pre><code id="code-14" data-language="R"># Read the logs for your application from the R console
+rsconnect::showLogs(
+  appName = &quot;my-survival-app&quot;, account = &quot;YOUR_ACCOUNT&quot;,
+  server = &quot;shinyapps.io&quot;, entries = 100, streaming = FALSE
+)</code></pre></div><p>The survival template logs <code>ICARE survival startup prediction PASS</code> after a successful startup check. This confirms that the server executed prediction on artificial inputs. Complete the browser interaction checks as well.</p></section><section id="github" class="chapter"><div class="step">STEP 09</div><h2>Link the application from GitHub or Quarto</h2><p>Once the Shiny application is deployed, add a standard link to your documentation page. Replace the placeholder URL below with the real address of your application.</p><div class="codebox"><div class="codebar"><span>html</span><button class="copy" data-copy="code-15" type="button">Copy code</button></div><pre><code id="code-15" data-language="html">&lt;a href=&quot;https://YOUR_ACCOUNT.shinyapps.io/my-survival-app/&quot;
+   target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;Open my Shiny application&lt;/a&gt;</code></pre></div><p>You can also embed the application in an iframe. Keep the direct link as a fallback because embedding behavior depends on browser and hosting policies.</p><div class="codebox"><div class="codebar"><span>html</span><button class="copy" data-copy="code-16" type="button">Copy code</button></div><pre><code id="code-16" data-language="html">&lt;iframe
+  src=&quot;https://YOUR_ACCOUNT.shinyapps.io/my-survival-app/&quot;
+  title=&quot;My survival risk application&quot;
+  style=&quot;width:100%;height:900px;border:0&quot;&gt;
+&lt;/iframe&gt;</code></pre></div><p>For a Quarto book, keep the static entry page in the source project, for example under <code>review-apps/</code>. <strong>Merge</strong> the resource rule into your existing <code>_quarto.yml</code>. Uploading only to the output directory may lose the page on the next render.</p><div class="codebox"><div class="codebar"><span>yaml</span><button class="copy" data-copy="code-17" type="button">Copy code</button></div><pre><code id="code-17" data-language="yaml">project:
+  type: book
+  resources:
+    - review-apps/**</code></pre></div><p>Add <code>[Open the application](review-apps/index.html)</code> to a chapter and publish through your normal Quarto workflow. Configure the GitHub Pages source branch or Actions workflow for your own site. <a href="https://quarto.org/docs/reference/projects/options.html">Quarto resources reference ↗</a></p></section><section id="troubleshooting" class="chapter"><div class="step">STEP 10</div><h2>Troubleshoot by symptom</h2><div class="table-scroll"><table><thead><tr><th>Symptom</th><th>What to check first</th></tr></thead><tbody>
+<tr><td>Works locally; fails on prediction in the cloud</td><td>Read showLogs. Check dynamic dependencies, learner packages, versions and the deployment manifest. HTTP 200 only confirms a page response.</td></tr>
+<tr><td>model.rds or example.csv cannot be found</td><td>Check the application directory, relative paths, filename case and appFiles. The server cannot access an absolute path on your computer.</td></tr>
+<tr><td>Missing predictors, category mismatch or unexpected predictions</td><td>Compare actual training fields and factor levels. Check original units, column names, fitted preprocessing and accidental double transformation.</td></tr>
+<tr><td>CSV upload fails or returns the wrong row count</td><td>Use unique, nonempty sample IDs in the first column. Match predictor column names and check encoding, missing values and file size.</td></tr>
+<tr><td>Bioconductor installation or compilation fails</td><td>Run BiocManager::valid(). Check R/Bioconductor compatibility, repositories, system dependencies and network access.</td></tr>
+<tr><td>The application exits during startup</td><td>Inspect the startup prediction log. Missing dependencies, incompatible example fields or an incomplete model object can fail this check.</td></tr>
+<tr><td>The iframe is blank or disconnected</td><td>Open the Shiny URL directly. Distinguish embedding restrictions, cold starts, server errors and account resource limits.</td></tr>
+<tr><td>A replaced model still gives old results</td><td>Verify the deployment account, application name and local RDS file. Redeploy, close the old session and test again.</td></tr>
+</tbody></table></div><p>When reporting an issue, include R/icare versions, the object type, the action that failed and sanitized logs. Do not attach account tokens or real patient inputs.</p>
+<div class="finish"><h3>Before sharing your URL</h3><p>Ask a colleague without a local R installation to complete a prediction and download the result through the public link. Then add that link to your manuscript or project documentation.</p><a class="button" href="downloads/icare-shiny-starter.zip" download>Download starter kit ↓</a><a class="text-link" href="../">Explore the three live examples →</a></div></section>
+<section class="sources" id="sources"><h2>Version and references</h2><p>Function signatures and templates were checked against <a href="https://github.com/YuLab-SMU/icare/tree/7ff676a556721affeb6da6c36b3bb60fc24ca468">icare commit 7ff676a</a> and this project’s deployed applications. The templates passed local prediction and Shiny server checks in that environment. Revalidate them for other datasets, learners and versions.</p><ul><li><a href="https://docs.posit.co/shinyapps.io/guide/getting_started/">Posit: getting started with shinyapps.io</a></li><li><a href="https://rstudio.github.io/rsconnect/reference/appDependencies.html">rsconnect dependency discovery</a> · <a href="https://rstudio.github.io/rsconnect/reference/deployApp.html">deployApp reference</a></li><li><a href="https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages">GitHub Pages static hosting</a></li><li><a href="https://quarto.org/docs/reference/projects/options.html">Quarto project resources</a></li></ul></section></main></div>
+<footer><span>ICARE · Intelligent ClinlAbomics Research Expedition</span><a href="#">Back to top ↑</a></footer><div id="copy-status" class="sr-only" role="status" aria-live="polite"></div><script src="guide.js"></script></body></html>
