@@ -32,6 +32,9 @@ PlotIDICurve(
   save_plot = FALSE,
   save_dir = NULL,
   save_filename = "idi_curve.png",
+  conf_int = FALSE,
+  conf_level = 0.95,
+  seed = NULL,
   ...
 )
 }
@@ -42,7 +45,7 @@ PlotIDICurve(
 
 \item{new_prob}{Predicted probabilities from the new model.}
 
-\item{positive}{The value in \code{truth} treated as the event. Defaults to the second unique value.}
+\item{positive}{The event label corresponding to the predicted probabilities. Required unless truth uses 0/1 (default event: 1).}
 
 \item{risk_thresholds}{Numeric vector for vertical reference lines.}
 
@@ -73,6 +76,14 @@ PlotIDICurve(
 \item{save_dir}{Directory to save the plot.}
 
 \item{save_filename}{Filename for the saved plot.}
+
+\item{conf_int}{Logical. If \code{TRUE}, add paired, stratified percentile-
+bootstrap confidence intervals for IS, IP and IDI (uses \code{n_boot}).
+Default \code{FALSE} (output unchanged).}
+
+\item{conf_level}{Confidence level. Default 0.95.}
+
+\item{seed}{Optional integer seed for the confidence-interval bootstrap.}
 
 \item{...}{Additional arguments passed to \code{ggplot2::ggsave}.}
 }

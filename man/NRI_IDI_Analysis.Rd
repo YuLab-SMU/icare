@@ -22,7 +22,10 @@ NRI_IDI_Analysis(
   show_ci = TRUE,
   n_boot = 500,
   save_plots = TRUE,
-  save_dir = "./NRIDI_Results/"
+  save_dir = "./NRIDI_Results/",
+  conf_int = TRUE,
+  conf_level = 0.95,
+  seed = NULL
 )
 }
 \arguments{
@@ -38,7 +41,7 @@ NRI_IDI_Analysis(
 
 \item{newdata}{Common data frame for prediction.}
 
-\item{positive}{The value in \code{truth} treated as the event. Defaults to the second unique value.}
+\item{positive}{The event label corresponding to the predicted probabilities. Required unless truth uses 0/1 (default event: 1).}
 
 \item{risk_thresholds}{Numeric vector of risk category boundaries.}
 
@@ -61,9 +64,17 @@ NRI_IDI_Analysis(
 \item{save_plots}{Save all plots?}
 
 \item{save_dir}{Output directory.}
+
+\item{conf_int}{Compute and print bootstrap confidence intervals for
+IS/IP/IDI and the NRI components? Default TRUE (set FALSE to skip).}
+
+\item{conf_level}{Confidence level. Default 0.95.}
+
+\item{seed}{Optional integer seed for the confidence-interval bootstrap.}
 }
 \value{
-Invisible list with all results.
+Invisible list with all results (\code{nri} and \code{idi}; each
+  carries a \code{ci} data frame when \code{conf_int = TRUE}).
 }
 \description{
 Runs the full suite of NRI/IDI analyses (ROC, IDI curve, NRI heatmap,
