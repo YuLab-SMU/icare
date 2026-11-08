@@ -1,0 +1,4 @@
+"SampleID","white_blood_cell_count","lymphocytes","monocytes","neutrophilic_granulocyte","eosinophil","basophil","lymphocytes_count","monocytes_count","neutrophilic_granulocyte_count","eosinophil_count","basophil_count","red_blood_cell_count","hemoglobin","hematocrit","mean_red_blood_cell_volume","mean_cell_hemoglobin","mean_corpuscular_hemoglobin_concentration","red_blood_cell_distribution_width_cv","red_blood_cell_distribution_width_sd","platelet_count","mean_platelet_volume","pct","platelet_volume_distribution_width","age"
+"DEMO_01",5.5,23.8,5.2,56.525,1,0.3,1.4,0.3,3.1,0.0625,0.02,4.28,123,37.125,88.8,29.2,323,12.6,42,193,9.8,0.2,12,56
+"DEMO_02",6.3,29.4,6,61.1,1.8,0.4,1.8,0.4,3.9,0.11,0.02,4.55,132.5,40.2,91.3,30.2,329,13,43,231,10.3,0.24,14.5,64
+"DEMO_03",7.3,34.475,7.1,67.075,2.8,0.5,2.2,0.5,4.6,0.17,0.03,4.81,144,43.475,93.575,31,336,13.3,45,271,10.975,0.28,16,70
