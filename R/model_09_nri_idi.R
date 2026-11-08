@@ -41,6 +41,34 @@
   )
 }
 
+# Paired, stratified percentile bootstrap used for all NRI/IDI confidence intervals.
+# stat_fn(e, n) must return a NAMED numeric vector computed on event rows `e` and
+# non-event rows `n`; the same resampled rows are used for both models (paired).
+.boot_ci <- function(stat_fn, ev_idx, nev_idx, est, n_boot, conf_level, seed) {
+  if (!is.null(seed)) set.seed(seed)
+  bs <- t(vapply(seq_len(n_boot), function(b) {
+    stat_fn(ev_idx[sample.int(length(ev_idx), replace = TRUE)],
+            nev_idx[sample.int(length(nev_idx), replace = TRUE)])
+  }, numeric(length(est))))
+  a  <- (1 - conf_level) / 2
+  ci <- data.frame(metric   = names(est),
+                   estimate = unname(est),
+                   lower    = unname(apply(bs, 2, stats::quantile, a,     na.rm = TRUE)),
+                   upper    = unname(apply(bs, 2, stats::quantile, 1 - a, na.rm = TRUE)),
+                   row.names = NULL)
+  attr(ci, "conf_level") <- conf_level
+  ci
+}
+
+.print_ci <- function(ci) {
+  if (is.null(ci)) return(invisible(NULL))
+  lv <- attr(ci, "conf_level"); if (is.null(lv)) lv <- 0.95
+  for (i in seq_len(nrow(ci)))
+    cat(sprintf("    %-14s %7.4f  (%g%% CI %.4f to %.4f)\n",
+                ci$metric[i], ci$estimate[i], 100 * lv, ci$lower[i], ci$upper[i]))
+  invisible(NULL)
+}
+
 .save_plot <- function(p, dir, filename, width, height) {
   if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
   path <- file.path(dir, paste0(tools::file_path_sans_ext(filename), ".pdf"))
@@ -127,14 +155,26 @@
 #'   when \code{ref_thresholds} and \code{new_thresholds} are NULL.
 #' @param ref_thresholds  Optional separate thresholds for the reference model.
 #' @param new_thresholds  Optional separate thresholds for the new model.
-#' @return A list with NRI components and reclassification tables.
+#' @param conf_int        Logical. If \code{TRUE}, add paired, stratified
+#'   percentile-bootstrap confidence intervals for the three NRI components.
+#'   Default \code{FALSE} (output unchanged).
+#' @param n_boot          Bootstrap iterations used when \code{conf_int = TRUE}.
+#' @param conf_level      Confidence level. Default 0.95.
+#' @param seed            Optional integer seed for the bootstrap.
+#' @return A list with NRI components and reclassification tables. When
+#'   \code{conf_int = TRUE} it also contains \code{ci}, a data frame with
+#'   columns \code{metric}, \code{estimate}, \code{lower}, \code{upper}.
 #' @export
 CalculateCategoryNRI <- function(truth,
                                  ref_prob,
                                  new_prob,
                                  risk_thresholds = c(0.02, 0.1, 0.5, 0.95),
                                  ref_thresholds  = NULL,
-                                 new_thresholds  = NULL) {
+                                 new_thresholds  = NULL,
+                                 conf_int   = FALSE,
+                                 n_boot     = 1000,
+                                 conf_level = 0.95,
+                                 seed       = NULL) {
   .check_nri_pkgs()
   binary <- if (is.factor(truth)) as.numeric(truth == levels(truth)[2]) else truth
   
@@ -169,6 +209,17 @@ CalculateCategoryNRI <- function(truth,
   
   nri_tot <- if (!is.na(nri_ev) && !is.na(nri_nev)) nri_ev + nri_nev else NA_real_
   
+  ci <- NULL
+  if (isTRUE(conf_int) && length(ev_idx) > 1 && length(nev_idx) > 1) {
+    ci <- .boot_ci(function(e, n) {
+      ne <- mean(new_num[e] > ref_num[e]) - mean(new_num[e] < ref_num[e])
+      nn <- mean(new_num[n] < ref_num[n]) - mean(new_num[n] > ref_num[n])
+      c(nri_events = ne, nri_nonevents = nn, nri_total = ne + nn)
+    }, ev_idx, nev_idx,
+    c(nri_events = nri_ev, nri_nonevents = nri_nev, nri_total = nri_tot),
+    n_boot, conf_level, seed)
+  }
+  
   list(nri_events     = nri_ev,
        nri_nonevents  = nri_nev,
        nri_total      = nri_tot,
@@ -179,7 +230,8 @@ CalculateCategoryNRI <- function(truth,
        event_table    = table(ref_cat[ev_idx],  new_cat[ev_idx]),
        nonevent_table = table(ref_cat[nev_idx], new_cat[nev_idx]),
        ref_thresholds = ref_thresholds,
-       new_thresholds = new_thresholds)
+       new_thresholds = new_thresholds,
+       ci             = ci)
 }
 
 # -- 2. Bootstrap AUC & ROC -------------------------------------------------
@@ -380,7 +432,7 @@ BootstrapIDICurveData <- function(truth, prob, n_boot = 500) {
 #' @param truth A vector or factor containing binary outcomes.
 #' @param ref_prob Predicted probabilities from the reference model.
 #' @param new_prob Predicted probabilities from the new model.
-#' @param positive The value in \code{truth} treated as the event. Defaults to the second unique value.
+#' @param positive The event label corresponding to the predicted probabilities. Required unless truth uses 0/1 (default event: 1).
 #' @param risk_thresholds Numeric vector for vertical reference lines.
 #' @param n_boot Integer. Number of bootstrap iterations for curve smoothing.
 #' @param colors Vector of length 2: \code{c(IP_color, IDI_label_fill)}.
@@ -396,6 +448,11 @@ BootstrapIDICurveData <- function(truth, prob, n_boot = 500) {
 #' @param save_plot Logical. Whether to save the plot.
 #' @param save_dir Directory to save the plot.
 #' @param save_filename Filename for the saved plot.
+#' @param conf_int Logical. If \code{TRUE}, add paired, stratified percentile-
+#'   bootstrap confidence intervals for IS, IP and IDI (uses \code{n_boot}).
+#'   Default \code{FALSE} (output unchanged).
+#' @param conf_level Confidence level. Default 0.95.
+#' @param seed Optional integer seed for the confidence-interval bootstrap.
 #' @param ... Additional arguments passed to \code{ggplot2::ggsave}.
 #'
 #' @return A list containing the \code{ggplot} object and calculated \code{is}, \code{ip}, and \code{idi}.
@@ -440,6 +497,9 @@ PlotIDICurve <- function(truth,
                          save_plot = FALSE,
                          save_dir = NULL,
                          save_filename = "idi_curve.png",
+                         conf_int = FALSE,
+                         conf_level = 0.95,
+                         seed = NULL,
                          ...) {
   
   if (is.factor(truth)) truth <- as.character(truth)
@@ -447,7 +507,7 @@ PlotIDICurve <- function(truth,
   if (length(u_vals) != 2) stop("truth must be binary.")
   
   if (is.null(positive)) {
-    positive <- sort(u_vals, decreasing = TRUE)[1]
+    positive <- if (all(u_vals %in% c(0, 1))) 1 else stop("Please specify `positive` as the event label; probabilities must refer to that event.")
   }
   
   truth_num <- as.numeric(truth == positive)
@@ -456,6 +516,18 @@ PlotIDICurve <- function(truth,
   is_val  <- mean(new_prob[truth_num == 1], na.rm = TRUE) - mean(ref_prob[truth_num == 1], na.rm = TRUE)
   ip_val  <- mean(ref_prob[truth_num == 0], na.rm = TRUE) - mean(new_prob[truth_num == 0], na.rm = TRUE)
   idi_val <- is_val + ip_val
+  
+  # Optional paired bootstrap CI for IS / IP / IDI
+  ci <- NULL
+  ev_i <- which(truth_num == 1); nev_i <- which(truth_num == 0)
+  if (isTRUE(conf_int) && length(ev_i) > 1 && length(nev_i) > 1) {
+    ci <- .boot_ci(function(e, n) {
+      is_b <- mean(new_prob[e], na.rm = TRUE) - mean(ref_prob[e], na.rm = TRUE)
+      ip_b <- mean(ref_prob[n], na.rm = TRUE) - mean(new_prob[n], na.rm = TRUE)
+      c(IS = is_b, IP = ip_b, IDI = is_b + ip_b)
+    }, ev_i, nev_i, c(IS = is_val, IP = ip_val, IDI = idi_val),
+    n_boot, conf_level, seed)
+  }
   
   # Bootstrapped IDI Curves over Risk Cutoffs t
   ref_idi_data <- BootstrapIDICurveData(truth_num, ref_prob, n_boot)
@@ -494,7 +566,7 @@ PlotIDICurve <- function(truth,
     ggplot2::ggsave(file.path(dir, save_filename), p, width = 8, height = 6, ...)
   }
   
-  return(list(plot = p, is = is_val, ip = ip_val, idi = idi_val))
+  return(list(plot = p, is = is_val, ip = ip_val, idi = idi_val, ci = ci))
 }
 
 # -- 5. NRI reclassification heatmap ---------------------------------------
@@ -726,7 +798,7 @@ PlotThresholdNRI <- function(truth, ref_prob, new_prob,
 #' @param new_prob        Raw new probabilities (optional).
 #' @param truth           Raw binary outcome (optional).
 #' @param newdata         Common data frame for prediction.
-#' @param positive The value in \code{truth} treated as the event. Defaults to the second unique value.
+#' @param positive The event label corresponding to the predicted probabilities. Required unless truth uses 0/1 (default event: 1).
 #' @param risk_thresholds Numeric vector of risk category boundaries.
 #' @param ref_thresholds  Optional separate thresholds for the reference model.
 #' @param new_thresholds  Optional separate thresholds for the new model.
@@ -738,7 +810,12 @@ PlotThresholdNRI <- function(truth, ref_prob, new_prob,
 #' @param n_boot          Bootstrap iterations.
 #' @param save_plots      Save all plots?
 #' @param save_dir        Output directory.
-#' @return Invisible list with all results.
+#' @param conf_int        Compute and print bootstrap confidence intervals for
+#'   IS/IP/IDI and the NRI components? Default TRUE (set FALSE to skip).
+#' @param conf_level      Confidence level. Default 0.95.
+#' @param seed            Optional integer seed for the confidence-interval bootstrap.
+#' @return Invisible list with all results (\code{nri} and \code{idi}; each
+#'   carries a \code{ci} data frame when \code{conf_int = TRUE}).
 #' @export
 NRI_IDI_Analysis <- function(model_obj_ref = NULL,
                              model_obj_new = NULL,
@@ -757,14 +834,17 @@ NRI_IDI_Analysis <- function(model_obj_ref = NULL,
                              show_ci        = TRUE,
                              n_boot         = 500,
                              save_plots     = TRUE,
-                             save_dir       = "./NRIDI_Results/") {
+                             save_dir       = "./NRIDI_Results/",
+                             conf_int       = TRUE,
+                             conf_level     = 0.95,
+                             seed           = NULL) {
   .check_nri_pkgs()
   if (is.null(save_dir) && save_plots) save_dir <- "./NRIDI_Results/"
   if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
   
   # Resolve inputs
   if (!is.null(model_obj_ref)) {
-    res_ref <- .extract_probs_and_truth(model_obj_ref, newdata)
+    res_ref <- .extract_probs_and_truth(model_obj_ref, newdata, positive_class = positive)
     ref_p   <- res_ref$probs
     truth   <- res_ref$truth
   } else if (!is.null(ref_prob) && !is.null(truth)) {
@@ -774,7 +854,7 @@ NRI_IDI_Analysis <- function(model_obj_ref = NULL,
   }
   
   if (!is.null(model_obj_new)) {
-    res_new <- .extract_probs_and_truth(model_obj_new, newdata)
+    res_new <- .extract_probs_and_truth(model_obj_new, newdata, positive_class = positive)
     new_p   <- res_new$probs
   } else if (!is.null(new_prob)) {
     new_p <- new_prob
@@ -794,22 +874,29 @@ NRI_IDI_Analysis <- function(model_obj_ref = NULL,
     truth = truth,
     ref_prob = ref_p,
     new_prob = new_p,
-    positive = NULL,                
+    positive = positive,
     risk_thresholds = risk_thresholds,
     n_boot = n_boot,
     save_plot = save_plots,
-    save_dir = save_dir
+    save_dir = save_dir,
+    conf_int = conf_int,
+    conf_level = conf_level,
+    seed = seed
   )
   cat(sprintf("  IS = %.4f | IP = %.4f | IDI = %.4f\n", idi_res$is, idi_res$ip, idi_res$idi))
+  .print_ci(idi_res$ci)
   
   # 3. NRI
   cat("[3/6] Calculating NRI...\n")
   nri_res <- CalculateCategoryNRI(truth, ref_p, new_p,
                                   risk_thresholds = risk_thresholds,
                                   ref_thresholds  = ref_thresholds,
-                                  new_thresholds  = new_thresholds)
+                                  new_thresholds  = new_thresholds,
+                                  conf_int = conf_int, n_boot = n_boot,
+                                  conf_level = conf_level, seed = seed)
   cat(sprintf("  NRI Events = %.4f | NRI Non-Events = %.4f | Total NRI = %.4f\n",
               nri_res$nri_events, nri_res$nri_nonevents, nri_res$nri_total))
+  .print_ci(nri_res$ci)
   
   # 4. NRI heatmap
   cat("[4/6] NRI heatmap...\n")

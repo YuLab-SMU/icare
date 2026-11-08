@@ -10,7 +10,11 @@ CalculateCategoryNRI(
   new_prob,
   risk_thresholds = c(0.02, 0.1, 0.5, 0.95),
   ref_thresholds = NULL,
-  new_thresholds = NULL
+  new_thresholds = NULL,
+  conf_int = FALSE,
+  n_boot = 1000,
+  conf_level = 0.95,
+  seed = NULL
 )
 }
 \arguments{
@@ -26,9 +30,21 @@ when \code{ref_thresholds} and \code{new_thresholds} are NULL.}
 \item{ref_thresholds}{Optional separate thresholds for the reference model.}
 
 \item{new_thresholds}{Optional separate thresholds for the new model.}
+
+\item{conf_int}{Logical. If \code{TRUE}, add paired, stratified
+percentile-bootstrap confidence intervals for the three NRI components.
+Default \code{FALSE} (output unchanged).}
+
+\item{n_boot}{Bootstrap iterations used when \code{conf_int = TRUE}.}
+
+\item{conf_level}{Confidence level. Default 0.95.}
+
+\item{seed}{Optional integer seed for the bootstrap.}
 }
 \value{
-A list with NRI components and reclassification tables.
+A list with NRI components and reclassification tables. When
+  \code{conf_int = TRUE} it also contains \code{ci}, a data frame with
+  columns \code{metric}, \code{estimate}, \code{lower}, \code{upper}.
 }
 \description{
 Calculates NRI events, NRI non-events, and total NRI using possibly
