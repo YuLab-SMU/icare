@@ -391,13 +391,13 @@ This section trains and compares candidate models. Select models using discrimin
 # 3. Algorithm Benchmarking & Hyperparameter Tuning
 # ---------------------------------------------------------------------------
 learners_list <- list(
-  surv_get_learner("surv.coxph",     train_task),
+  surv_get_learner("surv.rpart",     train_task),
   surv_get_learner("surv.cv_glmnet", train_task),
   surv_get_learner("surv.ranger",    train_task)
 )
 bmr1 <- surv_run_algorithm_benchmark(train_task, learners_list)
 dev.new()
-bmr2 <- surv_benchmark_learners(train_task, learner_ids = c("surv.coxph", "surv.ranger"), tune = FALSE)
+bmr2 <- surv_benchmark_learners(train_task, learner_ids = c("surv.rpart", "surv.ranger"), tune = FALSE)
 bmr2_summary <- surv_summarize_benchmark(bmr2)
 write.csv(bmr2_summary, file = file.path(sub_dir("02_model"), "algorithm_benchmark.csv"), row.names = FALSE)
 
