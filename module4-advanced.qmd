@@ -395,6 +395,7 @@ learners_list <- list(
   surv_get_learner("surv.cv_glmnet", train_task),
   surv_get_learner("surv.ranger",    train_task)
 )
+set.seed(123)
 bmr1 <- surv_run_algorithm_benchmark(train_task, learners_list)
 dev.new()
 bmr2 <- surv_benchmark_learners(train_task, learner_ids = c("surv.rpart", "surv.ranger"), tune = FALSE)
