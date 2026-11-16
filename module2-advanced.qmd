@@ -843,6 +843,12 @@ diag_svm <- ifelse(res_svm[, 2] >= 0.5, "POSITIVE", "NEGATIVE")
 ## 13.3 Interactive Shiny app — only launched in an interactive session so
 ## this script can still run non-interactively (e.g. via `Rscript`).
 library(bslib); library(shiny); library(plotly)
+
+deploy_manager$preprocess_columns <- setdiff(
+  names(deploy_manager$ref_data),
+  deploy_manager$group_col
+)
+
 if (interactive()) {
   icare::deploy_clinlab_app(deploy_manager, title = "Clinlabomics Intelligence")
 } else {
