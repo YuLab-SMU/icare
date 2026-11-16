@@ -76,6 +76,6 @@ Start with [Before You Begin](prerequisites.qmd), then choose a quick-start chap
 
 When using the package, cite:
 
-> Luo H, Long F, Lin H, Yuan C, Wang F, Huang J, Yu G. *icare: Intelligent ClinlAbomics Research Expedition*. R package version 1.0.1.
+> Huaichao Luo, Fei Long, Hongyan Lin, Xin Li, Ruohao Wu, Jixue Wang, Chunhui Yuan, Xingmei Zhang, Xiaohui Wang, Dongsheng Wang, Yang Luo, Weiyan Zhou, Fubing Wang, Jian Huang, Guangchuang Yu. *icare: Intelligent ClinlAbomics Research Expedition*. R package version 1.0.1.
 
 `icare` is distributed under the GPL-3 license. This tutorial follows the active development version of the official repository; consult the repository history and `NEWS.md` when exact version reproducibility is required.
