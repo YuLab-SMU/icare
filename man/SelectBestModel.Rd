@@ -2,39 +2,46 @@
 % Please edit documentation in R/model_05_train.R
 \name{SelectBestModel}
 \alias{SelectBestModel}
-\title{Select Best Performing Model (Fixed)}
+\title{Select Best Performing Model (training-set cross-validation based)}
 \usage{
 SelectBestModel(object, metric = "auc", custom_selection = NULL)
 }
 \arguments{
 \item{object}{A Train_Model object.}
 
-\item{metric}{Primary metric (default "auc").}
+\item{metric}{Primary metric (default "auc"). Selection uses its
+training-set CV mean.}
 
 \item{custom_selection}{Optional model name to force selection.}
 }
 \value{
-Updated Train_Model object.
+Updated Train_Model object (`@best.model.result` = list(model,
+  model_type, train_performance)). The training-set CV comparison table is
+  additionally stored in `@process.info$selection_cv_table`.
 }
 \description{
-NOTE: this assumes `object@all.results` is a data.frame with a `Model`
-column and the requested `metric` column, which is only true for BINARY
-task_type. Do not call this on a `Train_Model` object produced by
-`ModelTrainAnalysis()` in multiclass/regression mode -- that mode already
-selects and stores the best model internally in `@best.model.result`; use
-the downstream functions in `model_05b_nonbinary_downstream.R` instead.
+Selects the best model using the CROSS-VALIDATION performed INSIDE THE
+TRAINING SET ("training-set CV", i.e. caret's out-of-fold predictions
+stored with `savePredictions = "final"`), NOT the holdout test set. The
+test set therefore stays untouched by model selection and can be used for
+a single, unbiased final evaluation of the chosen model.
+}
+\details{
+For every candidate model the requested metric is recomputed on each
+held-out training fold (using the model's own best tuning parameters) and
+averaged (CV mean). Ties in the CV mean are broken by the smaller CV SD,
+then by the CV-mean F1 score, then by order. For LOOCV the metric is
+computed once on the pooled out-of-fold predictions.
+
+Metric names are case/punctuation-insensitive and accept common aliases,
+e.g. "auc", "AUC", "ROC", "accuracy", "Accuracy_score", "sens", "ppv", "f1".
+
+NOTE: this assumes `object@all.results` is a data.frame (BINARY task_type).
+For multiclass/regression, `ModelTrainAnalysis()` already stores the
+CV-selected model in `@best.model.result`.
 }
 \examples{
 \dontrun{
-mtcars$am <- as.factor(mtcars$am)
-model <- CreateModelObject(data = mtcars, group_col = "am")
-set.seed(123)
-idx <- sample(1:nrow(mtcars), 20)
-model@filtered.set <- list(training = mtcars[idx, ], testing = mtcars[-idx, ])
-trained <- ModelTrainAnalysis(model, methods = c("glm", "rf"),
-                              control = list(method = "cv", number = 3),
-                              task_type = "binary", metric_selection = "ROC",
-                              save_plots = FALSE)
 trained <- SelectBestModel(trained, metric = "auc")
 print(trained@best.model.result$model_type)
 }

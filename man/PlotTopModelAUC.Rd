@@ -4,7 +4,13 @@
 \alias{PlotTopModelAUC}
 \title{Top N Model Performance Dot Plot}
 \usage{
-PlotTopModelAUC(model_obj, top_n = 6, save_plot = FALSE, save_dir = NULL)
+PlotTopModelAUC(
+  model_obj,
+  top_n = 6,
+  save_plot = FALSE,
+  save_dir = NULL,
+  rank_by = c("test", "train_cv")
+)
 }
 \arguments{
 \item{model_obj}{A trained \code{Train_Model} object.}
@@ -14,7 +20,23 @@ PlotTopModelAUC(model_obj, top_n = 6, save_plot = FALSE, save_dir = NULL)
 \item{save_plot}{Logical.}
 
 \item{save_dir}{Output directory.}
+
+\item{rank_by}{Ranking basis: \code{"test"} (default) or \code{"train_cv"}.}
+}
+\value{
+A ggplot object.
 }
 \description{
-Shows AUC for the top N models with 95% CI as error bars, sorted by AUC.
+Shows AUC for the top N models, sorted by AUC. The ranking basis is set by
+\code{rank_by}:
+\itemize{
+  \item \code{"test"} (default, original behaviour): holdout-test-set AUC
+    from \code{@all.results}, with 95\% CI error bars when
+    \code{auc_lower}/\code{auc_upper} exist.
+  \item \code{"train_cv"}: mean AUC of the cross-validation performed
+    inside the TRAINING set (recomputed from caret's out-of-fold
+    predictions; same quantity \code{SelectBestModel(metric = "auc")}
+    uses), with mean +/- SD error bars across folds. The test set is not
+    used, so this is the appropriate basis for comparing models.
+}
 }

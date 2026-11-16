@@ -1,26 +1,26 @@
-<!-- badges: start -->
-
 # icare <img src="man/figures/logo.png" align="right" height="139" alt="icare logo" />
-
-<!-- badges: end -->
 
 **I**ntelligent **C**linl**A**bomics **R**esearch **E**xpedition
 
-A modular R framework that takes clinical / omics data all the way from
-raw table to publication-ready figures: statistics and missing-data
-handling, feature selection, machine-learning benchmarking, unsupervised
-subtyping (K-means, NMF, latent profile analysis), and prognostic /
+A modular R framework that takes clinical / omics data all the way from  
+raw table to publication-ready figures: statistics and missing-data  
+handling, feature selection, machine-learning benchmarking, unsupervised  
+subtyping (K-means, NMF, latent profile analysis), and prognostic /  
 survival modeling — each with an interactive Shiny deployment layer.
 
-[![License: GPL-3](https://img.shields.io/badge/License-GPL--3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-![R](https://img.shields.io/badge/R-%3E%3D3.5.0-276DC3?logo=r)
-![Status](https://img.shields.io/badge/status-active--development-yellow)
-[![Docs](https://img.shields.io/badge/docs-tutorial%20site-orange)](https://yulab-smu.top/icare/)
-[![Source](https://img.shields.io/badge/source-GitHub-181717?logo=github)](https://github.com/YuLab-SMU/icare)
+![License: GPL-3](https://img.shields.io/badge/License-GPL--3-blue.svg)
 
-**Maintainer:** Huaichao Luo (luohc@uestc.edu.cn) —
-[Google Scholar](https://scholar.google.com/citations?user=XNKOGaIAAAAJ) |
-[ResearchGate](https://www.researchgate.net/profile/Huaichao-Luo) |
+![R](https://img.shields.io/badge/R-%3E%3D3.5.0-276DC3?logo=r)
+
+![Status](https://img.shields.io/badge/status-active--development-yellow)
+
+![Docs](https://img.shields.io/badge/docs-tutorial%20site-orange)
+
+![Source](https://img.shields.io/badge/source-GitHub-181717?logo=github)
+
+**Maintainer:** Huaichao Luo (<luohc@uestc.edu.cn>) —  
+[Google Scholar](https://scholar.google.com/citations?user=XNKOGaIAAAAJ) |  
+[ResearchGate](https://www.researchgate.net/profile/Huaichao-Luo) |  
 [Lab Twitter/X](https://x.com/Luo_lab)
 
 **Contributor:** Guangchuang Yu — [Lab website (yulab-smu.top)](https://yulab-smu.top)
@@ -49,7 +49,7 @@ survival modeling — each with an interactive Shiny deployment layer.
 
 ## Overview
 
-icare organizes an analysis as a pipeline of **S4 objects**, one per stage,
+icare organizes an analysis as a pipeline of **S4 objects**, one per stage,  
 each produced by converting the previous one with `ConvertObject()`:
 
 ```javascript
@@ -70,9 +70,9 @@ Train_Model object                 Subtyping object                PrognosiX obj
 deploy_clinlab_app()             launch_sub_deploy_app()          launch_prog_deploy_app()
 ```
 
-Every stage keeps a record of what was done to the data (imputation
-values, scaling parameters, selected features, trained models) inside the
-object itself, so the *exact same* transformation can be replayed on new
+Every stage keeps a record of what was done to the data (imputation  
+values, scaling parameters, selected features, trained models) inside the  
+object itself, so the *exact same* transformation can be replayed on new  
 patients at prediction time.
 
 ---
@@ -81,126 +81,155 @@ patients at prediction time.
 
 Real output from the QUICKSTART vignettes on real clinical/omics data — click any figure to open the full walkthrough that produced it. The example dataset used throughout Modules 1, 2，3, and 4 ships with the package at `icare/inst/extdata/PMID37633276_DIA_plasmaproomic.xlsx`.
 
-<table>
-<tr>
+<table>  
+<tr>  
 <td width="50%" valign="top">
 
 **Module 1 · Data cleaning & exploration**
 
-[![Grouped distribution plot](http://yulab-smu.top/icare/module1-quickstart_files/figure-html/module1-quickstart-05-1.png)](https://yulab-smu.top/icare/module1-quickstart.html)
-[![PCA plot](http://yulab-smu.top/icare/module1-quickstart_files/figure-html/module1-quickstart-05-2.png)](https://yulab-smu.top/icare/module1-quickstart.html)
+![Grouped distribution plot](http://yulab-smu.top/icare/module1-quickstart_files/figure-html/module1-quickstart-05-1.png)
+
+![PCA plot](http://yulab-smu.top/icare/module1-quickstart_files/figure-html/module1-quickstart-05-2.png)
 
 Group-wise distributions and PCA ordination, straight out of `PlotGroupedDistribution()` / `PlotPCA()`. → [Quick-start chapter](https://yulab-smu.top/icare/module1-quickstart.html)
 
-</td>
+</td>  
 <td width="50%" valign="top">
 
 **Module 2 · Classification modeling**
 
-[![Cross-validation performance](http://yulab-smu.top/icare/module2-quickstart_files/figure-html/module2-quickstart-05-1.png)](https://yulab-smu.top/icare/module2-quickstart.html)
-[![Multi-model ROC curves](http://yulab-smu.top/icare/module2-quickstart_files/figure-html/module2-quickstart-06-1.png)](https://yulab-smu.top/icare/module2-quickstart.html)
+![Cross-validation performance](http://yulab-smu.top/icare/module2-quickstart_files/figure-html/module2-quickstart-05-1.png)
+
+![Multi-model ROC curves](http://yulab-smu.top/icare/module2-quickstart_files/figure-html/module2-quickstart-06-1.png)
 
 `glmnet` / `rf` / `gbm` benchmarked head-to-head, then the winner's ROC via `PlotMultiROC()`. → [Quick-start chapter](https://yulab-smu.top/icare/module2-quickstart.html)
 
-</td>
-</tr>
-<tr>
+</td>  
+</tr>  
+<tr>  
 <td width="50%" valign="top">
 
 **Module 3 · Unsupervised subtyping**
 
-[![NMF consensus / rank selection](http://yulab-smu.top/icare/module3-quickstart_files/figure-html/module3-quickstart-03-1.png)](https://yulab-smu.top/icare/module3-quickstart.html)
-[![t-SNE subtype visualization](http://yulab-smu.top/icare/module3-quickstart_files/figure-html/module3-quickstart-04-1.png)](https://yulab-smu.top/icare/module3-quickstart.html)
+![NMF consensus / rank selection](http://yulab-smu.top/icare/module3-quickstart_files/figure-html/module3-quickstart-03-1.png)
+
+![t-SNE subtype visualization](http://yulab-smu.top/icare/module3-quickstart_files/figure-html/module3-quickstart-04-1.png)
 
 NMF rank estimation and the resulting t-SNE embedding, colored by subtype. → [Quick-start chapter](https://yulab-smu.top/icare/module3-quickstart.html)
 
-</td>
+</td>  
 <td width="50%" valign="top">
 
 **Module 4 · Survival & prognosis**
 
-[![Kaplan-Meier risk stratification, training set](http://yulab-smu.top/icare/module4-quickstart_files/figure-html/module4-quickstart-08-1.png)](https://yulab-smu.top/icare/module4-quickstart.html)
-[![Kaplan-Meier risk stratification, validation set](http://yulab-smu.top/icare/module4-quickstart_files/figure-html/module4-quickstart-08-3.png)](https://yulab-smu.top/icare/module4-quickstart.html)
+![Kaplan-Meier risk stratification, training set](http://yulab-smu.top/icare/module4-quickstart_files/figure-html/module4-quickstart-08-1.png)
+
+![Kaplan-Meier risk stratification, validation set](http://yulab-smu.top/icare/module4-quickstart_files/figure-html/module4-quickstart-08-3.png)
 
 Median-split Kaplan–Meier curves from `surv_plot_risk_km()`, training vs. held-out validation. → [Quick-start chapter](https://yulab-smu.top/icare/module4-quickstart.html)
 
-</td>
-</tr>
+</td>  
+</tr>  
 </table>
 
 👉 Every chapter above (and their **ADVANCED** counterparts) is runnable end-to-end in the [online book](https://yulab-smu.top/icare/) — code, console output, and figures are shown together, chunk by chunk.
 
 ---
 
+
 ## Go further: the ADVANCED gallery
 
 The QUICKSTART chapters get you a result in minutes — the **ADVANCED** chapters are where icare earns its keep for a manuscript: multi-method feature selection with consensus/stability diagnostics, algorithm benchmarking with SHAP/DALEX explanations, three-way clustering validation, and full survival-model robustness/DCA/nomogram workflows. A taste of what each one produces:
 
-<table>
-<tr>
+<table>  
+<tr>  
 <td width="50%" valign="top">
 
 **Module 1 · Advanced — publication figures**
 
-[![PCA with confidence ellipses, publication style](http://yulab-smu.top/icare/module1-advanced_files/figure-html/module1-advanced-14-1.png)](https://yulab-smu.top/icare/module1-advanced.html)
-[![AUC vs. p-value feature triage](http://yulab-smu.top/icare/module1-advanced_files/figure-html/module1-advanced-17-1.png)](https://yulab-smu.top/icare/module1-advanced.html)
-[![Top-DEG feature heatmap with clinical annotation](http://yulab-smu.top/icare/module1-advanced_files/figure-html/module1-advanced-17-2.png)](https://yulab-smu.top/icare/module1-advanced.html)
-[![Per-feature ROC curves for the top DEGs](http://yulab-smu.top/icare/module1-advanced_files/figure-html/module1-advanced-17-3.png)](https://yulab-smu.top/icare/module1-advanced.html)
-[![Radar chart of group-mean feature shifts](http://yulab-smu.top/icare/module1-advanced_files/figure-html/module1-advanced-17-4.png)](https://yulab-smu.top/icare/module1-advanced.html)
+![PCA with confidence ellipses, publication style](http://yulab-smu.top/icare/module1-advanced_files/figure-html/module1-advanced-14-1.png)
+
+![AUC vs. p-value feature triage](http://yulab-smu.top/icare/module1-advanced_files/figure-html/module1-advanced-17-1.png)
+
+![Top-DEG feature heatmap with clinical annotation](http://yulab-smu.top/icare/module1-advanced_files/figure-html/module1-advanced-17-2.png)
+
+![Per-feature ROC curves for the top DEGs](http://yulab-smu.top/icare/module1-advanced_files/figure-html/module1-advanced-17-3.png)
+
+![Radar chart of group-mean feature shifts](http://yulab-smu.top/icare/module1-advanced_files/figure-html/module1-advanced-17-4.png)
 
 Annotated PCA, AUC/p-value feature triage, annotated heatmaps, per-feature ROCs, radar charts, and a manuscript-ready "Table 1" — all in one script. → [Advanced chapter](https://yulab-smu.top/icare/module1-advanced.html)
 
-</td>
+</td>  
 <td width="50%" valign="top">
 
 **Module 2 · Advanced — benchmarking & explainability**
 
-[![RFE feature-selection profile plot](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-15-1.png)](https://yulab-smu.top/icare/module2-advanced.html)
-[![Logistic diagnostic benchmark](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-16-1.png)](https://yulab-smu.top/icare/module2-advanced.html)
-[![Cross-validated training comparison across algorithms](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-18-1.png)](https://yulab-smu.top/icare/module2-advanced.html)
-[![Top model AUC comparison across algorithms](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-19-1.png)](https://yulab-smu.top/icare/module2-advanced.html)
-[![DALEX model-performance profile](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-23-1.png)](https://yulab-smu.top/icare/module2-advanced.html)
-[![Global SHAP beeswarm explanation](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-23-3.png)](https://yulab-smu.top/icare/module2-advanced.html)
-[![Two-model ROC comparison with 95% CI](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-24-47.png)](https://yulab-smu.top/icare/module2-advanced.html)
-[![Integrated Discrimination Improvement (IDI) curve](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-24-48.png)](https://yulab-smu.top/icare/module2-advanced.html)
-[![NRI reclassification heatmap between risk categories](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-24-49.png)](https://yulab-smu.top/icare/module2-advanced.html)
-[![NRI reclassification counts (up / down)](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-24-50.png)](https://yulab-smu.top/icare/module2-advanced.html)
-[![NRI as a function of the risk threshold](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-24-52.png)](https://yulab-smu.top/icare/module2-advanced.html)
+![RFE feature-selection profile plot](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-15-1.png)
+
+![Logistic diagnostic benchmark](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-16-1.png)
+
+![Cross-validated training comparison across algorithms](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-18-1.png)
+
+![Top model AUC comparison across algorithms](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-19-1.png)
+
+![DALEX model-performance profile](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-23-1.png)
+
+![Global SHAP beeswarm explanation](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-23-3.png)
+
+![Two-model ROC comparison with 95% CI](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-24-47.png)
+
+![Integrated Discrimination Improvement (IDI) curve](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-24-48.png)
+
+![NRI reclassification heatmap between risk categories](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-24-49.png)
+
+![NRI reclassification counts (up / down)](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-24-50.png)
+
+![NRI as a function of the risk threshold](http://yulab-smu.top/icare/module2-advanced_files/figure-html/module2-advanced-24-52.png)
 
 RFE/GA/SA consensus feature selection, a 9-algorithm benchmark, ensembling, Bayesian tuning, SHAP/DALEX explanations, decision thresholds, and NRI/IDI reclassification analysis. → [Advanced chapter](https://yulab-smu.top/icare/module2-advanced.html)
 
-</td>
-</tr>
-<tr>
+</td>  
+</tr>  
+<tr>  
 <td width="50%" valign="top">
 
 **Module 3 · Advanced — three-way clustering validation**
 
-[![K-means and LPA clustering diagnostics](http://yulab-smu.top/icare/module3-advanced_files/figure-html/module3-advanced-13-1.png)](https://yulab-smu.top/icare/module3-advanced.html)
-[![NMF rank estimation](http://yulab-smu.top/icare/module3-advanced_files/figure-html/module3-advanced-14-1.png)](https://yulab-smu.top/icare/module3-advanced.html)
-[![t-SNE embedding colored by LPA subtype](http://yulab-smu.top/icare/module3-advanced_files/figure-html/module3-advanced-19-1.png)](https://yulab-smu.top/icare/module3-advanced.html)
-[![t-SNE embedding colored by clinical outcome](http://yulab-smu.top/icare/module3-advanced_files/figure-html/module3-advanced-19-2.png)](https://yulab-smu.top/icare/module3-advanced.html)
-[![Cross-method agreement (Adjusted Rand Index)](http://yulab-smu.top/icare/module3-advanced_files/figure-html/module3-advanced-21-1.png)](https://yulab-smu.top/icare/module3-advanced.html)
+![K-means and LPA clustering diagnostics](http://yulab-smu.top/icare/module3-advanced_files/figure-html/module3-advanced-13-1.png)
+
+![NMF rank estimation](http://yulab-smu.top/icare/module3-advanced_files/figure-html/module3-advanced-14-1.png)
+
+![t-SNE embedding colored by LPA subtype](http://yulab-smu.top/icare/module3-advanced_files/figure-html/module3-advanced-19-1.png)
+
+![t-SNE embedding colored by clinical outcome](http://yulab-smu.top/icare/module3-advanced_files/figure-html/module3-advanced-19-2.png)
+
+![Cross-method agreement (Adjusted Rand Index)](http://yulab-smu.top/icare/module3-advanced_files/figure-html/module3-advanced-21-1.png)
 
 K-means, LPA, and NMF cross-validated against each other (Adjusted Rand Index), with marker heatmaps, silhouettes, and an alluvial agreement diagram. → [Advanced chapter](https://yulab-smu.top/icare/module3-advanced.html)
 
-</td>
+</td>  
 <td width="50%" valign="top">
 
 **Module 4 · Advanced — robust survival modeling**
 
-[![Survival-learner algorithm benchmark](http://yulab-smu.top/icare/module4-advanced_files/figure-html/module4-advanced-13-1.png)](https://yulab-smu.top/icare/module4-advanced.html)
-[![Kaplan-Meier median-split risk stratification](http://yulab-smu.top/icare/module4-advanced_files/figure-html/module4-advanced-14-1.png)](https://yulab-smu.top/icare/module4-advanced.html)
-[![Kaplan-Meier tertile risk stratification](http://yulab-smu.top/icare/module4-advanced_files/figure-html/module4-advanced-14-2.png)](https://yulab-smu.top/icare/module4-advanced.html)
-[![Validation-set KM with the training-derived cutoff](http://yulab-smu.top/icare/module4-advanced_files/figure-html/module4-advanced-14-6.png)](https://yulab-smu.top/icare/module4-advanced.html)
-[![Subgroup forest plot](http://yulab-smu.top/icare/module4-advanced_files/figure-html/module4-advanced-14-7.png)](https://yulab-smu.top/icare/module4-advanced.html)
-[![Feature-selection stability across resamples](http://yulab-smu.top/icare/module4-advanced_files/figure-html/module4-advanced-15-1.png)](https://yulab-smu.top/icare/module4-advanced.html)
-[![Feature-ablation robustness check](http://yulab-smu.top/icare/module4-advanced_files/figure-html/module4-advanced-15-2.png)](https://yulab-smu.top/icare/module4-advanced.html)
+![Survival-learner algorithm benchmark](http://yulab-smu.top/icare/module4-advanced_files/figure-html/module4-advanced-13-1.png)
+
+![Kaplan-Meier median-split risk stratification](http://yulab-smu.top/icare/module4-advanced_files/figure-html/module4-advanced-14-1.png)
+
+![Kaplan-Meier tertile risk stratification](http://yulab-smu.top/icare/module4-advanced_files/figure-html/module4-advanced-14-2.png)
+
+![Validation-set KM with the training-derived cutoff](http://yulab-smu.top/icare/module4-advanced_files/figure-html/module4-advanced-14-6.png)
+
+![Subgroup forest plot](http://yulab-smu.top/icare/module4-advanced_files/figure-html/module4-advanced-14-7.png)
+
+![Feature-selection stability across resamples](http://yulab-smu.top/icare/module4-advanced_files/figure-html/module4-advanced-15-1.png)
+
+![Feature-ablation robustness check](http://yulab-smu.top/icare/module4-advanced_files/figure-html/module4-advanced-15-2.png)
 
 Strict train/validation split, algorithm benchmarking, subgroup forests, time-dependent AUC, calibration, nomograms, stability/ablation checks, DCA, and survival SHAP. → [Advanced chapter](https://yulab-smu.top/icare/module4-advanced.html)
 
-</td>
-</tr>
+</td>  
+</tr>  
 </table>
 
 Every advanced script is designed to be run start-to-finish on your own cohort — swap in your data at the top of the `CONFIG` section and the rest of the pipeline (feature selection → modeling/clustering/survival → explainability → export) follows automatically.
@@ -214,36 +243,36 @@ Every advanced script is designed to be run start-to-finish on your own cohort �
 remotes::install_github("YuLab-SMU/icare", dependencies = TRUE)
 ```
 
-icare depends on a large number of Bioconductor/CRAN packages (`caret`,
-`mlr3` + `mlr3proba`/`mlr3tuning`, `survival`, `NMF`, `mclust`, `DALEX`,
-`ComplexHeatmap`, `shiny`, …) — see `DESCRIPTION` for the full list. A
-plain `remotes::install_github()` will pull in the required CRAN
-dependencies; Bioconductor packages (e.g. `ComplexHeatmap`) may need to be
+icare depends on a large number of Bioconductor/CRAN packages (`caret`,  
+`mlr3` + `mlr3proba`/`mlr3tuning`, `survival`, `NMF`, `mclust`, `DALEX`,  
+`ComplexHeatmap`, `shiny`, …) — see `DESCRIPTION` for the full list. A  
+plain `remotes::install_github()` will pull in the required CRAN  
+dependencies; Bioconductor packages (e.g. `ComplexHeatmap`) may need to be  
 installed separately first with `BiocManager::install()`.
 
 ## The four modules
 
-| # | Module | S4 object | What it does |
-| --- | --- | --- | --- |
-| 1 | **Data cleaning** | `Stat` | Type detection, missing-value imputation, outlier handling, one-hot encoding, normalization, differential-feature testing, baseline ("Table 1") reports |
-| 2 | **Modeling** | `Train_Model` | Feature selection (RFE/GA/SA/built-in importance), train/test split, multi-algorithm benchmarking via `caret`, ensembling, hyperparameter tuning, SHAP/DALEX explainability, clinical thresholds & NRI/IDI |
-| 3 | **Subtyping** | `Subtyping` | Unsupervised clustering (K-means, NMF, latent profile analysis), cluster validation & cross-method agreement, marker-feature discovery, t-SNE/UMAP visualization |
-| 4 | **Survival / Prognosis** | `PrognosiX` | Cox / random-survival-forest / other `mlr3proba` learners, univariate + LASSO feature selection, risk stratification & KM curves, nomograms, decision-curve analysis |
+| # | Module                   | S4 object     | What it does                                                                                                                                                                                               |
+| - | ------------------------ | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 | **Data cleaning**        | `Stat`        | Type detection, missing-value imputation, outlier handling, one-hot encoding, normalization, differential-feature testing, baseline ("Table 1") reports                                                    |
+| 2 | **Modeling**             | `Train_Model` | Feature selection (RFE/GA/SA/built-in importance), train/test split, multi-algorithm benchmarking via `caret`, ensembling, hyperparameter tuning, SHAP/DALEX explainability, clinical thresholds & NRI/IDI |
+| 3 | **Subtyping**            | `Subtyping`   | Unsupervised clustering (K-means, NMF, latent profile analysis), cluster validation & cross-method agreement, marker-feature discovery, t-SNE/UMAP visualization                                           |
+| 4 | **Survival / Prognosis** | `PrognosiX`   | Cox / random-survival-forest / other `mlr3proba` learners, univariate + LASSO feature selection, risk stratification & KM curves, nomograms, decision-curve analysis                                       |
 
-Each module ships with a **QUICKSTART** vignette (minimal, sensible
-defaults) and an **ADVANCED** vignette (every option, publication-style
-figures) under `vignettes/` — start there for runnable, end-to-end
-examples on real data. The same chapters are also published as a
+Each module ships with a **QUICKSTART** vignette (minimal, sensible  
+defaults) and an **ADVANCED** vignette (every option, publication-style  
+figures) under `vignettes/` — start there for runnable, end-to-end  
+examples on real data. The same chapters are also published as a  
 browsable book at **[yulab-smu.top/icare](https://yulab-smu.top/icare/)**.
 
 ---
 
 ## Essential Commands
 
-The tables below are a fast reference for the functions you'll use most
-often in each module, grouped the way you'd actually call them in a
-script. They mirror the shape of a normal icare analysis — see the
-[Quick start](#quick-start) section for a compact end-to-end example, and
+The tables below are a fast reference for the functions you'll use most  
+often in each module, grouped the way you'd actually call them in a  
+script. They mirror the shape of a normal icare analysis — see the  
+[Quick start](#quick-start) section for a compact end-to-end example, and  
 the vignettes for fully worked ones.
 
 ### Module 1 — Data cleaning (`Stat`)
@@ -273,18 +302,18 @@ stat_obj    <- stat_gaze_analysis(stat_obj, save_word = TRUE)   # baseline "Tabl
 saveRDS(stat_obj, "stat_obj.rds")
 ```
 
-| Command | Purpose |
-| --- | --- |
-| `CreateStatObject()` | Wrap a raw data matrix + metadata into a `Stat` object |
-| `InspectObject()` | Print a structured summary of any icare S4 object |
-| `stat_diagnose_variable_type()` / `stat_convert_variables()` | Detect and coerce numeric vs. categorical columns |
-| `stat_miss_processed()` | Impute missing values (`"median_mode"`, `"mice"`, `"knn"`, …) |
-| `stat_detect_and_mark_outliers()` / `stat_handle_outliers()` | Flag and remediate outliers (IQR, Z-score, …) |
-| `stat_onehot_encode()` | One-hot encode categorical variables |
-| `stat_normalize_process()` | Normalize numeric variables (`"auto"`, `"z_score"`, `"min_max"`, …) |
-| `stat_var_feature()` / `batch_Wilcoxon()` / `ExtractLastTestSig()` | Univariate group-difference testing (differential features) |
-| `stat_gaze_analysis()` | Publication-style baseline characteristics table |
-| `PlotGroupedDistribution()`, `PlotPCA()` | Quick group-comparison and ordination plots |
+| Command                                                            | Purpose                                                             |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| `CreateStatObject()`                                               | Wrap a raw data matrix + metadata into a `Stat` object              |
+| `InspectObject()`                                                  | Print a structured summary of any icare S4 object                   |
+| `stat_diagnose_variable_type()` / `stat_convert_variables()`       | Detect and coerce numeric vs. categorical columns                   |
+| `stat_miss_processed()`                                            | Impute missing values (`"median_mode"`, `"mice"`, `"knn"`, …)       |
+| `stat_detect_and_mark_outliers()` / `stat_handle_outliers()`       | Flag and remediate outliers (IQR, Z-score, …)                       |
+| `stat_onehot_encode()`                                             | One-hot encode categorical variables                                |
+| `stat_normalize_process()`                                         | Normalize numeric variables (`"auto"`, `"z_score"`, `"min_max"`, …) |
+| `stat_var_feature()` / `batch_Wilcoxon()` / `ExtractLastTestSig()` | Univariate group-difference testing (differential features)         |
+| `stat_gaze_analysis()`                                             | Publication-style baseline characteristics table                    |
+| `PlotGroupedDistribution()`, `PlotPCA()`                           | Quick group-comparison and ordination plots                         |
 
 ### Module 2 — Modeling (`Train_Model`)
 
@@ -320,22 +349,22 @@ deploy_manager <- ModelDeployment(model_obj, preproc = preProc,
 deploy_clinlab_app(deploy_manager)
 ```
 
-| Command | Purpose |
-| --- | --- |
-| `ConvertObject(x, to = "Train_Model")` | Turn a cleaned `Stat` object into a modeling object |
+| Command                                                                                                 | Purpose                                                                             |
+| ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `ConvertObject(x, to = "Train_Model")`                                                                  | Turn a cleaned `Stat` object into a modeling object                                 |
 | `FeatureSelectBuiltin()` / `FeatureSelectionPipeline()` (`ga`/`rfe`/`sa`) / `run_feature_elimination()` | Feature selection: built-in importance, GA/RFE/SA, or performance-elbow elimination |
-| `ApplyFeatureSelection()` | Commit to a final feature set |
-| `PreprocessingBenchmark()` / `LogisticDiagnosticBenchmark()` | Compare imputation × normalization × algorithm combinations by CV performance |
-| `ModelTrainAnalysis()` | Train and cross-validate multiple `caret` algorithms at once |
-| `SelectBestModel()` | Pick the top-performing trained model |
-| `TrainEnsemble()` | Combine models: `"stacking"`, `"average"`, `"weighted"`, `"voting"` |
-| `FineTuneModel()` + `BuildTuningBounds()` / `InspectHyperParams()` | Bayesian hyperparameter search around a chosen algorithm |
-| `CreateExplainer()` + `ExplainSHAP*()` / `ExplainVariableImportance()` / `ExplainPartialDependence()` | DALEX/SHAP-based model explainability |
-| `CalculateThresholds()` / `ApplyThreshold()` / `ClinicalThreshold()` | PPV/NPV/Youden decision thresholds |
-| `ClinicalCorrelation()` / `PlotSubgroupForest()` / `PlotConfounderForest()` | Clinical covariate correlation, subgroup and confounder-adjusted forest plots |
-| `CalculateCategoryNRI()` / `PlotIDICurve()` / `NRI_IDI_Analysis()` | Reclassification analysis (NRI/IDI) between two models |
-| `PlotMultiROC()`, `PlotConfusionMatrix()`, `PlotCalibration()`, `PlotFeatureImportance()` | Standard performance visualizations |
-| `ModelDeployment()` + `deploy_clinlab_app()` | Wrap trained model(s) + preprocessing into a predict function and Shiny app |
+| `ApplyFeatureSelection()`                                                                               | Commit to a final feature set                                                       |
+| `PreprocessingBenchmark()` / `LogisticDiagnosticBenchmark()`                                            | Compare imputation × normalization × algorithm combinations by CV performance       |
+| `ModelTrainAnalysis()`                                                                                  | Train and cross-validate multiple `caret` algorithms at once                        |
+| `SelectBestModel()`                                                                                     | Pick the top-performing trained model                                               |
+| `TrainEnsemble()`                                                                                       | Combine models: `"stacking"`, `"average"`, `"weighted"`, `"voting"`                 |
+| `FineTuneModel()` + `BuildTuningBounds()` / `InspectHyperParams()`                                      | Bayesian hyperparameter search around a chosen algorithm                            |
+| `CreateExplainer()` + `ExplainSHAP*()` / `ExplainVariableImportance()` / `ExplainPartialDependence()`   | DALEX/SHAP-based model explainability                                               |
+| `CalculateThresholds()` / `ApplyThreshold()` / `ClinicalThreshold()`                                    | PPV/NPV/Youden decision thresholds                                                  |
+| `ClinicalCorrelation()` / `PlotSubgroupForest()` / `PlotConfounderForest()`                             | Clinical covariate correlation, subgroup and confounder-adjusted forest plots       |
+| `CalculateCategoryNRI()` / `PlotIDICurve()` / `NRI_IDI_Analysis()`                                      | Reclassification analysis (NRI/IDI) between two models                              |
+| `PlotMultiROC()`, `PlotConfusionMatrix()`, `PlotCalibration()`, `PlotFeatureImportance()`               | Standard performance visualizations                                                 |
+| `ModelDeployment()` + `deploy_clinlab_app()`                                                            | Wrap trained model(s) + preprocessing into a predict function and Shiny app         |
 
 ### Module 3 — Subtyping (`Subtyping`)
 
@@ -367,21 +396,21 @@ sub_manager <- New_Sub_Manager(sub_obj)
 launch_sub_deploy_app(sub_manager)
 ```
 
-| Command | Purpose |
-| --- | --- |
-| `ConvertObject(x, to = "Subtyping")` | Turn a cleaned `Stat` object into a subtyping object |
-| `Sub_normalize_process()` / `Sub_extract_norm_params()` / `Sub_apply_norm_params()` | Fit normalization on training data and replay it on validation/new data |
-| `SplitSubtypingObject()` | Stratified train/validation split for cluster validation |
-| `Sub_kmeans_with_optimal_k()` | K-means with automatic k selection |
-| `Sub_lpa_with_optimal_k()` | Latent profile analysis (Gaussian mixture) |
+| Command                                                                                              | Purpose                                                                 |
+| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `ConvertObject(x, to = "Subtyping")`                                                                 | Turn a cleaned `Stat` object into a subtyping object                    |
+| `Sub_normalize_process()` / `Sub_extract_norm_params()` / `Sub_apply_norm_params()`                  | Fit normalization on training data and replay it on validation/new data |
+| `SplitSubtypingObject()`                                                                             | Stratified train/validation split for cluster validation                |
+| `Sub_kmeans_with_optimal_k()`                                                                        | K-means with automatic k selection                                      |
+| `Sub_lpa_with_optimal_k()`                                                                           | Latent profile analysis (Gaussian mixture)                              |
 | `Sub_nmf_estimate()` → `Sub_nmf_best_rank()` → `Sub_nmf_assign_subtypes()` → `Sub_nmf_train_model()` | Non-negative matrix factorization pipeline, including a re-usable model |
-| `Sub_predict_subtypes()` | Assign new/validation samples to existing subtypes |
-| `Sub_tsne_analyse()` / `Sub_umap_analyse()` + `PlotDimReduction()` | Dimensionality reduction for visualization |
-| `Sub_evaluation_results()` | Cluster-quality metrics (silhouette, etc.) |
-| `compare_clusterings()` / `plot_clustering_comparison()` | Adjusted Rand Index agreement between methods |
-| `batch_Wilcoxon_MultiClass()` + `PlotClusterHeatmap()` / `PlotGroupMeanHeatmap()` | Subtype-specific marker discovery and heatmaps |
-| `PlotSilhouette()` / `PlotMultiAlluvial()` | Separation diagnostics and multi-method/outcome alluvial plots |
-| `New_Sub_Manager()` + `launch_sub_deploy_app()` | Deploy the trained subtyping model as a Shiny app |
+| `Sub_predict_subtypes()`                                                                             | Assign new/validation samples to existing subtypes                      |
+| `Sub_tsne_analyse()` / `Sub_umap_analyse()` + `PlotDimReduction()`                                   | Dimensionality reduction for visualization                              |
+| `Sub_evaluation_results()`                                                                           | Cluster-quality metrics (silhouette, etc.)                              |
+| `compare_clusterings()` / `plot_clustering_comparison()`                                             | Adjusted Rand Index agreement between methods                           |
+| `batch_Wilcoxon_MultiClass()` + `PlotClusterHeatmap()` / `PlotGroupMeanHeatmap()`                    | Subtype-specific marker discovery and heatmaps                          |
+| `PlotSilhouette()` / `PlotMultiAlluvial()`                                                           | Separation diagnostics and multi-method/outcome alluvial plots          |
+| `New_Sub_Manager()` + `launch_sub_deploy_app()`                                                      | Deploy the trained subtyping model as a Shiny app                       |
 
 ### Module 4 — Survival / Prognosis (`PrognosiX`)
 
@@ -417,26 +446,26 @@ prog_manager <- New_Prog_Manager(prog)
 launch_prog_deploy_app(prog_manager)
 ```
 
-| Command | Purpose |
-| --- | --- |
-| `Stat_to_PrognosiX()` | Convert a `Stat` object into a survival-modeling (`PrognosiX`) object |
-| `surv_feature_selection_multi()` | Univariate Cox / LASSO feature selection (`combine = "union"`/`"intersect"`) |
-| `surv_extract_task()` | Build an `mlr3proba::TaskSurv` from a `PrognosiX` object |
-| `surv_get_learner()` / `surv_run_algorithm_benchmark()` | Instantiate or cross-validate `mlr3proba` survival learners (Cox, RSF, `surv.ranger`, …) |
-| `surv_train_and_tune()` | Hyperparameter tuning of a survival learner |
-| `surv_evaluate_model()` | C-index / Brier score / time-dependent AUC evaluation |
-| `surv_plot_risk_km()` | Kaplan–Meier risk stratification (`"median"`, `"tertile"`, `"quartile"`, `"p_optimize"`, `"custom"`) |
-| `surv_generate_nomogram()` | Cox-based nomogram, with an automatic proportional-hazards (`cox.zph`) check |
-| `predict_prognosix()` / `predict_risk_groups()` | Score and risk-classify new patients |
-| `run_prognosis_pipeline()` | End-to-end orchestration of the steps above in one call |
-| `New_Prog_Manager()` + `launch_prog_deploy_app()` | Deploy the trained survival model as a Shiny app |
+| Command                                                 | Purpose                                                                                              |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `Stat_to_PrognosiX()`                                   | Convert a `Stat` object into a survival-modeling (`PrognosiX`) object                                |
+| `surv_feature_selection_multi()`                        | Univariate Cox / LASSO feature selection (`combine = "union"`/`"intersect"`)                         |
+| `surv_extract_task()`                                   | Build an `mlr3proba::TaskSurv` from a `PrognosiX` object                                             |
+| `surv_get_learner()` / `surv_run_algorithm_benchmark()` | Instantiate or cross-validate `mlr3proba` survival learners (Cox, RSF, `surv.ranger`, …)             |
+| `surv_train_and_tune()`                                 | Hyperparameter tuning of a survival learner                                                          |
+| `surv_evaluate_model()`                                 | C-index / Brier score / time-dependent AUC evaluation                                                |
+| `surv_plot_risk_km()`                                   | Kaplan–Meier risk stratification (`"median"`, `"tertile"`, `"quartile"`, `"p_optimize"`, `"custom"`) |
+| `surv_generate_nomogram()`                              | Cox-based nomogram, with an automatic proportional-hazards (`cox.zph`) check                         |
+| `predict_prognosix()` / `predict_risk_groups()`         | Score and risk-classify new patients                                                                 |
+| `run_prognosis_pipeline()`                              | End-to-end orchestration of the steps above in one call                                              |
+| `New_Prog_Manager()` + `launch_prog_deploy_app()`       | Deploy the trained survival model as a Shiny app                                                     |
 
-> **Methodological note.** Several of the "essential commands" above only
-> report an unbiased estimate of performance when you actually pass a
-> held-out split (`val_task`, `split.data$testing`, …) rather than
-> re-using the data a model was trained/tuned on — e.g. `surv_plot_risk_km()`
-> and `surv_generate_nomogram()` will happily run on the training task, but
-> the resulting p-values/HRs should then be treated as descriptive, not
+> **Methodological note.** Several of the "essential commands" above only  
+> report an unbiased estimate of performance when you actually pass a  
+> held-out split (`val_task`, `split.data$testing`, …) rather than  
+> re-using the data a model was trained/tuned on — e.g. `surv_plot_risk_km()`  
+> and `surv_generate_nomogram()` will happily run on the training task, but  
+> the resulting p-values/HRs should then be treated as descriptive, not  
 > confirmatory. See each function's documentation for details.
 
 ---
@@ -445,7 +474,7 @@ launch_prog_deploy_app(prog_manager)
 
 For package versions that include the tutorial dataset, its source location is `icare/inst/extdata/PMID37633276_DIA_plasmaproomic.xlsx`; after installation, locate it with `system.file("extdata", "PMID37633276_DIA_plasmaproomic.xlsx", package = "icare")` (an empty string means the installed version does not include the file).
 
-The fastest way to see the whole pipeline end-to-end is the QUICKSTART
+The fastest way to see the whole pipeline end-to-end is the QUICKSTART  
 vignette for each module, in order:
 
 ```r
@@ -464,27 +493,26 @@ source(system.file("vignettes", "03_module3_subtyping_QUICKSTART.R", package = "
 source(system.file("vignettes", "04_module4_survival_QUICKSTART.R", package = "icare"))
 ```
 
-Each QUICKSTART script points to its ADVANCED counterpart for the full
-option set (multi-method feature selection, ensembling, tuning,
-SHAP/DALEX explanations, clinical thresholds & NRI/IDI, cluster
-cross-validation, survival benchmarking, decision-curve analysis, and
-the Shiny deployment apps). Prefer to read rather than run? The same
-scripts are rendered with output and figures at
+Each QUICKSTART script points to its ADVANCED counterpart for the full  
+option set (multi-method feature selection, ensembling, tuning,  
+SHAP/DALEX explanations, clinical thresholds & NRI/IDI, cluster  
+cross-validation, survival benchmarking, decision-curve analysis, and  
+the Shiny deployment apps). Prefer to read rather than run? The same  
+scripts are rendered with output and figures at  
 **[yulab-smu.top/icare](https://yulab-smu.top/icare/)**.
 
 ## Getting help
 
 - Full documentation & worked examples: **[yulab-smu.top/icare](https://yulab-smu.top/icare/)**
-- Function-level help: `?FunctionName` inside R, or `InspectObject(x)` to
-inspect any icare S4 object's current state.
-- Bug reports and feature requests: please open a
-[GitHub issue](https://github.com/YuLab-SMU/icare/issues) with a minimal reproducible example.
+- Function-level help: `?FunctionName` inside R, or `InspectObject(x)` to  
+  inspect any icare S4 object's current state.
+- Bug reports and feature requests: please open a  
+  [GitHub issue](https://github.com/YuLab-SMU/icare/issues) with a minimal reproducible example.
 
 ## Citation
 
 ```javascript
-Luo H, Long F, Lin H, Yuan C, Wang F, Huang J, Yu G. icare: Intelligent
-ClinlAbomics Research Expedition. R package version 1.0.1.
+Huaichao Luo, Fei Long, Hongyan Lin, Xin Li, Ruohao Wu, Jixue Wang, Chunhui Yuan, Xingmei Zhang, Xiaohui Wang, Dongsheng Wang, Yang Luo, Weiyan Zhou, Fubing Wang, Jian Huang, Guangchuang Yu. icare: Intelligent ClinlAbomics Research Expedition. R package version 1.1.0
 ```
 
 ## License

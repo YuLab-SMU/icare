@@ -2,7 +2,7 @@ Package: icare
 Type: Package
 Title: Intelligent ClinlAbomics Research Expedition
 Version: 1.1.0
-Author: Huaichao Luo, Fei Long, Hongyan Lin, Jian Huang,Guangchuang Yu
+Author: Huaichao Luo, Fei Long, Hongyan Lin, Xin Li, Ruohao Wu, Jixue Wang, Chunhui Yuan, Xingmei Zhang, Xiaohui Wang, Dongsheng Wang, Yang Luo, Weiyan Zhou, Fubing Wang, Jian Huang, Guangchuang Yu
 Maintainer: Huaichao Luo <luohc@uestc.edu.cn>
 Description: A modular framework for clinical statistics, missing-data
     handling, feature selection, machine learning, unsupervised subtyping
@@ -168,3 +168,4 @@ Collate:
   'prognosis_04_Extensions.R'
   'utils_convert_types.R'
   'viz_functions.R'
+RoxygenNote: 7.3.3
