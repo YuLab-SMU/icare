@@ -1,0 +1,17 @@
+# ---- generated outputs (every module writes here) ---------------------------
+outputs/
+**/output/
+
+# ---- R session artefacts ----------------------------------------------------
+Rplots.pdf
+.Rhistory
+.RData
+.Rapp.history
+.Rproj.user/
+*.Rproj
+
+# ---- macOS ------------------------------------------------------------------
+.DS_Store
+
+# ---- optional local data overrides ------------------------------------------
+data/*.xlsx

@@ -1,0 +1,182 @@
+# ==============================================================================
+# Undiagnosed dysglycemia - Step 2 of 3
+# Merge the NHANES source tables and build the development / external cohorts
+# ------------------------------------------------------------------------------
+# Scenario      : HbA1c >= 6.5% among adults self-reporting no diabetes (DIQ010 = 2)
+# Label         : LBXGH >= 6.5
+# Clinical action: Who needs an HbA1c test / referral for confirmatory diagnosis
+#
+# Design (test-triage): the label is a gold-standard test result that a clinician
+# would otherwise have to order; features are only routine, low-cost measurements.
+# The gold-standard variables never enter the feature set.
+#
+# Input  : data/*.rds (produced by 01_download.R)
+# Output : output/cohort.rds, output/cohort_flow.csv
+# Next   : 03_model.R
+# ==============================================================================
+
+suppressMessages(library(dplyr))
+
+# ---- 0. Locate this folder ---------------------------------------------------
+script_dir <- function() {
+  args <- commandArgs(FALSE)
+  hit  <- grep("^--file=", args, value = TRUE)
+  if (length(hit)) return(dirname(normalizePath(sub("^--file=", "", hit[1]))))
+  if (requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
+    p <- tryCatch(rstudioapi::getActiveDocumentContext()$path,
+                  error = function(e) "")
+    if (nzchar(p) && file.exists(p)) return(dirname(normalizePath(p)))
+  }
+  stop("Source this script from RStudio, or run it with Rscript and its full path.")
+}
+SCRIPT_DIR <- script_dir()
+
+DATA_DIR   <- file.path(SCRIPT_DIR, "data")
+OUTPUT_DIR <- file.path(SCRIPT_DIR, "output")
+dir.create(OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
+
+# ---- 1. Constants: cycles, class names, feature panel -------------------------
+DEV_CYCLE <- "E"    # 2007-2008, development cohort
+EXT_CYCLE <- "F"    # 2009-2010, independent external validation cohort
+NEG       <- "Negative"
+POS       <- "Positive"
+GROUP     <- "group"
+
+DEMO    <- c(
+  "RIDAGEYR", "RIAGENDR"
+  )
+ANTHRO  <- c(
+  "BMXBMI", "BMXWAIST"
+  )
+BP_MEAN <- c("mean_sbp", "mean_dbp")
+BIO     <- c(
+  "LBXSAL", "LBXSATSI", "LBXSASSI", "LBXSAPSI",
+  "LBXSBU", "LBXSCA", "LBXSCH", "LBXSC3SI",
+  "LBXSCR", "LBXSGL", "LBXSGTSI", "LBXSIR",
+  "LBXSLDSI", "LBXSPH", "LBXSTB", "LBXSTP",
+  "LBXSTR", "LBXSUA", "LBXSNASI", "LBXSKSI",
+  "LBXSCLSI", "LBXSOSSI", "LBXSGB"
+  )
+CBC     <- c(
+  "LBXWBCSI", "LBXLYPCT", "LBXMOPCT", "LBXNEPCT",
+  "LBXEOPCT", "LBXBAPCT", "LBDLYMNO", "LBDMONO",
+  "LBDNENO", "LBDEONO", "LBDBANO", "LBXRBCSI",
+  "LBXHGB", "LBXHCT", "LBXMCVSI", "LBXMCHSI",
+  "LBXMC", "LBXRDW", "LBXPLTSI", "LBXMPSI"
+  )
+
+# Variables explicitly excluded for this scenario (label components or derived composites)
+# LBXGH and LBXSGL are the label itself or a diagnostic-criterion component;
+#   LBXSOSSI is calculated osmolality containing a glucose term (it can
+#   algebraically reconstruct the excluded glucose), a derived composite
+#   removed from all three scenarios.
+EXCLUDE <- c(
+  "LBXGH", "LBXSGL", "LBXSOSSI"
+  )
+
+# Candidate pool -> features actually used for modelling
+POOL     <- c(DEMO, ANTHRO, BP_MEAN, BIO, CBC)
+FEATURES <- setdiff(POOL, EXCLUDE)
+
+# ---- 2. Helpers ---------------------------------------------------------------
+read_table <- function(name, cycle) {
+  path <- file.path(DATA_DIR, paste0(name, "_", cycle, ".rds"))
+  if (!file.exists(path)) stop("Missing ", path, "; run 01_download.R first")
+  readRDS(path)
+}
+
+# Standardized clinic BP: mean of valid readings; 0 or out-of-range = not measured
+mean_blood_pressure <- function(bpx) {
+  sys <- bpx[, grep("^BPXSY[1-4]$", names(bpx), value = TRUE), drop = FALSE]
+  dia <- bpx[, grep("^BPXDI[1-4]$", names(bpx), value = TRUE), drop = FALSE]
+  sys[sys <= 0 | sys > 300] <- NA
+  dia[dia <= 0 | dia > 200] <- NA
+
+  out <- data.frame(
+    SEQN           = bpx$SEQN,
+    mean_sbp       = rowMeans(sys, na.rm = TRUE),
+    mean_dbp       = rowMeans(dia, na.rm = TRUE),
+    n_bp_readings  = rowSums(!is.na(sys))
+  )
+  out$mean_sbp[!is.finite(out$mean_sbp)] <- NA
+  out$mean_dbp[!is.finite(out$mean_dbp)] <- NA
+  out
+}
+
+# ---- 3. Build the cohort for one cycle ---------------------------------------
+build_cycle <- function(cycle) {
+  # 3.1 Read tables, keeping only the columns used by this scenario
+  demo <- read_table("DEMO", cycle)[, c("SEQN", DEMO, "RIDEXPRG")]
+  bio  <- read_table("BIOPRO", cycle)[, c("SEQN", BIO)]
+  cbc  <- read_table("CBC", cycle)[, c("SEQN", CBC)]
+  bmx  <- read_table("BMX", cycle)[, c("SEQN", ANTHRO)]
+  bpx  <- read_table("BPX", cycle)
+  bp   <- mean_blood_pressure(bpx)
+  diq <- read_table("DIQ", cycle)[, c("SEQN", "DIQ010")]
+  ghb <- read_table("GHB", cycle)[, c("SEQN", "LBXGH")]
+
+
+  # 3.2 Left-join on SEQN (DEMO is the master table)
+  d <- demo |>
+    left_join(bio, by = "SEQN") |>
+    left_join(cbc, by = "SEQN") |>
+    left_join(bmx, by = "SEQN") |>
+    left_join(bp,  by = "SEQN") |>
+    left_join(diq, by = "SEQN") |>
+    left_join(ghb, by = "SEQN") |>
+    as.data.frame()
+
+  # 3.3 General eligibility: adults, not pregnant
+  d <- d[!is.na(d$RIDAGEYR) & d$RIDAGEYR >= 18 & !(d$RIDEXPRG %in% 1), ]
+
+  # 3.4 Scenario-specific eligibility
+  n_eligible_before <- nrow(d)
+  d <- d[!is.na(d$DIQ010 %in% 2 & !is.na(d$LBXGH)) & (d$DIQ010 %in% 2 & !is.na(d$LBXGH)), ]
+
+  # 3.5 Define the binary label
+  is_positive <- d$LBXGH >= 6.5
+  d <- d[!is.na(is_positive), ]
+  d[[GROUP]] <- factor(ifelse(d$LBXGH >= 6.5, POS, NEG), levels = c(NEG, POS))
+
+  # 3.6 Complete cases on the feature columns only (label is not checked for missingness)
+  n_before_complete <- nrow(d)
+  d <- d[complete.cases(d[, FEATURES]), ]
+
+  # 3.7 Cohort flow, for verifying sample sizes in the report
+  attr(d, "flow") <- data.frame(
+    cycle              = cycle,
+    adults_nonpregnant = n_eligible_before,
+    scenario_eligible  = n_before_complete,
+    complete_cases     = nrow(d),
+    positive           = sum(d[[GROUP]] == POS),
+    negative           = sum(d[[GROUP]] == NEG)
+  )
+  d
+}
+
+# ---- 4. Build both cycles -----------------------------------------------------
+cat("Building cohorts ...\n")
+dev <- build_cycle(DEV_CYCLE)
+ext <- build_cycle(EXT_CYCLE)
+
+flow <- rbind(attr(dev, "flow"), attr(ext, "flow"))
+write.csv(flow, file.path(OUTPUT_DIR, "cohort_flow.csv"), row.names = FALSE)
+
+cat("\nCohort flow:\n")
+print(flow, row.names = FALSE)
+cat("\nNumber of features: ", length(FEATURES), "\n")
+cat("Excluded variables: ", paste(EXCLUDE, collapse = ", "), "\n")
+
+# ---- 5. Save ------------------------------------------------------------------
+saveRDS(
+  list(
+    dev = dev, ext = ext,
+    features = FEATURES, exclude = EXCLUDE,
+    label_text = "LBXGH >= 6.5",
+    scenario_title = "Undiagnosed dysglycemia",
+    clinical_action = "Who needs an HbA1c test / referral for confirmatory diagnosis",
+    dev_cycle = DEV_CYCLE, ext_cycle = EXT_CYCLE
+  ),
+  file = file.path(OUTPUT_DIR, "cohort.rds")
+)
+cat("\nSaved output/cohort.rds\nNext step: 03_model.R\n")
