@@ -517,4 +517,4 @@ Huaichao Luo, Fei Long, Hongyan Lin, Xin Li, Ruohao Wu, Jixue Wang, Chunhui Yuan
 
 ## License
 
-GPL-3 © Huaichao Luo, Fei Long, Hongyan Lin, Jian Huang, Guangchuang Yu
+GPL-3 © Huaichao Luo, Fei Long, Hongyan Lin, Xin Li, Ruohao Wu, Jixue Wang, Chunhui Yuan, Xingmei Zhang, Xiaohui Wang, Dongsheng Wang, Yang Luo, Weiyan Zhou, Fubing Wang, Jian Huang, Guangchuang Yu
