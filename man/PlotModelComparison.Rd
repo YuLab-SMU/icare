@@ -13,7 +13,8 @@ PlotModelComparison(
   save_plot = FALSE,
   save_dir = NULL,
   width = 10,
-  height = 6
+  height = 6,
+  rank_by = c("test", "train_cv")
 )
 }
 \arguments{
@@ -33,6 +34,12 @@ PlotModelComparison(
 \item{save_dir}{Output directory.}
 
 \item{width, height}{Plot dimensions.}
+
+\item{rank_by}{Basis for ranking AND for the plotted values:
+\code{"test"} (default, original behaviour) uses holdout-test-set metrics
+from \code{@all.results}; \code{"train_cv"} uses the mean metrics of the
+cross-validation performed inside the TRAINING set (recomputed from
+caret's out-of-fold predictions), so the test set is not involved.}
 }
 \value{
 A ggplot object.
@@ -52,6 +59,7 @@ trained <- ModelTrainAnalysis(model, methods = c("glm", "rf"),
                               save_plots = FALSE)
 if (interactive()) {
   PlotModelComparison(trained, top_n = 2, save_plot = FALSE)
+  PlotModelComparison(trained, top_n = 2, rank_by = "train_cv")
   PlotModelHeatmap(trained, save_plot = FALSE)
   PlotModelParallel(trained, top_n = 2, save_plot = FALSE)
 }

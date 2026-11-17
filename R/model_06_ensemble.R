@@ -51,46 +51,84 @@
 
 #' Top N Model Performance Dot Plot
 #'
-#' Shows AUC for the top N models with 95% CI as error bars, sorted by AUC.
+#' Shows AUC for the top N models, sorted by AUC. The ranking basis is set by
+#' \code{rank_by}:
+#' \itemize{
+#'   \item \code{"test"} (default, original behaviour): holdout-test-set AUC
+#'     from \code{@all.results}, with 95\% CI error bars when
+#'     \code{auc_lower}/\code{auc_upper} exist.
+#'   \item \code{"train_cv"}: mean AUC of the cross-validation performed
+#'     inside the TRAINING set (recomputed from caret's out-of-fold
+#'     predictions; same quantity \code{SelectBestModel(metric = "auc")}
+#'     uses), with mean +/- SD error bars across folds. The test set is not
+#'     used, so this is the appropriate basis for comparing models.
+#' }
 #'
 #' @param model_obj A trained \code{Train_Model} object.
 #' @param top_n Number of top models to show. Default 6.
 #' @param save_plot Logical.
 #' @param save_dir Output directory.
+#' @param rank_by Ranking basis: \code{"test"} (default) or \code{"train_cv"}.
+#' @return A ggplot object.
 #' @export
-PlotTopModelAUC <- function(model_obj, top_n = 6, save_plot = FALSE, save_dir = NULL) {
+PlotTopModelAUC <- function(model_obj, top_n = 6, save_plot = FALSE, save_dir = NULL,
+                            rank_by = c("test", "train_cv")) {
   .check_final_pkgs()
+  rank_by <- match.arg(rank_by)
   
-  perf <- model_obj@all.results
-  if (nrow(perf) == 0) stop("No performance data available.")
+  if (rank_by == "train_cv") {
+    models <- model_obj@train.models
+    if (length(models) == 0) stop("No trained models available for training-set CV ranking.")
+    cvt  <- .cv_metric_table(models, "auc")
+    perf <- data.frame(Model = cvt$Model, auc = cvt$auc, CV_SD = cvt$auc_sd,
+                       stringsAsFactors = FALSE)
+    perf <- perf[!is.na(perf$auc), , drop = FALSE]
+    if (nrow(perf) == 0) {
+      stop("Could not compute training-set CV AUC for any model ",
+           "(out-of-fold predictions/class probabilities not available).")
+    }
+    perf$auc_lower <- pmax(0, perf$auc - perf$CV_SD)
+    perf$auc_upper <- pmin(1, perf$auc + perf$CV_SD)
+    has_ci   <- any(!is.na(perf$CV_SD))
+    title_lb <- "Top Models by Training-set CV AUC"
+    x_lb     <- "Training-set CV AUC (mean \u00b1 SD)"
+    file_nm  <- "top_model_auc_train_cv.pdf"
+  } else {
+    perf <- model_obj@all.results
+    if (nrow(perf) == 0) stop("No performance data available.")
+    has_ci   <- all(c("auc_lower", "auc_upper") %in% colnames(perf))
+    title_lb <- "Top Models by AUC"
+    x_lb     <- "AUC (95% CI)"
+    file_nm  <- "top_model_auc.pdf"
+  }
   
   perf <- head(perf[order(-perf$auc), ], top_n)
   perf$Model <- factor(perf$Model, levels = rev(perf$Model))
-  
-  has_ci <- all(c("auc_lower", "auc_upper") %in% colnames(perf))
   cols <- .get_palette("Darjeeling1", nrow(perf))
   
   p <- ggplot2::ggplot(perf, ggplot2::aes(x = auc, y = Model, color = Model)) +
     ggplot2::geom_point(size = 4, shape = 18) +
     ggplot2::scale_color_manual(values = cols) +
-    ggplot2::labs(title = "Top Models by AUC", x = "AUC (95% CI)", y = NULL) +
+    ggplot2::labs(title = title_lb, x = x_lb, y = NULL) +
     .pub_theme(13) +
     ggplot2::theme(legend.position = "none")
   
-  # Only draw error bars if real confidence intervals exist
+  # Only draw error bars if real intervals exist
   if (has_ci) {
     p <- p + ggplot2::geom_errorbarh(
       ggplot2::aes(xmin = auc_lower, xmax = auc_upper),
-      height = 0.2, linewidth = 0.8
+      height = 0.2, linewidth = 0.8, na.rm = TRUE
     )
   }
   
   if (save_plot && !is.null(save_dir)) {
     if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
-    ggplot2::ggsave(file.path(save_dir, "top_model_auc.pdf"), plot = p, width = 6, height = 4, dpi = 300)
+    ggplot2::ggsave(file.path(save_dir, file_nm), plot = p, width = 6, height = 4, dpi = 300)
   }
   return(p)
 }
+
+
 
 #' Multi-Metric Faceted Bar Chart
 #'
@@ -103,6 +141,11 @@ PlotTopModelAUC <- function(model_obj, top_n = 6, save_plot = FALSE, save_dir = 
 #' @param save_plot Save? Default FALSE.
 #' @param save_dir Output directory.
 #' @param width,height Plot dimensions.
+#' @param rank_by Basis for ranking AND for the plotted values:
+#'   \code{"test"} (default, original behaviour) uses holdout-test-set metrics
+#'   from \code{@all.results}; \code{"train_cv"} uses the mean metrics of the
+#'   cross-validation performed inside the TRAINING set (recomputed from
+#'   caret's out-of-fold predictions), so the test set is not involved.
 #' @return A ggplot object.
 #' @export
 #' @examples
@@ -117,6 +160,7 @@ PlotTopModelAUC <- function(model_obj, top_n = 6, save_plot = FALSE, save_dir = 
 #'                               save_plots = FALSE)
 #' if (interactive()) {
 #'   PlotModelComparison(trained, top_n = 2, save_plot = FALSE)
+#'   PlotModelComparison(trained, top_n = 2, rank_by = "train_cv")
 #'   PlotModelHeatmap(trained, save_plot = FALSE)
 #'   PlotModelParallel(trained, top_n = 2, save_plot = FALSE)
 #' }
@@ -129,10 +173,24 @@ PlotModelComparison <- function(model_obj,
                                 save_plot = FALSE,
                                 save_dir = NULL,
                                 width = 10,
-                                height = 6) {
+                                height = 6,
+                                rank_by = c("test", "train_cv")) {
   .check_final_pkgs()
-  perf <- model_obj@all.results
-  if (nrow(perf) == 0) stop("No model performance data available.")
+  rank_by <- match.arg(rank_by)
+  
+  if (rank_by == "train_cv") {
+    if (length(model_obj@train.models) == 0) stop("No trained models available for training-set CV.")
+    cvt  <- .cv_metric_table(model_obj@train.models, unique(c("auc", metrics)), strict = FALSE)
+    perf <- cvt[, !grepl("_sd$", colnames(cvt)), drop = FALSE]   # CV means only
+    if (all(is.na(perf$auc))) stop("Could not compute training-set CV metrics for any model.")
+    subtitle_lb <- paste("Top", top_n, "models by training-set CV AUC (mean over folds)")
+    file_nm     <- "model_comparison_train_cv.pdf"
+  } else {
+    perf <- model_obj@all.results
+    if (nrow(perf) == 0) stop("No model performance data available.")
+    subtitle_lb <- paste("Top", top_n, "models by AUC")
+    file_nm     <- "model_comparison.pdf"
+  }
   
   available_metrics <- intersect(metrics, colnames(perf))
   if (length(available_metrics) < 1) stop("No valid metrics found in model results.")
@@ -168,14 +226,14 @@ PlotModelComparison <- function(model_obj,
     ggplot2::facet_wrap(~ Metric_Label, scales = "free_y", nrow = 1) +
     ggplot2::scale_fill_manual(values = cols, guide = "none") +
     ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0, 0.15))) +
-    ggplot2::labs(title = "Model Performance Comparison", subtitle = paste("Top", top_n, "models by AUC"), x = NULL, y = NULL) +
+    ggplot2::labs(title = "Model Performance Comparison", subtitle = subtitle_lb, x = NULL, y = NULL) +
     .pub_theme(base_size) +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
   
   print(p)
   if (save_plot && !is.null(save_dir)) {
     if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
-    ggplot2::ggsave(file.path(save_dir, "model_comparison.pdf"), plot = p, width = width, height = height, dpi = 300)
+    ggplot2::ggsave(file.path(save_dir, file_nm), plot = p, width = width, height = height, dpi = 300)
   }
   return(p)
 }
@@ -186,17 +244,33 @@ PlotModelComparison <- function(model_obj,
 #' @param metrics Metrics to display.
 #' @param save_plot Save? Default FALSE.
 #' @param save_dir Output directory.
+#' @param rank_by Source of the plotted values: \code{"test"} (default,
+#'   original behaviour) = holdout-test-set metrics from \code{@all.results};
+#'   \code{"train_cv"} = mean metrics of the cross-validation performed inside
+#'   the TRAINING set (recomputed from caret's out-of-fold predictions).
 #' @return A ggplot object.
 #' @export
 PlotModelHeatmap <- function(model_obj,
                              metrics = c("auc", "Sensitivity", "Specificity", 
                                          "accuracy_score", "f1_score", "Precision"),
                              save_plot = FALSE,
-                             save_dir = NULL) {
+                             save_dir = NULL,
+                             rank_by = c("test", "train_cv")) {
   
+  rank_by <- match.arg(rank_by)
   cat("Generating model performance heatmap...\n")
   
-  perf <- model_obj@all.results
+  if (rank_by == "train_cv") {
+    if (length(model_obj@train.models) == 0) stop("No trained models available for training-set CV.")
+    cvt  <- .cv_metric_table(model_obj@train.models, metrics, strict = FALSE)
+    perf <- cvt[, !grepl("_sd$", colnames(cvt)), drop = FALSE]   # CV means only
+    title_lb <- "Model Performance Heatmap (Training-set CV mean)"
+    file_nm  <- "model_heatmap_train_cv.pdf"
+  } else {
+    perf <- model_obj@all.results
+    title_lb <- "Model Performance Heatmap"
+    file_nm  <- "model_heatmap.pdf"
+  }
   available_metrics <- intersect(metrics, colnames(perf))
   
   perf[, available_metrics] <- lapply(perf[, available_metrics], function(x) {
@@ -216,7 +290,7 @@ PlotModelHeatmap <- function(model_obj,
     ) +
     ggplot2::scale_fill_viridis_c(option = "D", na.value = "grey80", 
                                   limits = c(0, 1), name = "Score") +
-    ggplot2::labs(title = "Model Performance Heatmap", x = NULL, y = NULL) +
+    ggplot2::labs(title = title_lb, x = NULL, y = NULL) +
     ggprism::theme_prism(base_size = 13) +
     ggplot2::theme(
       plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"),
@@ -228,13 +302,14 @@ PlotModelHeatmap <- function(model_obj,
   
   if (save_plot) {
     if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
-    path <- file.path(save_dir, "model_heatmap.pdf")
+    path <- file.path(save_dir, file_nm)
     ggplot2::ggsave(path, plot = p, width = 8, height = 5, dpi = 300)
     cat("Plot saved to:", path, "\n")
   }
   
   return(p)
 }
+
 
 #' Model Performance Parallel Coordinates
 #'
@@ -243,6 +318,11 @@ PlotModelHeatmap <- function(model_obj,
 #' @param metrics Metrics to display.
 #' @param save_plot Save? Default FALSE.
 #' @param save_dir Output directory.
+#' @param rank_by Basis for ranking AND for the plotted values:
+#'   \code{"test"} (default, original behaviour) = holdout-test-set metrics
+#'   from \code{@all.results}; \code{"train_cv"} = mean metrics of the
+#'   cross-validation performed inside the TRAINING set (recomputed from
+#'   caret's out-of-fold predictions).
 #' @return A ggplot object.
 #' @export
 PlotModelParallel <- function(model_obj,
@@ -250,11 +330,24 @@ PlotModelParallel <- function(model_obj,
                               metrics = c("auc", "Sensitivity", "Specificity", 
                                           "accuracy_score", "f1_score"),
                               save_plot = FALSE,
-                              save_dir = NULL) {
+                              save_dir = NULL,
+                              rank_by = c("test", "train_cv")) {
   
+  rank_by <- match.arg(rank_by)
   cat("Generating parallel coordinates plot...\n")
   
-  perf <- model_obj@all.results
+  if (rank_by == "train_cv") {
+    if (length(model_obj@train.models) == 0) stop("No trained models available for training-set CV.")
+    cvt  <- .cv_metric_table(model_obj@train.models, unique(c("auc", metrics)), strict = FALSE)
+    perf <- cvt[, !grepl("_sd$", colnames(cvt)), drop = FALSE]   # CV means only
+    if (all(is.na(perf$auc))) stop("Could not compute training-set CV metrics for any model.")
+    subtitle_lb <- paste("Top", top_n, "models by training-set CV AUC (metrics normalized 0-1)")
+    file_nm     <- "model_parallel_train_cv.pdf"
+  } else {
+    perf <- model_obj@all.results
+    subtitle_lb <- paste("Top", top_n, "models (metrics normalized 0-1)")
+    file_nm     <- "model_parallel.pdf"
+  }
   available_metrics <- intersect(metrics, colnames(perf))
   
   perf <- head(perf[order(-perf$auc), ], top_n)
@@ -280,7 +373,7 @@ PlotModelParallel <- function(model_obj,
     ggplot2::scale_color_manual(values = cols) +
     ggplot2::labs(
       title = "Model Performance Parallel Coordinates",
-      subtitle = paste("Top", top_n, "models (metrics normalized 0-1)"),
+      subtitle = subtitle_lb,
       x = NULL, y = "Normalized Score"
     ) +
     ggprism::theme_prism(base_size = 13) +
@@ -293,13 +386,14 @@ PlotModelParallel <- function(model_obj,
   
   if (save_plot) {
     if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
-    path <- file.path(save_dir, "model_parallel.pdf")
+    path <- file.path(save_dir, file_nm)
     ggplot2::ggsave(path, plot = p, width = 8, height = 5, dpi = 300)
     cat("Plot saved to:", path, "\n")
   }
   
   return(p)
 }
+
 
 
 

@@ -1659,45 +1659,112 @@ return(plot_data_list)
 }
 
 
-#' Select Best Performing Model (Fixed)
+# ---- internal: training-set CV metrics for a list of caret models ----------
+# Recomputed from the out-of-fold predictions caret kept (model$pred, best
+# tuning parameters only) because the stored cv_metrics / model$resample hold
+# ONLY the metric used at training time (e.g. Accuracy, or ROC/Sens/Spec).
+# Returns one row per model: Model, <metric> (CV mean), <metric>_sd (CV SD);
+# attr "metric_cols" = canonical metric names. strict = FALSE skips unknown ones.
+.cv_metric_table <- function(model_list, metrics = "auc", strict = TRUE) {
+  al <- c(auc = "auc", roc = "auc", sensitivity = "Sensitivity", sens = "Sensitivity",
+          specificity = "Specificity", spec = "Specificity",
+          accuracy = "accuracy_score", accuracyscore = "accuracy_score", acc = "accuracy_score",
+          f1 = "f1_score", f1score = "f1_score", precision = "Precision",
+          recall = "recall_score", recallscore = "recall_score",
+          ppv = "Positive_predictive_value", positivepredictivevalue = "Positive_predictive_value",
+          npv = "Negative_predictive_value", negativepredictivevalue = "Negative_predictive_value")
+  key  <- gsub("[^a-z0-9]", "", tolower(metrics))
+  ok   <- key %in% names(al)
+  if (any(!ok)) {
+    msg <- paste0("Metric '", metrics[!ok][1], "' not available. Available: ",
+                  paste(unique(al), collapse = ", "), " (case-insensitive; aliases like AUC/ROC, Accuracy, Sens, PPV, F1 accepted)")
+    if (strict) stop(msg, call. = FALSE) else warning(msg, call. = FALSE)
+  }
+  cols <- unique(unname(al[key[ok]]))
+  
+  # one metric on one fold: positive class = 2nd level, cutoff 0.5
+  met <- function(y, p, col) {
+    if (col == "auc") {   # direction "<": cannot flip a worse-than-random model
+      if (length(unique(y)) < 2) return(NA_real_)
+      return(as.numeric(pROC::auc(pROC::roc(y, p, levels = c(FALSE, TRUE), direction = "<", quiet = TRUE))))
+    }
+    pc <- p > 0.5
+    tp <- sum(pc & y); fp <- sum(pc & !y); fn <- sum(!pc & y); tn <- sum(!pc & !y)
+    r <- switch(col,
+                Sensitivity = , recall_score = tp / (tp + fn),
+                Specificity = tn / (tn + fp),
+                Precision = , Positive_predictive_value = tp / (tp + fp),
+                Negative_predictive_value = tn / (tn + fn),
+                accuracy_score = (tp + tn) / length(y),
+                f1_score = if (tp + fp == 0 || tp + fn == 0) NA_real_ else 2 * tp / (2 * tp + fp + fn))
+    if (is.nan(r)) NA_real_ else r
+  }
+  # CV mean / SD of one metric for one caret model (LOOCV: pooled predictions)
+  one <- function(m, col) tryCatch({
+    pr <- m$pred; bt <- m$bestTune
+    for (cn in names(bt)) pr <- pr[as.character(pr[[cn]]) == as.character(bt[[cn]][1]), , drop = FALSE]
+    pos <- levels(pr$obs)[2]
+    grp <- if (identical(m$control$method, "LOOCV")) rep(1, nrow(pr)) else pr$Resample
+    v <- vapply(split(seq_len(nrow(pr)), grp),
+                function(i) met(pr$obs[i] == pos, pr[[pos]][i], col), numeric(1))
+    c(if (all(is.na(v))) NA_real_ else mean(v, na.rm = TRUE),
+      if (sum(!is.na(v)) > 1) stats::sd(v, na.rm = TRUE) else NA_real_)
+  }, error = function(e) c(NA_real_, NA_real_))
+  
+  res <- data.frame(Model = names(model_list), stringsAsFactors = FALSE)
+  for (col in cols) {
+    mat <- t(vapply(model_list, one, numeric(2), col = col))
+    res[[col]] <- unname(mat[, 1]); res[[paste0(col, "_sd")]] <- unname(mat[, 2])
+  }
+  attr(res, "metric_cols") <- cols
+  res
+}
+
+#' Select Best Performing Model (training-set cross-validation based)
 #'
-#' NOTE: this assumes `object@all.results` is a data.frame with a `Model`
-#' column and the requested `metric` column, which is only true for BINARY
-#' task_type. Do not call this on a `Train_Model` object produced by
-#' `ModelTrainAnalysis()` in multiclass/regression mode -- that mode already
-#' selects and stores the best model internally in `@best.model.result`; use
-#' the downstream functions in `model_05b_nonbinary_downstream.R` instead.
+#' Selects the best model using the CROSS-VALIDATION performed INSIDE THE
+#' TRAINING SET ("training-set CV", i.e. caret's out-of-fold predictions
+#' stored with `savePredictions = "final"`), NOT the holdout test set. The
+#' test set therefore stays untouched by model selection and can be used for
+#' a single, unbiased final evaluation of the chosen model.
+#'
+#' For every candidate model the requested metric is recomputed on each
+#' held-out training fold (using the model's own best tuning parameters) and
+#' averaged (CV mean). Ties in the CV mean are broken by the smaller CV SD,
+#' then by the CV-mean F1 score, then by order. For LOOCV the metric is
+#' computed once on the pooled out-of-fold predictions.
+#'
+#' Metric names are case/punctuation-insensitive and accept common aliases,
+#' e.g. "auc", "AUC", "ROC", "accuracy", "Accuracy_score", "sens", "ppv", "f1".
+#'
+#' NOTE: this assumes `object@all.results` is a data.frame (BINARY task_type).
+#' For multiclass/regression, `ModelTrainAnalysis()` already stores the
+#' CV-selected model in `@best.model.result`.
 #'
 #' @param object A Train_Model object.
-#' @param metric Primary metric (default "auc").
+#' @param metric Primary metric (default "auc"). Selection uses its
+#'   training-set CV mean.
 #' @param custom_selection Optional model name to force selection.
-#' @return Updated Train_Model object.
+#' @return Updated Train_Model object (`@best.model.result` = list(model,
+#'   model_type, train_performance)). The training-set CV comparison table is
+#'   additionally stored in `@process.info$selection_cv_table`.
 #' @export
 #' @examples
 #' \dontrun{
-#' mtcars$am <- as.factor(mtcars$am)
-#' model <- CreateModelObject(data = mtcars, group_col = "am")
-#' set.seed(123)
-#' idx <- sample(1:nrow(mtcars), 20)
-#' model@filtered.set <- list(training = mtcars[idx, ], testing = mtcars[-idx, ])
-#' trained <- ModelTrainAnalysis(model, methods = c("glm", "rf"),
-#'                               control = list(method = "cv", number = 3),
-#'                               task_type = "binary", metric_selection = "ROC",
-#'                               save_plots = FALSE)
 #' trained <- SelectBestModel(trained, metric = "auc")
 #' print(trained@best.model.result$model_type)
 #' }
 SelectBestModel <- function(object,
                             metric = "auc",
                             custom_selection = NULL) {
-
+  
   if (!inherits(object, "Train_Model")) {
     stop("Input must be an object of class 'Train_Model'")
   }
-
+  
   all.results <- slot(object, "all.results")
   model_list  <- slot(object, "train.models")
-
+  
   if (!is.data.frame(all.results)) {
     stop("object@all.results is not a data.frame (this happens for multiclass/",
          "regression results from ModelTrainAnalysis()). SelectBestModel() only ",
@@ -1705,62 +1772,72 @@ SelectBestModel <- function(object,
          "already stored in object@best.model.result. See ",
          "model_05b_nonbinary_downstream.R for matching downstream tools.")
   }
-
-  available_metrics <- intersect(c("auc", "Sensitivity", "Specificity",
-                                   "accuracy_score", "f1_score", "Precision",
-                                   "recall_score", "Positive_predictive_value",
-                                   "Negative_predictive_value"),
-                                 colnames(all.results))
-
-  if (!metric %in% available_metrics) {
-    stop("Metric '", metric, "' not available.\n",
-         "Available: ", paste(available_metrics, collapse = ", "))
-  }
-
+  if (length(model_list) == 0) stop("No trained models found in object@train.models")
+  
+  # ---- training-set CV table (the test set is NOT used) ----
+  wide       <- .cv_metric_table(model_list, c(metric, "f1_score"))
+  metric_col <- attr(wide, "metric_cols")[1]
+  nms        <- names(model_list)
+  cv_tab <- data.frame(
+    Model   = wide$Model,
+    CV_Mean = wide[[metric_col]],
+    CV_SD   = wide[[paste0(metric_col, "_sd")]],
+    CV_F1   = wide[["f1_score"]],
+    stringsAsFactors = FALSE
+  )
+  
+  # ---- Choose the model ----
   if (!is.null(custom_selection)) {
-    if (!custom_selection %in% all.results$Model) {
+    if (!custom_selection %in% nms) {
       stop("Model '", custom_selection, "' not found in trained models")
     }
     cat("User selected model: ", custom_selection, "\n")
-    best.model.result <- all.results[all.results$Model == custom_selection, ]
-    best_model_type   <- custom_selection
+    best_model_type <- custom_selection
   } else {
-
-    primary_vals <- all.results[[metric]]
-    best_val <- max(primary_vals, na.rm = TRUE)
-
-    candidates <- all.results[which(primary_vals == best_val), ]
-
-    if (nrow(candidates) > 1 && "f1_score" %in% colnames(candidates)) {
-      f1_vals <- candidates$f1_score
-      f1_vals[is.na(f1_vals)] <- -Inf
-      best_f1 <- max(f1_vals)
-      candidates <- candidates[which(f1_vals == best_f1), ]
+    if (all(is.na(cv_tab$CV_Mean))) {
+      stop("Could not compute training-set CV '", metric_col, "' for any model. ",
+           "Was the model trained with savePredictions and classProbs = TRUE?")
     }
-
-    best.model.result <- candidates[1, , drop = FALSE]
-    best_model_type   <- best.model.result$Model
-
-    if (nrow(candidates) > 1) {
-      cat("Multiple models with same metrics, using first one: ", best_model_type, "\n")
+    best_val <- max(cv_tab$CV_Mean, na.rm = TRUE)
+    cand <- cv_tab[which(abs(cv_tab$CV_Mean - best_val) < 1e-12), , drop = FALSE]
+    if (nrow(cand) > 1) {
+      # tie-break: smaller CV SD, then higher CV F1, then original order
+      ord <- order(ifelse(is.na(cand$CV_SD), Inf, cand$CV_SD),
+                   -ifelse(is.na(cand$CV_F1), -Inf, cand$CV_F1))
+      cand <- cand[ord, , drop = FALSE]
+    }
+    best_model_type <- cand$Model[1]
+    if (nrow(cand) > 1) {
+      cat("Multiple models tied on training-set CV ", metric_col,
+          ", using first after tie-break: ", best_model_type, "\n")
     } else {
-      cat("Best model (", metric, "): ", best_model_type, "\n")
+      cat("Best model by training-set CV ", metric_col, " (", metric, "): ",
+          best_model_type, "\n")
     }
   }
-
+  
+  cat("\n---- Training-set CV comparison (", metric_col, ") ----\n", sep = "")
+  print(cv_tab[order(-ifelse(is.na(cv_tab$CV_Mean), -Inf, cv_tab$CV_Mean)), ],
+        row.names = FALSE)
+  
   best_model <- model_list[[best_model_type]]
   if (is.null(best_model)) {
     stop("Model '", best_model_type, "' not found in trained models")
   }
-
+  
+  # kept for backward compatibility: same row from @all.results as before
+  perf_row <- all.results[all.results$Model == best_model_type, , drop = FALSE]
+  
   object@best.model.result <- list(
     model              = best_model,
     model_type         = best_model_type,
-    train_performance  = best.model.result
+    train_performance  = perf_row
   )
-
+  object@process.info$selection_cv_table <- cv_tab
+  
   return(object)
 }
+
 
 #' Fit and Apply Feature Preprocessing (Reusable Core)
 #'

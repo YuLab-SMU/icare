@@ -9,7 +9,8 @@ PlotModelHeatmap(
   metrics = c("auc", "Sensitivity", "Specificity", "accuracy_score", "f1_score",
     "Precision"),
   save_plot = FALSE,
-  save_dir = NULL
+  save_dir = NULL,
+  rank_by = c("test", "train_cv")
 )
 }
 \arguments{
@@ -20,6 +21,11 @@ PlotModelHeatmap(
 \item{save_plot}{Save? Default FALSE.}
 
 \item{save_dir}{Output directory.}
+
+\item{rank_by}{Source of the plotted values: \code{"test"} (default,
+original behaviour) = holdout-test-set metrics from \code{@all.results};
+\code{"train_cv"} = mean metrics of the cross-validation performed inside
+the TRAINING set (recomputed from caret's out-of-fold predictions).}
 }
 \value{
 A ggplot object.
