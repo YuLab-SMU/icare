@@ -7,55 +7,43 @@
 surv_plot_calibration(
   learner,
   object,
-  time_point,
+  time_point = NULL,
   n_bins = 10,
   apparent = TRUE,
   print_metrics = TRUE,
-  show_ici = TRUE
+  show_ici = TRUE,
+  eps = 1e-06
 )
 }
 \arguments{
-\item{learner}{Trained mlr3 learner (must support "distr" predict_type)}
+\item{learner}{A trained \code{mlr3} learner supporting \code{"distr"} predict_type.}
 
-\item{object}{A \code{TaskSurv} or \code{PrognosiX} object}
+\item{object}{A \code{TaskSurv} or \code{PrognosiX} object.}
 
-\item{time_point}{Numeric. Evaluation time point for calibration.}
+\item{time_point}{Numeric. Evaluation time point. Defaults to \code{NULL} 
+(median follow-up).}
 
 \item{n_bins}{Integer. Requested number of bins (default 10; automatically
-reduced for small datasets, see \code{.prepare_cal_data}).}
+reduced for small datasets).}
 
-\item{apparent}{Logical. Whether this is apparent (training-set,
-optimistic) calibration (default TRUE).}
+\item{apparent}{Logical. Whether this is apparent calibration (default TRUE).}
 
 \item{print_metrics}{Logical. Print calibration metrics to console (default TRUE).}
 
 \item{show_ici}{Logical. Show ICI in the plot subtitle (default TRUE).}
+
+\item{eps}{Numeric. Small clipping value passed to ICI calculation (default 1e-6).}
 }
 \value{
-A ggplot object (invisibly carrying \code{calibration_metrics} and
-  \code{calibration_data} as attributes), or \code{NULL} if calibration
-  could not be computed.
+A \code{ggplot} object with metrics attached as attributes.
 }
 \description{
 Plots predicted vs. observed (KM-based) survival probability at a fixed
-evaluation time, using adaptively-sized quantile bins.
+evaluation time, using adaptively-sized quantile bins and 95\% confidence intervals.
 }
-\examples{
-\dontrun{
-veteran <- survival::veteran
-veteran$celltype <- as.character(veteran$celltype)
-task <- surv_create_surv_task(veteran, time_col = "time", event_col = "status")
-lrn <- surv_get_learner("surv.ranger", task)
-lrn$train(task)
-
-cal <- surv_plot_calibration(lrn, task, time_point = 90)
-
-set.seed(1)
-idx <- sample(seq_len(task$nrow), size = floor(0.7 * task$nrow))
-train_task <- task$clone()$filter(idx)
-val_task   <- task$clone()$filter(setdiff(seq_len(task$nrow), idx))
-lrn2 <- surv_get_learner("surv.ranger", train_task)
-lrn2$train(train_task)
-cal_cmp <- surv_plot_comparison_calibration(lrn2, train_task, val_task, time_point = 90)
-}
+\details{
+If \code{time_point} is not provided (\code{NULL}), the function automatically
+uses the median follow-up time of the dataset as the evaluation horizon. 
+A warning is issued if the time point exceeds the maximum follow-up time,
+as this may involve extrapolation.
 }
