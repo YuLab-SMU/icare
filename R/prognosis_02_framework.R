@@ -63,36 +63,49 @@ surv_extract_task <- function(object) {
   stop('Input must be a PrognosiX object or TaskSurv')
 }
 
-# Internal helper: prepare binned predicted-vs-observed calibration data.
-#
-# @details Bin count is adaptively capped so each bin retains a statistically
-#   meaningful sample size (default target: >= 10 observations/bin). Without
-#   this guard, small task subsets (e.g. a held-out validation split) combined
-#   with a fixed n_bins can produce bins with only 2-3 observations; the
-#   per-bin KM estimate at time_point then frequently collapses to exactly 0
-#   or 1, producing a jagged, misleading calibration curve driven by binning
-#   noise rather than genuine miscalibration.
+#' Prepare Binned Calibration Data
+#'
+#' @description
+#' Bins predicted survival probabilities into quantiles and computes the 
+#' Kaplan-Meier observed survival probability at a specific time point for each bin.
+#'
+#' @details
+#' This function addresses two common calibration issues:
+#' \enumerate{
+#'   \item \strong{KM Confidence Intervals}: It calculates the standard error 
+#'     of the KM estimate using the delta-method (SE(S(t)) = S(t) * SE(-log S(t))). 
+#'     This allows downstream plotting functions to draw 95\% error bars.
+#'   \item \strong{Uninformative Bins}: It drops bins where the last observation 
+#'     is censored before \code{time_point}. Passing \code{extend = TRUE} to 
+#'     \code{summary.survfit} would otherwise carry forward the last available 
+#'     value (often 1.0), creating fake "perfectly calibrated" points.
+#' }
+#'
+#' @param learner A trained \code{mlr3} survival learner that supports \code{"distr"} predictions.
+#' @param object A \code{TaskSurv} or \code{PrognosiX} object.
+#' @param time_point Numeric. The fixed time horizon at which to evaluate calibration.
+#' @param n_bins Integer. The requested number of quantile bins.
+#'
+#' @return A \code{data.frame} with columns \code{predicted}, \code{observed}, 
+#'   \code{n}, \code{low}, and \code{high}, or \code{NULL} if binning fails.
+#'
+#' @keywords internal
 .prepare_cal_data <- function(learner, object, time_point, n_bins) {
   if (inherits(object, "TaskSurv")) {
     task <- object
   } else if (inherits(object, "PrognosiX")) {
     task <- surv_extract_task(object)
   } else {
-    stop("object must be a TaskSurv or PrognosiX object")
+    stop("object must be a TaskSurv or PrognosiX object.")
   }
   
-  n_bins <- max(n_bins, 5L)
-  # Adaptive bin count: cap n_bins so each bin has a statistically meaningful
-  # number of observations. With too few points per bin, the per-bin KM
-  # estimate at time_point becomes unstable (often collapsing to exactly 0
-  # or 1), producing a jagged, misleading calibration curve rather than a
-  # true miscalibration signal -- this is especially visible when comparing
-  # a small validation set against a larger training set.
+  n_bins <- max(as.integer(n_bins), 5L)
   min_per_bin <- 10L
   adaptive_n_bins <- min(n_bins, max(3L, floor(task$nrow / min_per_bin)))
+  
   if (adaptive_n_bins < n_bins) {
     message(sprintf(
-      "[Calibration] Reduced n_bins from %d to %d (task has %d rows; targeting >= %d obs/bin for stable per-bin KM estimates).",
+      "[Calibration] Reduced n_bins from %d to %d (task has %d rows; targeting >= %d obs/bin).",
       n_bins, adaptive_n_bins, task$nrow, min_per_bin
     ))
   }
@@ -106,7 +119,7 @@ surv_extract_task <- function(object) {
   surv_prob <- as.numeric(surv_prob)
   
   if (length(surv_prob) != task$nrow) {
-    warning("Length of survival probabilities does not match task rows. Calibration skipped.")
+    warning("Length of survival probabilities does not match task rows.")
     return(NULL)
   }
   
@@ -117,28 +130,43 @@ surv_extract_task <- function(object) {
   df <- data.frame(pred = surv_prob, time = time, status = status)
   df <- df[order(df$pred), ]
   
-  breaks <- unique(quantile(df$pred, probs = seq(0, 1, length.out = n_bins + 1L), na.rm = TRUE))
-  if (length(breaks) < 3L) {
-    warning("Not enough unique predicted probabilities to form bins. Calibration skipped.")
-    return(NULL)
-  }
+  breaks <- unique(stats::quantile(df$pred,
+                                   probs = seq(0, 1, length.out = n_bins + 1L),
+                                   na.rm = TRUE))
+  if (length(breaks) < 3L) return(NULL)
   df$bin <- cut(df$pred, breaks = breaks, include.lowest = TRUE)
   
-  obs_surv <- sapply(split(df, df$bin), function(bin_data) {
-    if (nrow(bin_data) < 2L) return(NA_real_)
+  bin_stats <- lapply(split(df, df$bin), function(bin_data) {
+    if (nrow(bin_data) < 2L) return(NULL)
+    
+    last_idx <- which.max(bin_data$time)
+    if (bin_data$time[last_idx] < time_point && bin_data$status[last_idx] == 0L) {
+      return(NULL)
+    }
+    
     km <- survival::survfit(survival::Surv(time, status) ~ 1, data = bin_data)
-    sp <- summary(km, times = time_point, extend = TRUE)$surv
-    if (length(sp) == 0L) NA_real_ else sp[[1L]]
+    sm <- summary(km, times = time_point, extend = TRUE)
+    obs <- sm$surv[1L]
+    if (!is.finite(obs)) return(NULL)
+    
+    se <- NA_real_
+    if (length(sm$std.err) && is.finite(sm$std.err[1L])) {
+      se <- obs * sm$std.err[1L]
+    }
+    
+    data.frame(
+      predicted = mean(bin_data$pred),
+      observed  = obs,
+      n         = nrow(bin_data),
+      low       = if (is.finite(se)) max(0, obs - 1.96 * se) else NA_real_,
+      high      = if (is.finite(se)) min(1, obs + 1.96 * se) else NA_real_
+    )
   })
   
-  bin_centers <- tapply(df$pred, df$bin, mean, na.rm = TRUE)
-  cal_df <- na.omit(data.frame(predicted = as.numeric(bin_centers),
-                               observed  = as.numeric(obs_surv)))
+  cal_df <- do.call(rbind, bin_stats)
+  if (is.null(cal_df) || nrow(cal_df) < 2L) return(NULL)
   
-  if (nrow(cal_df) < 2L) {
-    warning("Not enough valid bins for calibration (need at least 2).")
-    return(NULL)
-  }
+  rownames(cal_df) <- NULL
   return(cal_df)
 }
 # ==============================================================================
@@ -2691,97 +2719,100 @@ surv_analyze_feature_ablation <- function(object, learner_id, features_to_test =
 # 11. Clinical Validation: Calibration & Time-dependent AUC
 #' Plot Calibration Curve (Apparent)
 #'
+#' @description
 #' Plots predicted vs. observed (KM-based) survival probability at a fixed
-#' evaluation time, using adaptively-sized quantile bins.
+#' evaluation time, using adaptively-sized quantile bins and 95\% confidence intervals.
 #'
-#' @param learner Trained mlr3 learner (must support "distr" predict_type)
-#' @param object A \code{TaskSurv} or \code{PrognosiX} object
-#' @param time_point Numeric. Evaluation time point for calibration.
+#' @details
+#' If \code{time_point} is not provided (\code{NULL}), the function automatically
+#' uses the median follow-up time of the dataset as the evaluation horizon. 
+#' A warning is issued if the time point exceeds the maximum follow-up time,
+#' as this may involve extrapolation.
+#'
+#' @param learner A trained \code{mlr3} learner supporting \code{"distr"} predict_type.
+#' @param object A \code{TaskSurv} or \code{PrognosiX} object.
+#' @param time_point Numeric. Evaluation time point. Defaults to \code{NULL} 
+#'   (median follow-up).
 #' @param n_bins Integer. Requested number of bins (default 10; automatically
-#'   reduced for small datasets, see \code{.prepare_cal_data}).
-#' @param apparent Logical. Whether this is apparent (training-set,
-#'   optimistic) calibration (default TRUE).
+#'   reduced for small datasets).
+#' @param apparent Logical. Whether this is apparent calibration (default TRUE).
 #' @param print_metrics Logical. Print calibration metrics to console (default TRUE).
 #' @param show_ici Logical. Show ICI in the plot subtitle (default TRUE).
-#' @return A ggplot object (invisibly carrying \code{calibration_metrics} and
-#'   \code{calibration_data} as attributes), or \code{NULL} if calibration
-#'   could not be computed.
+#' @param eps Numeric. Small clipping value passed to ICI calculation (default 1e-6).
+#'
+#' @return A \code{ggplot} object with metrics attached as attributes.
+#'
 #' @export
-#'
-#' @examples
-#' \dontrun{
-#' veteran <- survival::veteran
-#' veteran$celltype <- as.character(veteran$celltype)
-#' task <- surv_create_surv_task(veteran, time_col = "time", event_col = "status")
-#' lrn <- surv_get_learner("surv.ranger", task)
-#' lrn$train(task)
-#'
-#' cal <- surv_plot_calibration(lrn, task, time_point = 90)
-#'
-#' set.seed(1)
-#' idx <- sample(seq_len(task$nrow), size = floor(0.7 * task$nrow))
-#' train_task <- task$clone()$filter(idx)
-#' val_task   <- task$clone()$filter(setdiff(seq_len(task$nrow), idx))
-#' lrn2 <- surv_get_learner("surv.ranger", train_task)
-#' lrn2$train(train_task)
-#' cal_cmp <- surv_plot_comparison_calibration(lrn2, train_task, val_task, time_point = 90)
-#' }
-surv_plot_calibration <- function(learner, object, time_point, n_bins = 10,
-                                  apparent = TRUE,
-                                  print_metrics = TRUE, show_ici = TRUE) {
+#' @importFrom ggplot2 ggplot geom_abline geom_errorbar geom_line geom_point
+#'   labs coord_cartesian theme_minimal
+#' @importFrom survival survfit Surv
+#' @importFrom stats quantile lm coef median
+#' @importFrom grDevices dev.cur
+surv_plot_calibration <- function(learner, object, time_point = NULL, n_bins = 10,
+                                  apparent = TRUE, print_metrics = TRUE,
+                                  show_ici = TRUE, eps = 1e-6) {
   if (!("distr" %in% learner$predict_types)) {
-    warning("Learner does not support 'distr' predict_type. Calibration skipped.")
+    warning("Learner does not support 'distr' predict_type.")
     return(NULL)
   }
+  
+  task <- surv_extract_task(object)
+  time_vec <- as.data.frame(task$data())[[task$target_names[1L]]]
+  
+  if (is.null(time_point)) {
+    time_point <- stats::median(time_vec, na.rm = TRUE)
+    message(sprintf("[Calibration] time_point not specified. Defaulting to median follow-up: %.1f", time_point))
+  }
+  
+  # Time point extrapolation warning
+  max_follow_up <- max(time_vec, na.rm = TRUE)
+  if (time_point > max_follow_up) {
+    warning(sprintf("Specified time_point (%.1f) exceeds maximum follow-up time (%.1f). Calibration may involve extrapolation.", time_point, max_follow_up))
+  }
+  
   old_predict_type <- learner$predict_type
   on.exit({ learner$predict_type <- old_predict_type }, add = TRUE)
   
-  cal_df <- .prepare_cal_data(learner = learner, object = object,
-                              time_point = time_point, n_bins = n_bins)
+  cal_df <- .prepare_cal_data(learner, task, time_point, n_bins)
   if (is.null(cal_df)) return(NULL)
   
   if (apparent) {
-    message(paste(
-      "[Calibration] Evaluating on the TRAINING SET.",
-      "This is APPARENT (optimistic) calibration.",
-      "For valid calibration use an independent test set or CV out-of-fold predictions."
-    ))
+    message("[Calibration] APPARENT (training-set) calibration -- optimistic.")
   }
   
-  metrics <- .compute_cal_metrics(cal_df)
+  metrics <- .compute_cal_metrics(cal_df, eps = eps)
   
   if (print_metrics) {
-    cat("\n========== Calibration Metrics at t =", time_point, "==========\n")
-    if (apparent) cat("** APPARENT (training-set) calibration -- interpret with caution **\n")
-    cat(sprintf("Calibration slope    (ideal 1): %.4f\n", metrics$slope))
-    cat(sprintf("Calibration intercept (ideal 0): %.4f\n", metrics$intercept))
-    cat(sprintf("R-squared:                       %.4f\n", metrics$r_squared))
-    cat(sprintf("Mean Absolute Error (MAE):       %.4f\n", metrics$mae))
-    cat(sprintf("Integrated Calibration Index:    %s\n",
-                ifelse(is.na(metrics$ici), "NA", sprintf("%.4f", metrics$ici))))
-    cat(sprintf("E50 (median abs error):          %.4f\n", metrics$e50))
-    cat(sprintf("E90 (90th pct abs error):        %.4f\n", metrics$e90))
+    cat("\n========== Calibration Metrics at t =", round(time_point, 1), "==========\n")
+    cat(sprintf("  Bins (for plot): %d\n", metrics$n_bins))
+    cat(sprintf("  Slope:           %.4f\n", metrics$slope))
+    cat(sprintf("  Intercept:       %.4f\n", metrics$intercept))
+    cat(sprintf("  R-squared:       %.4f\n", metrics$r_squared))
+    cat(sprintf("  Smooth ICI:      %s\n", ifelse(is.na(metrics$ici), "NA", sprintf("%.4f", metrics$ici))))
     cat("====================================================\n")
   }
   
   slope_label <- round(metrics$slope, 3)
   ici_label   <- ifelse(is.na(metrics$ici), "NA", round(metrics$ici, 3))
   plot_title  <- ifelse(apparent,
-                        paste("Apparent Calibration at t =", time_point, "(training set)"),
-                        paste("Calibration Curve at t =", time_point))
+                        paste("Apparent Calibration at t =", round(time_point, 1), "(training set)"),
+                        paste("Calibration Curve at t =", round(time_point, 1)))
   sub_title   <- ifelse(show_ici,
-                        paste(learner$id, "| Slope =", slope_label, "| ICI =", ici_label),
+                        paste(learner$id, "| Slope =", slope_label, "| Smooth ICI =", ici_label),
                         learner$id)
   
   p <- ggplot2::ggplot(cal_df, ggplot2::aes(x = predicted, y = observed)) +
     ggplot2::geom_abline(intercept = 0, slope = 1, linetype = "dashed",
                          color = "red", linewidth = 0.8) +
-    ggplot2::geom_line(color = "#2980b9", linewidth = 0.9) +
-    ggplot2::geom_point(size = 3, color = "#2980b9") +
+    ggplot2::geom_errorbar(ggplot2::aes(ymin = low, ymax = high), 
+                           width = 0, linewidth = 0.7, alpha = 0.6, 
+                           color = "#2980b9", na.rm = TRUE) +
+    ggplot2::geom_line(color = "#2980b9", linewidth = 0.9, na.rm = TRUE) +
+    ggplot2::geom_point(size = 3, color = "#2980b9", na.rm = TRUE) +
     ggplot2::labs(x = "Predicted Survival Probability",
                   y = "Observed Survival Probability (KM)",
                   title = plot_title, subtitle = sub_title) +
-    ggplot2::coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) # Set display range without clipping geom_line paths; no forced 1:1 aspect
+    ggplot2::coord_cartesian(xlim = c(0, 1), ylim = c(0, 1))
   
   if (requireNamespace("ggprism", quietly = TRUE)) {
     p <- p + ggprism::theme_prism()
@@ -2797,59 +2828,81 @@ surv_plot_calibration <- function(learner, object, time_point, n_bins = 10,
 
 #' Plot Comparison Calibration (Apparent Training vs Validation)
 #'
+#' @description
 #' Overlays calibration curves for the training set (apparent/optimistic) and
 #' a held-out validation set on the same plot.
 #'
-#' @param learner Trained mlr3 learner (must support "distr" predict_type)
-#' @param train_task Training TaskSurv object
-#' @param val_task Validation TaskSurv object
-#' @param time_point Numeric. Evaluation time point for calibration.
-#' @param n_bins Integer. Requested number of bins (default 10; each of
-#'   \code{train_task} and \code{val_task} is independently adjusted for its
-#'   own sample size, see \code{.prepare_cal_data} -- a message is printed
-#'   when the two datasets end up with different effective bin counts).
-#' @param print_metrics Logical. Print metrics for both datasets (default TRUE).
-#' @return A ggplot object showing calibration curves for training and validation.
-#' @export
+#' @details
+#' If \code{time_point} is \code{NULL}, it defaults to the median follow-up 
+#' time of the \strong{training set}. Both sets are forced to use the exact same 
+#' number of quantile bins, dictated by the smaller of the two datasets.
+#' A warning is issued if the time point exceeds the maximum follow-up time 
+#' in either dataset.
 #'
-#' @examples
-#' \dontrun{
-#' comp_plot <- surv_plot_comparison_calibration(learner, train_task, val_task, time_point = 365)
-#' }
+#' @param learner Trained mlr3 learner (must support "distr" predict_type).
+#' @param train_task Training \code{TaskSurv} object.
+#' @param val_task Validation \code{TaskSurv} object.
+#' @param time_point Numeric. Evaluation time point. Defaults to \code{NULL} 
+#'   (training median follow-up).
+#' @param n_bins Integer. Requested number of bins (default 10; automatically
+#'   adjusted to maintain shared bins).
+#' @param print_metrics Logical. Print metrics for both datasets (default TRUE).
+#' @param eps Numeric. Small clipping value passed to ICI calculation (default 1e-6).
+#'
+#' @return A \code{ggplot} object with metrics and data attached as attributes.
+#'
+#' @export
+#' @importFrom ggplot2 ggplot geom_abline geom_errorbar geom_line geom_point
+#'   labs coord_cartesian scale_color_manual theme_minimal
+#' @importFrom survival survfit Surv
+#' @importFrom stats quantile lm coef median
 surv_plot_comparison_calibration <- function(learner, train_task, val_task,
-                                             time_point, n_bins = 10,
-                                             print_metrics = TRUE) {
+                                             time_point = NULL, n_bins = 10,
+                                             print_metrics = TRUE, eps = 1e-6) {
   if (!("distr" %in% learner$predict_types)) {
-    warning("Learner does not support 'distr' predict_type. Calibration skipped.")
+    warning("Learner does not support 'distr' predict_type.")
     return(NULL)
   }
+  
+  train_time <- as.data.frame(train_task$data())[[train_task$target_names[1L]]]
+  val_time   <- as.data.frame(val_task$data())[[val_task$target_names[1L]]]
+  
+  if (is.null(time_point)) {
+    time_point <- stats::median(train_time, na.rm = TRUE)
+    message(sprintf("[Calibration] time_point not specified. Defaulting to training median follow-up: %.1f", time_point))
+  }
+  
+  # Time point extrapolation warning
+  max_train <- max(train_time, na.rm = TRUE)
+  max_val   <- max(val_time, na.rm = TRUE)
+  if (time_point > max_train || time_point > max_val) {
+    warning(sprintf("Specified time_point (%.1f) exceeds maximum follow-up (Train: %.1f, Val: %.1f). Extrapolation may occur.", time_point, max_train, max_val))
+  }
+  
   old_predict_type <- learner$predict_type
   on.exit({ learner$predict_type <- old_predict_type }, add = TRUE)
   
-  cal_train <- .prepare_cal_data(learner, train_task, time_point, n_bins)
-  cal_val   <- .prepare_cal_data(learner, val_task, time_point, n_bins)
+  shared_bins <- max(3L, min(as.integer(n_bins), floor(min(train_task$nrow, val_task$nrow) / 10L)))
+  message(sprintf("[Calibration] Using %d shared quantile bins for both sets.", shared_bins))
+  
+  cal_train <- .prepare_cal_data(learner, train_task, time_point, shared_bins)
+  cal_val   <- .prepare_cal_data(learner, val_task,   time_point, shared_bins)
   
   if (is.null(cal_train) || is.null(cal_val)) {
     warning("Insufficient bins or missing columns for calibration comparison.")
     return(NULL)
   }
   
-  m_train <- .compute_cal_metrics(cal_train)
-  m_val   <- .compute_cal_metrics(cal_val)
+  m_train <- .compute_cal_metrics(cal_train, eps = eps)
+  m_val   <- .compute_cal_metrics(cal_val, eps = eps)
   
   if (print_metrics) {
-    cat("\n========== Calibration Metrics at t =", time_point, "==========\n")
-    cat("** TRAINING (apparent -- optimistic for flexible learners): **\n")
-    cat(sprintf("  Slope=%.4f | Intercept=%.4f | R2=%.4f | MAE=%.4f | ICI=%.4f\n",
-                m_train$slope, m_train$intercept, m_train$r_squared, m_train$mae, m_train$ici))
-    cat("** VALIDATION (unbiased estimate): **\n")
-    cat(sprintf("  Slope=%.4f | Intercept=%.4f | R2=%.4f | MAE=%.4f | ICI=%.4f\n",
-                m_val$slope, m_val$intercept, m_val$r_squared, m_val$mae, m_val$ici))
-    cat("  Note: Training calibration is always expected to be more optimistic.\n")
-    if (nrow(cal_train) != nrow(cal_val)) {
-      cat(sprintf("  Note: Effective bin counts differ (train=%d, val=%d) due to per-set adaptive binning.\n",
-                  nrow(cal_train), nrow(cal_val)))
-    }
+    cat("\n========== Calibration Metrics at t =", round(time_point, 1), "==========\n")
+    cat(sprintf("  Shared bins (for plot): %d\n", shared_bins))
+    cat("** TRAINING (apparent) **\n")
+    cat(sprintf("  Slope=%.4f | Intercept=%.4f | ICI=%.4f\n", m_train$slope, m_train$intercept, m_train$ici))
+    cat("** VALIDATION (unbiased) **\n")
+    cat(sprintf("  Slope=%.4f | Intercept=%.4f | ICI=%.4f\n", m_val$slope, m_val$intercept, m_val$ici))
     cat("=================================================================\n")
   }
   
@@ -2863,21 +2916,32 @@ surv_plot_comparison_calibration <- function(learner, train_task, val_task,
   p <- ggplot2::ggplot(cal_all, ggplot2::aes(x = predicted, y = observed, color = Dataset)) +
     ggplot2::geom_abline(intercept = 0, slope = 1, linetype = "dashed",
                          color = "gray40", linewidth = 0.8) +
-    ggplot2::geom_line(linewidth = 1.0) +
-    ggplot2::geom_point(size = 3) +
+    ggplot2::geom_errorbar(ggplot2::aes(ymin = low, ymax = high), 
+                           width = 0, linewidth = 0.7, alpha = 0.6, na.rm = TRUE) +
+    ggplot2::geom_line(linewidth = 1.0, na.rm = TRUE) +
+    ggplot2::geom_point(size = 3, na.rm = TRUE) +
     ggplot2::scale_color_manual(values = c("Training (apparent)" = "#2980b9", "Validation" = "#e74c3c")) +
     ggplot2::labs(x = "Predicted Survival Probability",
                   y = "Observed Survival Probability (KM)",
-                  title = paste("Calibration Comparison at t =", time_point),
-                  subtitle = paste0(learner$id, " | Train ICI = ", ici_tr, " (apparent) | Val ICI = ", ici_val)) +
-    ggplot2::coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) # Set display range without clipping geom_line paths; no forced 1:1 aspect
+                  title = paste("Calibration Comparison at t =", round(time_point, 1)),
+                  subtitle = paste0(learner$id, " | Train ICI = ", ici_tr, " | Val ICI = ", ici_val)) +
+    # Use coord_equal for strict 1:1 aspect ratio, and place legend at bottom
+    ggplot2::coord_equal(xlim = c(0, 1), ylim = c(0, 1)) +
+    ggplot2::theme(legend.position = "bottom", legend.direction = "horizontal")
   
   if (requireNamespace("ggprism", quietly = TRUE)) {
-    p <- p + ggprism::theme_prism()
+    p <- p + ggprism::theme_prism(base_size = 12) + 
+      ggplot2::theme(plot.margin = ggplot2::margin(10, 15, 10, 15),
+                     legend.position = "bottom")
   } else {
-    p <- p + ggplot2::theme_minimal()
+    p <- p + ggplot2::theme_minimal() +
+      ggplot2::theme(legend.position = "bottom",
+                     plot.margin = ggplot2::margin(10, 15, 10, 15))
   }
   
+  attr(p, "train_metrics")    <- m_train
+  attr(p, "val_metrics")      <- m_val
+  attr(p, "calibration_data") <- cal_all
   return(p)
 }
 
@@ -4201,20 +4265,55 @@ print_surv_feature_methods <- function() {
 }
 
 
-# Unified interface to calculate calibration metrics
-.compute_cal_metrics <- function(cal_df) {
-  metrics <- list()
-  lm_fit            <- lm(observed ~ predicted, data = cal_df)
-  metrics$slope     <- unname(stats::coef(lm_fit)[2L])
-  metrics$intercept <- unname(stats::coef(lm_fit)[1L])
-  metrics$r_squared <- summary(lm_fit)$r.squared
+#' Compute Calibration Metrics
+#'
+#' @description
+#' Computes standard calibration metrics from binned predicted-observed data.
+#' It provides both a binned ICI (legacy iCARE implementation) and a 
+#' patient-level smooth ICI (modern clinical standard).
+#'
+#' @param cal_df A \code{data.frame} returned by \code{.prepare_cal_data()}.
+#' @param eps Numeric. Small clipping value passed to \code{.compute_ici()} (default 1e-6).
+#'
+#' @return A named \code{list} containing calibration metrics.
+#'
+#' @keywords internal
+.compute_cal_metrics <- function(cal_df, eps = 1e-6) {
+  empty <- list(
+    slope = NA_real_, intercept = NA_real_, r_squared = NA_real_,
+    mae = NA_real_, ici = NA_real_, e50 = NA_real_, e90 = NA_real_, n_bins = 0L
+  )
   
-  errors            <- abs(cal_df$observed - cal_df$predicted)
-  metrics$mae       <- mean(errors, na.rm = TRUE)
-  metrics$ici       <- .compute_ici(cal_df)
-  metrics$e50       <- unname(quantile(errors, 0.5, na.rm = TRUE))
-  metrics$e90       <- unname(quantile(errors, 0.9, na.rm = TRUE))
-  return(metrics)
+  if (is.null(cal_df) || nrow(cal_df) < 2L) return(empty)
+  
+  ok <- is.finite(cal_df$predicted) & is.finite(cal_df$observed)
+  d <- cal_df[ok, , drop = FALSE]
+  if (nrow(d) < 2L) return(empty)
+  
+  lm_fit <- stats::lm(observed ~ predicted, data = d)
+  errors <- abs(d$observed - d$predicted)
+  
+  # Calculate smooth patient-level ICI
+  ici_val <- NA_real_
+  raw_data <- attr(cal_df, "raw_data")
+  t0 <- attr(cal_df, "time_point")
+  
+  if (!is.null(raw_data) && !is.null(t0)) {
+    ici_val <- .compute_ici(raw_data$pred, raw_data$time, raw_data$status, t0, eps = eps)
+  } else {
+    warning("Raw patient data attribute missing. Smooth ICI cannot be calculated.")
+  }
+  
+  list(
+    slope     = unname(stats::coef(lm_fit)[2L]),
+    intercept = unname(stats::coef(lm_fit)[1L]),
+    r_squared = summary(lm_fit)$r.squared,
+    mae       = mean(errors, na.rm = TRUE),
+    ici       = ici_val,
+    e50       = unname(stats::quantile(errors, 0.5, na.rm = TRUE)),
+    e90       = unname(stats::quantile(errors, 0.9, na.rm = TRUE)),
+    n_bins    = nrow(d)
+  )
 }
 
 # Extractor for predicted survival probabilities from mlr3 distribution objects
@@ -4243,24 +4342,61 @@ print_surv_feature_methods <- function() {
   NULL
 }
 
-# Integrated Calibration Index (ICI) computation engine
-.compute_ici <- function(cal_df) {
-  if (nrow(cal_df) < 2L) return(NA_real_)
-  tryCatch({
-    if (nrow(cal_df) >= 4L) {
-      lo    <- loess(observed ~ predicted, data = cal_df,
-                     span = 1.0, degree = 1L, surface = "direct")
-      x_seq <- seq(min(cal_df$predicted), max(cal_df$predicted), length.out = 200L)
-      y_hat <- predict(lo, newdata = data.frame(predicted = x_seq))
-      valid <- !is.na(y_hat)
-      if (sum(valid) < 2L) return(NA_real_)
-      x_v <- x_seq[valid]; d_v <- abs(y_hat[valid] - x_v)
-    } else {
-      x_v <- cal_df$predicted; d_v <- abs(cal_df$observed - x_v)
-    }
-    rng <- diff(range(x_v))
-    if (rng < 1e-6) return(NA_real_)
-    sum(diff(x_v) * (d_v[-length(d_v)] + d_v[-1L]) / 2L) / rng
-  }, error = function(e) NA_real_)
+#' Integrated Calibration Index (Patient-Level Smooth)
+#'
+#' @description
+#' Computes the modern patient-level smooth Integrated Calibration Index (ICI).
+#' 
+#' @details
+#' Unlike legacy implementations that bin predictions and approximate the integral 
+#' (e.g., using loess), this function fits a Cox model with a natural cubic spline 
+#' on the complementary log-log transformed predictions. It then evaluates the 
+#' absolute differences at the individual patient level. This eliminates the 
+#' arbitrary dependence on bin counts and is the recommended standard in modern 
+#' clinical prediction literature.
+#'
+#' @param pred Numeric vector of predicted survival probabilities.
+#' @param time Numeric vector of follow-up times.
+#' @param status Numeric vector of event indicators (1 = event, 0 = censored).
+#' @param t0 Numeric. The time horizon at which to evaluate calibration.
+#' @param df Integer. Degrees of freedom for the natural cubic spline (default 3).
+#' @param eps Numeric. Small clipping value to avoid log(0) overflow (default 1e-6).
+#'
+#' @return A numeric scalar representing the smooth ICI, or \code{NA} if it fails.
+#'
+#' @keywords internal
+.compute_ici <- function(pred, time, status, t0, df = 3, eps = 1e-6) {
+  # Clean and validate
+  keep <- is.finite(pred) & is.finite(time) & !is.na(status)
+  pred <- pred[keep]; time <- time[keep]; status <- status[keep]
+  
+  if (length(pred) < 10L) return(NA_real_)
+  
+  # Clip predictions to avoid log(0) using eps
+  p_clip <- pmin(pmax(pred, eps), 1 - eps)
+  cll <- log(-log(p_clip))
+  
+  # Require some variability to fit a spline
+  if (length(unique(cll)) < 5L) return(NA_real_)
+  
+  d <- data.frame(time = time, status = status, cll = cll)
+  
+  # Fit Cox model on spline of cloglog(pred)
+  fit <- tryCatch(
+    survival::coxph(survival::Surv(time, status) ~ splines::ns(cll, df = df), data = d),
+    error = function(e) NULL
+  )
+  if (is.null(fit)) return(NA_real_)
+  
+  # Predict individual survival probabilities at t0
+  sm <- tryCatch(
+    summary(survival::survfit(fit), times = t0, extend = TRUE),
+    error = function(e) NULL
+  )
+  if (is.null(sm) || is.null(sm$surv) || length(sm$surv) == 0) return(NA_real_)
+  
+  # Calculate mean absolute error at the patient level
+  obs_smooth <- as.numeric(sm$surv)
+  mean(abs(obs_smooth - pred), na.rm = TRUE)
 }
 

@@ -8,36 +8,40 @@ surv_plot_comparison_calibration(
   learner,
   train_task,
   val_task,
-  time_point,
+  time_point = NULL,
   n_bins = 10,
-  print_metrics = TRUE
+  print_metrics = TRUE,
+  eps = 1e-06
 )
 }
 \arguments{
-\item{learner}{Trained mlr3 learner (must support "distr" predict_type)}
+\item{learner}{Trained mlr3 learner (must support "distr" predict_type).}
 
-\item{train_task}{Training TaskSurv object}
+\item{train_task}{Training \code{TaskSurv} object.}
 
-\item{val_task}{Validation TaskSurv object}
+\item{val_task}{Validation \code{TaskSurv} object.}
 
-\item{time_point}{Numeric. Evaluation time point for calibration.}
+\item{time_point}{Numeric. Evaluation time point. Defaults to \code{NULL} 
+(training median follow-up).}
 
-\item{n_bins}{Integer. Requested number of bins (default 10; each of
-\code{train_task} and \code{val_task} is independently adjusted for its
-own sample size, see \code{.prepare_cal_data} -- a message is printed
-when the two datasets end up with different effective bin counts).}
+\item{n_bins}{Integer. Requested number of bins (default 10; automatically
+adjusted to maintain shared bins).}
 
 \item{print_metrics}{Logical. Print metrics for both datasets (default TRUE).}
+
+\item{eps}{Numeric. Small clipping value passed to ICI calculation (default 1e-6).}
 }
 \value{
-A ggplot object showing calibration curves for training and validation.
+A \code{ggplot} object with metrics and data attached as attributes.
 }
 \description{
 Overlays calibration curves for the training set (apparent/optimistic) and
 a held-out validation set on the same plot.
 }
-\examples{
-\dontrun{
-comp_plot <- surv_plot_comparison_calibration(learner, train_task, val_task, time_point = 365)
-}
+\details{
+If \code{time_point} is \code{NULL}, it defaults to the median follow-up 
+time of the \strong{training set}. Both sets are forced to use the exact same 
+number of quantile bins, dictated by the smaller of the two datasets.
+A warning is issued if the time point exceeds the maximum follow-up time 
+in either dataset.
 }
