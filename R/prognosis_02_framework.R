@@ -166,6 +166,8 @@ surv_extract_task <- function(object) {
   cal_df <- do.call(rbind, bin_stats)
   if (is.null(cal_df) || nrow(cal_df) < 2L) return(NULL)
   
+  attr(cal_df, "raw_data") <- df[, c("pred", "time", "status")]
+  attr(cal_df, "time_point") <- time_point
   rownames(cal_df) <- NULL
   return(cal_df)
 }
@@ -4390,7 +4392,7 @@ print_surv_feature_methods <- function() {
   
   # Predict individual survival probabilities at t0
   sm <- tryCatch(
-    summary(survival::survfit(fit), times = t0, extend = TRUE),
+    summary(survival::survfit(fit, newdata = d), times = t0, extend = TRUE),
     error = function(e) NULL
   )
   if (is.null(sm) || is.null(sm$surv) || length(sm$surv) == 0) return(NA_real_)
