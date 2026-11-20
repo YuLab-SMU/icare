@@ -102,7 +102,7 @@ print(table(sub_train@info.data$cluster_kmeans))
 cat("\n=== LPA Clustering ===\n")
 library(mclust)
 sub_train <- Sub_lpa_with_optimal_k(
-  sub_train, use_scaled_data = TRUE, max_clusters = 3, verbose = TRUE,
+  sub_train, use_scaled_data = TRUE, max_clusters = 4, verbose = TRUE,
   color_palette = "Darjeeling1", save_plots = TRUE, save_dir = sub_dir("02_lpa"), seed = SEED
 )
 cat("LPA optimal K =", sub_train@Optimal.cluster, "\n")
@@ -114,7 +114,6 @@ print(table(sub_train@info.data$cluster_lpa))
 cat("\n=== NMF Clustering ===\n")
 library(NMF)
 nmf_dir <- sub_dir("03_nmf")
-
 
 # 3.3a Estimate the best rank (= number of subtypes) across a candidate range.
 sub_train <- Sub_nmf_estimate(sub_train, rank_range = 2:6, nrun = 5,
@@ -128,7 +127,6 @@ cat("NMF optimal rank =", sub_train@Optimal.cluster, "\n")
 # 3.3c Assign each training sample to a subtype.
 sub_train <- Sub_nmf_assign_subtypes(sub_train)
 print(table(sub_train@info.data$cluster_nmf))
-
 
 # 3.3d Refit with more NMF runs and save a re-usable model object, so new
 # samples (or the validation split) can be classified consistently later.
@@ -210,6 +208,29 @@ plot_clustering_comparison(
   sub_compare, methods = c("cluster_kmeans", "cluster_lpa", "cluster_nmf"),
   save_dir = sub_dir("05_method_comparison"), width = 5, height = 4.5, base_size = 12
 )
+
+
+# Compare all three methods at k = 4.
+sub4 <- Sub_nmf_estimate(sub_train, rank_range = 4, nrun = 5, method = "brunet", seed = SEED)
+sub4 <- Sub_nmf_assign_subtypes(sub4)
+
+# Align rows by sample ID before assigning cluster labels.
+x <- as.matrix(sub4@scale.data[rownames(sub4@info.data), , drop = FALSE])
+set.seed(SEED)
+sub4@info.data$cluster_kmeans <- paste0("S", stats::kmeans(x, centers = 4, nstart = 50)$cluster)
+lpa4 <- mclust::Mclust(x, G = 4, verbose = FALSE)
+stopifnot(!is.null(lpa4))
+sub4@info.data$cluster_lpa <- paste0("S", lpa4$classification)
+
+methods4 <- c("cluster_kmeans", "cluster_lpa", "cluster_nmf")
+
+# Verify that each method assigned every sample to one of four nonempty clusters.
+stopifnot(all(vapply(sub4@info.data[methods4], function(g) {
+  !anyNA(g) && length(unique(g)) == 4L
+}, logical(1))))
+
+print(round(compare_clusterings(sub4, methods = methods4, output = "matrix"), 3))
+plot_clustering_comparison(sub4, methods = methods4, save_dir = sub_dir("05_method_comparison_k4"))
 
 # =============================================================================
 
