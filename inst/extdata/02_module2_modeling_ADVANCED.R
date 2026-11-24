@@ -201,32 +201,32 @@ model_obj <- SelectBestModel(model_obj, metric = "auc")
 
 # 7. Model Comparison Visualizations
 # =============================================================================
-PlotTopModelAUC(model_obj, top_n = 4, save_plot = TRUE, save_dir = model_dir)
+PlotTopModelAUC(model_obj, top_n = 4, save_plot = TRUE, save_dir = model_dir,rank_by = "train_cv")
 PlotProbDensity(model_obj, save_plot = TRUE, save_dir = model_dir)
 PlotModelComparison(
   model_obj, top_n = 4,
   metrics = c("auc", "Sensitivity", "Specificity", "accuracy_score", "f1_score"),
   palette_name = "Darjeeling1", save_plot = TRUE, save_dir = model_dir,
-  width = 12, height = 5
+  width = 12, height = 5, rank_by = "train_cv"
 )
 
 PlotModelParallel(
   model_obj, top_n = 4,
   metrics = c("auc", "Sensitivity", "Specificity", "accuracy_score", "f1_score"),
-  save_plot = TRUE, save_dir = model_dir
+  save_plot = TRUE, save_dir = model_dir, rank_by = "train_cv"
 )
 PlotMultiROC(model_obj, test_data = model_obj@split.scale.data$testing,
              palette_name = "Darjeeling1", save_plot = TRUE, save_dir = model_dir)
 
-# Pick a trained model to inspect. "rf" is included in the model list above.
+# Pick a trained model to inspect. "C5.0" is included in the model list above.
 PlotConfusionMatrix(model_obj, test_data = model_obj@split.scale.data$testing,
-                    model_name = "nb", threshold = 0.6, prevalence = 0.3,
+                    model_name = "C5.0", threshold = 0.6, prevalence = 0.3,
                     save_plot = TRUE, save_dir = model_dir)
 PlotFeatureImportance(model_obj, top_n = 20, save_plot = TRUE, save_dir = model_dir)
-PlotCalibration(model_obj, model_name = "nb",
+PlotCalibration(model_obj, model_name = "C5.0",
                 test_data = model_obj@filtered.set$training,
                 save_plot = TRUE, save_dir = model_dir)
-PlotCalibration(model_obj, model_name = "nb",
+PlotCalibration(model_obj, model_name = "C5.0",
                 test_data = model_obj@filtered.set$testing, 
                 save_plot = TRUE, save_dir = model_dir)
 # =============================================================================
@@ -371,7 +371,7 @@ xai_dir <- sub_dir("04_explainability")
 explainer <- CreateExplainer(model_obj)
 ExplainModelPerformance(explainer, geom = "roc", save_plots = TRUE, save_dir = xai_dir,
                         plot_width = 6, plot_height = 5)
-ExplainVariableImportance(explainer, B = 10, top_n = 20, filter_zero = TRUE,
+ExplainVariableImportance(explainer, B = 100, top_n = 20, filter_zero = TRUE,
                            save_plots = TRUE, save_dir = xai_dir,
                            plot_width = 8, plot_height = 5)
 
@@ -483,9 +483,9 @@ thresh_internal <- CalculateThresholds(model_obj, target_ppv = 0.8, target_npv =
 # Set seed for reproducibility of the random perturbation step.
 set.seed(456)
 
-# Obtain predicted probabilities for the positive class from the internal random forest model
+# Obtain predicted probabilities for the positive class from the internal C5.0 model
 # applied to the test data.
-my_probs <- predict(model_obj@train.models$rf, test_data, type = "prob")[, positive]
+my_probs <- predict(model_obj@train.models$C5.0, test_data, type = "prob")[, positive]
 
 # Simulate predictions from an "external" model by adding random noise to the logit of the probabilities.
 # This is a crude way to generate a second set of probability estimates for comparison.
@@ -521,7 +521,7 @@ PlotThresholdROC(thresh_internal, compare_model = thresh_external,
 nri_dir <- sub_dir("06_nri_idi")
 true_labels <- factor(test_data[[model_obj@group_col]])
 ref_prob <- predict(model_obj@train.models$glm,  test_data, type = "prob")[, positive]
-new_prob <- predict(model_obj@train.models$nb, test_data, type = "prob")[, positive]
+new_prob <- predict(model_obj@train.models$C5.0, test_data, type = "prob")[, positive]
 
 # Scenario A: both models judged against the same clinical risk thresholds.
 # Set directories: keep these figures inside the chapter's output tree
@@ -531,15 +531,15 @@ dir.create(save_dir, recursive = TRUE, showWarnings = FALSE)
 
 # ROC
 PlotROCCompare(true_labels, ref_prob, new_prob, 
-               labels = c("glm", "nb"), save_plot = TRUE, save_dir = save_dir)
+               labels = c("glm", "C5.0"), save_plot = TRUE, save_dir = save_dir)
 
 # IDI
 idi <- PlotIDICurve(true_labels, ref_prob, new_prob, positive = positive, 
-                    save_plot = TRUE, save_dir = save_dir)
+                    save_plot = TRUE, save_dir = save_dir,conf_int = T)
 idi
 # NRI calculation
 nri <- CalculateCategoryNRI(true_labels, ref_prob, new_prob, 
-                            risk_thresholds = c(0.02, 0.1, 0.5, 0.95))
+                            risk_thresholds = c(0.02, 0.1, 0.5, 0.95),conf_int = T)
 # Export numeric results
 cat("\nNRI Events:", nri$nri_events,
     "\nNRI Non-Events:", nri$nri_nonevents,
@@ -577,16 +577,16 @@ NRI_IDI_Analysis(
 #nri_res <- CalculateCategoryNRI(true_labels, ref_prob, new_prob,
 #                                 ref_thresholds = c(0.3, 0.7), new_thresholds = c(0.5))
 nri_res <- CalculateCategoryNRI(true_labels, ref_prob, new_prob,
-                                risk_thresholds = c(0.5))
+                                risk_thresholds = c(0.5),conf_int = T)
 print(nri_res$nri_total)
 PlotNRIHeatmap(nri_res, ref_category_labels = c("Negative", "Positive"),
                new_category_labels = c("Negative", "Positive"),
                save_plot = TRUE, save_dir = file.path(nri_dir, "heatmap"))
 PlotIDICurve(true_labels, ref_prob, new_prob, risk_thresholds = c(0.02, 0.1, 0.5, 0.95),positive = positive,
-             save_plot = TRUE, save_dir = file.path(nri_dir, "idi"))
-PlotROCCompare(true_labels, ref_prob, new_prob, labels = c("glm", "nb"), show_ci = FALSE,
+             save_plot = TRUE, save_dir = file.path(nri_dir, "idi"),conf_int = T)
+PlotROCCompare(true_labels, ref_prob, new_prob, labels = c("glm", "C5.0"), show_ci = FALSE,
                save_plot = TRUE, save_dir = file.path(nri_dir, "roc"))
-PlotPredDist(true_labels, ref_prob, new_prob, labels = c("glm", "nb"),
+PlotPredDist(true_labels, ref_prob, new_prob, labels = c("glm", "C5.0"),
              outcome_labels = levels(true_labels), save_plot = TRUE, save_dir = file.path(nri_dir, "dist"))
 PlotThresholdNRI(true_labels, ref_prob, new_prob, save_plot = TRUE,
                   save_dir = file.path(nri_dir, "threshold_scan"))
@@ -631,6 +631,12 @@ diag_svm <- ifelse(res_svm[, 2] >= 0.5, "POSITIVE", "NEGATIVE")
 ## 13.3 Interactive Shiny app — only launched in an interactive session so
 ## this script can still run non-interactively (e.g. via `Rscript`).
 library(bslib); library(shiny); library(plotly)
+
+deploy_manager$preprocess_columns <- setdiff(
+  names(deploy_manager$ref_data),
+  deploy_manager$group_col
+)
+
 if (interactive()) {
   icare::deploy_clinlab_app(deploy_manager, title = "Clinlabomics Intelligence")
 } else {

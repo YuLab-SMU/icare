@@ -1,6 +1,6 @@
 # 0. Environment and configuration
 # ---------------------------------------------------------------------------
-set.seed(2025)
+set.seed(42)
 
 # Version and output root
 VERSION <- "Advanced_extensions"
@@ -115,7 +115,7 @@ prog <- Stat_to_PrognosiX(stat_obj, "time", "status",
 task_full <- surv_extract_task(prog)
 n <- task_full$nrow
 train_idx <- caret::createDataPartition(task_full$data()[[task_full$target_names[2]]],
-                                        p = 0.7, list = FALSE)
+                                        p = 0.5, list = FALSE)
 val_idx <- setdiff(seq_len(n), train_idx)
 
 train_task <- task_full$clone()$filter(train_idx)
@@ -147,17 +147,176 @@ write.csv(train_data, file = file.path(sub_dir("data"), "training_data.csv"), ro
 write.csv(val_data,   file = file.path(sub_dir("data"), "validation_data.csv"), row.names = FALSE)
 
 # ---------------------------------------------------------------------------
+# 2.1 Feature Selection Visualization
+# ---------------------------------------------------------------------------
+
+# 1. Prepare feature selection data
+df2 <- feat_sel$method_table
+
+# Algorithm order in the original figure
+method_cols <- c(
+  "uni_cox",
+  "lasso",
+  "ridge",
+  "enet",
+  "rf_imp",
+  "vimp"
+)
+
+# Calculate the number of algorithms selecting each feature
+df2$N_selected <- rowSums(
+  df2[, method_cols, drop = FALSE],
+  na.rm = TRUE
+)
+
+# Union: selected by at least one algorithm
+df2$Union <- df2$N_selected > 0
+
+# 2. Reshape data for plotting
+df_plot <- df2 %>%
+  arrange(desc(N_selected), Feature) %>%
+  mutate(
+    Feature = factor(
+      Feature,
+      levels = rev(unique(Feature))
+    )
+  ) %>%
+  dplyr::select(
+    Feature,
+    all_of(method_cols),
+    Union
+  ) %>%
+  pivot_longer(
+    cols = -Feature,
+    names_to = "Method",
+    values_to = "Selected"
+  ) %>%
+  mutate(
+    Method = factor(
+      Method,
+      levels = c(method_cols, "Union")
+    ),
+    FillGroup = case_when(
+      Method == "Union" & Selected ~ "Union",
+      Selected ~ "Selected",
+      TRUE ~ "Not selected"
+    ),
+    FillGroup = factor(
+      FillGroup,
+      levels = c(
+        "Selected",
+        "Union",
+        "Not selected"
+      )
+    )
+  )
+
+# 3. Plot heatmap
+p_feature <- ggplot(
+  df_plot,
+  aes(
+    x = Method,
+    y = Feature,
+    fill = FillGroup
+  )
+) +
+  geom_tile(
+    color = "white",
+    linewidth = 0.8,
+    width = 0.95,
+    height = 0.95
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Selected" = "#40577E",
+      "Union" = "#D64B43",
+      "Not selected" = "#EAE9E6"
+    ),
+    breaks = c(
+      "Selected",
+      "Union",
+      "Not selected"
+    ),
+    labels = c(
+      "Selected by algorithm",
+      "Included in union",
+      "Not selected"
+    )
+  ) +
+  labs(
+    title = "Feature selection across algorithms",
+    x = NULL,
+    y = NULL,
+    fill = NULL,
+    tag = "A"
+  ) +
+  theme_classic(base_size = 11) +
+  theme(
+    plot.title = element_text(
+      size = 14,
+      hjust = 0.5
+    ),
+    plot.tag = element_text(
+      size = 18,
+      face = "bold"
+    ),
+    plot.tag.position = c(0, 1),
+    axis.text.x = element_text(
+      size = 10,
+      angle = 45,
+      hjust = 1,
+      vjust = 1,
+      color = "black"
+    ),
+    axis.text.y = element_text(
+      size = 10,
+      color = "black"
+    ),
+    axis.ticks = element_blank(),
+    axis.line = element_blank(),
+    legend.position = "left",
+    legend.text = element_text(size = 10),
+    legend.key.size = unit(0.8, "cm"),
+    plot.margin = margin(5, 5, 5, 5)
+  )
+
+print(p_feature)
+
+# 4. Export
+ggsave(
+  file.path(
+    sub_dir("01_feature_selection"),
+    "Feature_selection_across_algorithms.pdf"
+  ),
+  p_feature,
+  width = 6.5,
+  height = 4.5
+)
+
+ggsave(
+  file.path(
+    sub_dir("01_feature_selection"),
+    "Feature_selection_across_algorithms.png"
+  ),
+  p_feature,
+  width = 6.5,
+  height = 4.5,
+  dpi = 600
+)
+
+# ---------------------------------------------------------------------------
 
 # 3. Algorithm benchmarking and hyperparameter tuning
 # ---------------------------------------------------------------------------
 # Compare Cox, LASSO, and Random Survival Forest (Ranger)
 learners_list <- list(
-  surv_get_learner("surv.coxph",     train_task),
+  surv_get_learner("surv.rpart",     train_task),
   surv_get_learner("surv.cv_glmnet", train_task),
   surv_get_learner("surv.ranger",    train_task)
 )
+set.seed(123)
 bmr1 <- surv_run_algorithm_benchmark(train_task, learners_list)
-bmr2 <- surv_benchmark_learners(train_task, learner_ids = c("surv.coxph", "surv.ranger"), tune = FALSE)
+bmr2 <- surv_benchmark_learners(train_task, learner_ids = c("surv.rpart", "surv.ranger"), tune = FALSE)
 bmr2_summary <- surv_summarize_benchmark(bmr2)
 write.csv(bmr2_summary, file = file.path(sub_dir("02_model"), "algorithm_benchmark.csv"), row.names = FALSE)
 
@@ -310,12 +469,10 @@ cat("Stability index:", round(stab$stability_index, 4), "\n")
 ggsave(file.path(sub_dir("04_robustness"), "stability_plot.pdf"), stab$plot, width = 8, height = 6)
 write.csv(stab$frequencies, file.path(sub_dir("04_robustness"), "stability_frequencies.csv"), row.names = FALSE)
 
-
 # 5.2 Feature ablation (drop each feature and measure C-index drop)
 abl <- surv_analyze_feature_ablation(train_task, best_id, selected_feats)
 ggsave(file.path(sub_dir("04_robustness"), "ablation_plot.pdf"), abl$plot, width = 8, height = 6)
 write.csv(abl$results, file.path(sub_dir("04_robustness"), "ablation_results.csv"), row.names = FALSE)
-
 
 # 5.3 Model sensitivity (sample size and censoring rate)
 sens_sample <- surv_analyze_model_sensitivity(train_task, best_id, analysis_type = "sample_size")
